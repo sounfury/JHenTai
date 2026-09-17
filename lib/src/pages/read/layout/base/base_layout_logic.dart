@@ -420,11 +420,25 @@ abstract class BaseLayoutLogic extends GetxController
       return;
     }
     imageInpaintingService.setDisplayMode(mode);
-    await imageInpaintingService.detectAndRepair(
-      requestKey: request.cacheKey,
-      sourcePath: sourcePath,
-      force: force,
-    );
+    final InpaintingResult repairResult = await imageInpaintingService
+        .detectAndRepair(
+          requestKey: request.cacheKey,
+          sourcePath: sourcePath,
+          force: force,
+        );
+    if (repairResult.fallbackToOverlay &&
+        repairResult.errorCode != null &&
+        repairResult.errorCode != 'canceled' &&
+        repairResult.errorCode != 'ctd_no_text') {
+      // Surface the concrete reason so a silent white-box fallback is not
+      // mistaken for a successful CTD + MI-GAN repair.
+      toast(
+        'imageTranslationInpaintFallback'.trParams({
+          'reason': repairResult.errorCode!,
+        }),
+        isShort: false,
+      );
+    }
     updateSafely([BaseLayoutLogic.pageId]);
   }
 

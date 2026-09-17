@@ -1326,11 +1326,16 @@ class ImageTranslationService extends GetxController
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
+        final double sourceFont = estimateSourceTranslationFontSize(
+          blocks,
+          group.blockIndices,
+        );
         final double resolved = fitTranslationFontSize(
           translation,
           math.max(1, safeRect.width - 8),
           math.max(1, safeRect.height - 4),
           TextDirection.ltr,
+          maxFontSize: sourceFont,
         );
         entries.add((safeRect, translation, resolved));
       }
@@ -1894,16 +1899,25 @@ void paintTranslationBubbleText(
   );
 }
 
-/// The largest font size (clamped 8-30) whose laid-out wrapped text still fits
-/// the box, found with a binary search over [TextPainter] layouts.
+/// The largest font size whose laid-out wrapped text still fits the box,
+/// found with a binary search over [TextPainter] layouts.
+///
+/// [maxFontSize] caps the search (still clamped to 8-30). Pass the source OCR
+/// line height so a large bubble detector box cannot inflate tiny source text
+/// into an oversized translation that overflows the bubble.
 double fitTranslationFontSize(
   String text,
   double maxWidth,
   double maxHeight,
-  TextDirection textDirection,
-) {
+  TextDirection textDirection, {
+  double? maxFontSize,
+}) {
   const double minFont = 8;
-  const double maxFont = 30;
+  const double absoluteMaxFont = 30;
+  final double maxFont = math.min(
+    absoluteMaxFont,
+    math.max(minFont, maxFontSize ?? absoluteMaxFont),
+  );
   double low = minFont;
   double high = maxFont;
   double best = minFont;
@@ -1922,6 +1936,28 @@ double fitTranslationFontSize(
     }
   }
   return best;
+}
+
+/// Median OCR glyph/line height for [blockIndices], scaled into the same
+/// coordinate space as the layout rect. Used as the translation font ceiling
+/// so size tracks the source text rather than the (often larger) bubble box.
+double estimateSourceTranslationFontSize(
+  List<RecognizedTextBlock> blocks,
+  List<int> blockIndices, {
+  double scaleY = 1,
+}) {
+  final List<double> heights = <double>[
+    for (final int index in blockIndices)
+      if (index >= 0 &&
+          index < blocks.length &&
+          blocks[index].height > 0)
+        blocks[index].height * scaleY,
+  ];
+  if (heights.isEmpty) {
+    return 30;
+  }
+  heights.sort();
+  return heights[heights.length ~/ 2];
 }
 
 class ImageTranslationException implements Exception {

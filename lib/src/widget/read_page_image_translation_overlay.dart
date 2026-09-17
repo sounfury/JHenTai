@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/model/image_translation.dart';
+import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/utils/image_text_grouping.dart';
@@ -263,6 +264,40 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
               ),
             ),
           ),
+        GetBuilder<ImageInpaintingService>(
+          id: request.cacheKey,
+          builder: (_) {
+            final InpaintingResult repair =
+                imageInpaintingService.resultFor(request.cacheKey);
+            if (!repair.fallbackToOverlay ||
+                repair.errorCode == null ||
+                repair.errorCode == 'canceled' ||
+                repair.errorCode == 'ctd_no_text') {
+              return const SizedBox.shrink();
+            }
+            return Positioned(
+              top: 8,
+              left: 8,
+              right: result.fromCache ? 120 : 8,
+              child: Material(
+                color: Colors.orange.shade800.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Text(
+                    'imageTranslationInpaintFallback'.trParams({
+                      'reason': repair.errorCode!,
+                    }),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -461,11 +496,17 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
+        final double sourceFont = estimateSourceTranslationFontSize(
+          result.blocks,
+          group.blockIndices,
+          scaleY: scaleY,
+        );
         final double resolved = fitTranslationFontSize(
           translation,
           math.max(1, safeRect.width - 8),
           math.max(1, safeRect.height - 4),
           textDirection,
+          maxFontSize: sourceFont,
         );
         entries.add((safeRect, translation, resolved));
       }

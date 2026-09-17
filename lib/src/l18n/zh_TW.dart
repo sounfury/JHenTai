@@ -1197,6 +1197,7 @@ favnote：配對收藏備註
       'imageTranslationCtdLicenseNotice': 'CTD 模型依 GPL-3.0 條款於執行時下載，不隨應用程式散佈',
       'imageTranslationCtdFallbackHint':
           '需同時下載 CTD 與 MI-GAN；任何步驟失敗都會安全退回文字覆蓋層。',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': '自訂',
       'imageTranslationAppleLiveTextUseApi': '使用第三方 API 翻譯',
