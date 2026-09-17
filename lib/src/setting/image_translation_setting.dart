@@ -96,8 +96,9 @@ class ImageTranslationSetting
   /// Defaults off to match nearby translation toggles (e.g. translate-subsequent).
   final RxBool enableAutoTranslate = false.obs;
 
-  /// How many leading pages to pre-translate when a gallery opts in on the
-  /// detail page. Global default; per-gallery on/off lives in local config.
+  /// How many leading pages to pre-translate immediately in the background
+  /// when a gallery opts in on the detail page. Global default; per-gallery
+  /// on/off lives in local config.
   final RxInt preTranslatePageCount = 30.obs;
 
   final Rx<ContextBatchSize> contextBatchSize = ContextBatchSize.one.obs;

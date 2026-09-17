@@ -36,6 +36,7 @@ import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/service/tag_search_order_service.dart';
 import 'package:jhentai/src/service/tag_translation_service.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
+import 'package:jhentai/src/service/gallery_pre_translate_runner.dart';
 import 'package:jhentai/src/service/volume_service.dart';
 import 'package:jhentai/src/service/windows_service.dart';
 import 'package:jhentai/src/setting/advanced_setting.dart';
@@ -92,6 +93,7 @@ List<JHLifeCircleBean> lifeCircleBeans = [
   storageService,
   superResolutionService,
   imageTranslationService,
+  galleryPreTranslateRunner,
   imageInpaintingService,
   lanDeviceTrustService,
   lanUnifiedStateService,

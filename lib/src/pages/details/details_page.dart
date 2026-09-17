@@ -29,6 +29,7 @@ import 'package:jhentai/src/widget/eh_thumbnail.dart';
 import 'package:jhentai/src/widget/eh_translated_text.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
 import 'package:jhentai/src/widget/icon_text_button.dart';
+import 'package:jhentai/src/widget/image_translation_batch_progress_banner.dart';
 import 'package:jhentai/src/widget/keep_alive.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -73,7 +74,12 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
       init: logic,
       builder: (_) => Scaffold(
         appBar: buildAppBar(context),
-        body: buildBody(context),
+        body: Stack(
+          children: [
+            buildBody(context),
+            const ImageTranslationBatchProgressBanner(topPadding: 8),
+          ],
+        ),
         floatingActionButton: buildFloatingActionButton(),
       ),
     );

@@ -1238,9 +1238,9 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslate': 'Pre-translate',
       'preTranslateEnabled': 'Pre-translate on',
       'preTranslateHint':
-          'When enabled, opening the reader pre-translates the first @count pages of this gallery in the background.',
+          'When enabled, immediately pre-translates the first @count pages of this gallery in the background.',
       'preTranslateEnabledToast':
-          'Pre-translate enabled (first @count pages). It starts when you open the reader.',
+          'Pre-translate enabled (first @count pages). Starting in the background now.',
       'preTranslateDisabledToast': 'Pre-translate disabled for this gallery.',
       'imageTranslationContextPages': 'Pages per context request',
       'imageTranslationContextPagesValue': '@count page(s)',
