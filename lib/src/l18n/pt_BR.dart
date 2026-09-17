@@ -1140,9 +1140,9 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslate': 'Pré-traduzir',
       'preTranslateEnabled': 'Pré-tradução on',
       'preTranslateHint':
-          'Quando ativado, ao abrir o leitor as primeiras @count páginas desta galeria são pré-traduzidas em segundo plano.',
+          'Quando ativado, as primeiras @count páginas desta galeria são pré-traduzidas imediatamente em segundo plano.',
       'preTranslateEnabledToast':
-          'Pré-tradução ativada (primeiras @count páginas). Começa ao abrir o leitor.',
+          'Pré-tradução ativada (primeiras @count páginas). Iniciando em segundo plano agora.',
       'preTranslateDisabledToast': 'Pré-tradução desativada para esta galeria.',
       'imageTranslationContextPages': 'Páginas por solicitação de contexto',
       'imageTranslationContextPagesValue': '@count página(s)',

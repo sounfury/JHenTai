@@ -24,6 +24,7 @@ import 'package:jhentai/src/network/eh_request.dart';
 import 'package:jhentai/src/pages/download/download_base_page.dart';
 import 'package:jhentai/src/service/read_progress_service.dart';
 import 'package:jhentai/src/service/gallery_pre_translate_preference.dart';
+import 'package:jhentai/src/service/gallery_pre_translate_runner.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/setting/download_setting.dart';
@@ -1023,11 +1024,21 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
     updateSafely([preTranslateButtonId]);
     final int count = imageTranslationSetting.preTranslatePageCount.value;
     if (next) {
+      final int pageCount = state.galleryDetails?.pageCount ??
+          state.gallery?.pageCount ??
+          state.galleryMetadata?.pageCount ??
+          0;
+      galleryPreTranslateRunner.startForGallery(
+        galleryUrl: state.galleryUrl,
+        pageCount: pageCount,
+        seedThumbnails: state.galleryDetails?.thumbnails,
+      );
       toast(
         'preTranslateEnabledToast'.trParams({'count': '$count'}),
         isShort: false,
       );
     } else {
+      galleryPreTranslateRunner.cancelForGallery(gid);
       toast('preTranslateDisabledToast'.tr);
     }
   }

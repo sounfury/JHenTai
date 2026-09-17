@@ -8,7 +8,6 @@ import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/mixin/scroll_status_listener.dart';
 import 'package:jhentai/src/mixin/scroll_status_listener_state.dart';
 import 'package:jhentai/src/mixin/window_widget_mixin.dart';
-import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/model/read_page_info.dart';
 import 'package:jhentai/src/pages/read/layout/horizontal_list/horizontal_list_layout.dart';
 import 'package:jhentai/src/pages/read/layout/horizontal_page/horizontal_page_layout.dart';
@@ -37,12 +36,14 @@ import '../../widget/eh_thumbnail.dart';
 import '../../widget/reader_thumbnail_layout.dart';
 import '../../widget/eh_wheel_speed_controller_for_read_page.dart';
 import '../../widget/reader_floating_translation_ball.dart';
+import '../../setting/image_translation_setting.dart';
+import '../../widget/image_translation_batch_progress_banner.dart';
 import '../../widget/loading_state_indicator.dart';
 import 'layout/horizontal_double_column/horizontal_double_column_layout.dart';
 import 'layout/vertical_list/vertical_list_layout.dart';
 
 /// Actions offered by the read-page top-right translate button dropdown.
-enum _ImageTranslationMenuAction { start, retranslate, settings, toggleOverlay }
+enum _ImageTranslationMenuAction { start, retranslate, settings, toggleOverlay, toggleAutoTranslate }
 
 class ReadPage extends StatefulWidget {
   const ReadPage({super.key});
@@ -486,6 +487,21 @@ class _ReadPageState extends State<ReadPage>
                                         ),
                                   ),
                                   GlassMenuItem(
+                                    title: 'enableAutoTranslate'.tr,
+                                    icon: Icon(
+                                      imageTranslationSetting
+                                              .enableAutoTranslate.value
+                                          ? Icons.check_box
+                                          : Icons.check_box_outline_blank,
+                                    ),
+                                    onTap:
+                                        () => _handleImageTranslationMenuAction(
+                                          context,
+                                          _ImageTranslationMenuAction
+                                              .toggleAutoTranslate,
+                                        ),
+                                  ),
+                                  GlassMenuItem(
                                     title: 'imageTranslationSettings'.tr,
                                     icon: const Icon(Icons.settings),
                                     onTap:
@@ -600,6 +616,13 @@ class _ReadPageState extends State<ReadPage>
               'imageTranslationRetranslate'.tr,
             ),
             _translationMenuItem(
+              _ImageTranslationMenuAction.toggleAutoTranslate,
+              imageTranslationSetting.enableAutoTranslate.value
+                  ? Icons.check_box
+                  : Icons.check_box_outline_blank,
+              'enableAutoTranslate'.tr,
+            ),
+            _translationMenuItem(
               _ImageTranslationMenuAction.settings,
               Icons.settings,
               'imageTranslationSettings'.tr,
@@ -636,6 +659,11 @@ class _ReadPageState extends State<ReadPage>
       case _ImageTranslationMenuAction.toggleOverlay:
         logic.toggleImageTranslationOverlay();
         break;
+      case _ImageTranslationMenuAction.toggleAutoTranslate:
+        imageTranslationSetting.saveEnableAutoTranslate(
+          !imageTranslationSetting.enableAutoTranslate.value,
+        );
+        break;
     }
   }
 
@@ -658,70 +686,7 @@ class _ReadPageState extends State<ReadPage>
 
   /// Floating progress banner shown while batch translation runs.
   Widget buildTranslationProgress(BuildContext context) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 8,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: GetBuilder<ImageTranslationService>(
-          id: ImageTranslationService.batchProgressId,
-          builder: (_) {
-            if (!imageTranslationService.isBatchTranslating) {
-              return const SizedBox.shrink();
-            }
-            return Material(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(18),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 12,
-                      height: 12,
-                      child:
-                          ThemeConfig.isApple
-                              ? GlassProgressIndicator.circular(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              )
-                              : const CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'translationProgress'.trParams({
-                        'current': '${imageTranslationService.batchCompleted}',
-                        'total': '${imageTranslationService.batchTotal}',
-                        'stage': _translationStageLabel(
-                          imageTranslationService.currentStage,
-                        ),
-                      }),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    const SizedBox(width: 4),
-                    InkWell(
-                      onTap: imageTranslationService.cancelBatch,
-                      borderRadius: BorderRadius.circular(12),
-                      child: const Padding(
-                        padding: EdgeInsets.all(2),
-                        child: Icon(Icons.close, color: Colors.white, size: 16),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+    return const ImageTranslationBatchProgressBanner();
   }
 
   Widget buildFloatingTranslationBall(BuildContext context) {
@@ -763,24 +728,6 @@ class _ReadPageState extends State<ReadPage>
     );
   }
 
-  String _translationStageLabel(ImageTranslationStage stage) {
-    switch (stage) {
-      case ImageTranslationStage.idle:
-        return 'translationStageIdle'.tr;
-      case ImageTranslationStage.downloading:
-        return 'translationStageIdle'.tr;
-      case ImageTranslationStage.recognizing:
-        return 'translationStageRecognizing'.tr;
-      case ImageTranslationStage.translating:
-        return 'translationStageTranslating'.tr;
-      case ImageTranslationStage.masking:
-        return 'translationStageMasking'.tr;
-      case ImageTranslationStage.embedding:
-        return 'translationStageEmbedding'.tr;
-      case ImageTranslationStage.done:
-        return 'translationStageDone'.tr;
-    }
-  }
 
   /// bottom menu
   Widget buildBottomMenu(BuildContext context) {

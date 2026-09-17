@@ -56,6 +56,7 @@ import '../../service/lan_sharing_runtime.dart';
 import '../../service/gallery_download/gallery_images_retainer.dart';
 import '../../service/read_progress_service.dart';
 import '../../service/gallery_pre_translate_preference.dart';
+import '../../service/gallery_pre_translate_runner.dart';
 import '../../setting/image_translation_setting.dart';
 import '../../setting/preference_setting.dart';
 import '../../setting/performance_setting.dart';
@@ -1934,6 +1935,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
 
   /// When the detail-page toggle is on for this gallery, pre-translate the
   /// first N pages in the background (existing batch banner / cancel).
+  /// Skips if the detail-page [GalleryPreTranslateRunner] already finished or
+  /// is still running for this gid — reader hydrates from persistent cache.
   Future<void> _startPreTranslateIfNeeded(BuildContext context) async {
     final int? gid = state.readPageInfo.gid;
     if (gid == null || isClosed) {
@@ -1942,7 +1945,15 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (!await GalleryPreTranslatePreference.isEnabled(gid)) {
       return;
     }
-    if (imageTranslationService.isBatchTranslating || isClosed) {
+    if (galleryPreTranslateRunner.isActiveOrFinished(gid) ||
+        imageTranslationService.isBatchTranslating ||
+        isClosed) {
+      // Keep overlay on so hydrated/cached results are visible.
+      if (!state.showImageTranslationOverlay) {
+        state.showImageTranslationOverlay = true;
+        updateSafely([translationMenuId]);
+        layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
+      }
       return;
     }
     final int n = imageTranslationSetting.preTranslatePageCount.value;

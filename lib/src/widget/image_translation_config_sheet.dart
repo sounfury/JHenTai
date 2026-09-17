@@ -134,6 +134,11 @@ class _ImageTranslationConfigSheetState
               shrinkWrap: true,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               children: [
+                // Quick toggles first — auto-translate is also on the outer
+                // reader translation menu; keep it here near the top.
+                _buildAutoTranslate(),
+                _buildTranslateScope(),
+                _buildPreTranslatePageCount(),
                 _buildBubbleDetection(),
                 _buildBubbleDetectionModelTile(),
                 _buildOcrEngine(),
@@ -150,9 +155,6 @@ class _ImageTranslationConfigSheetState
                 if (_translatorEngine == ImageTranslationEngine.localGguf)
                   _buildLocalTranslationSettings(),
                 _buildTargetLanguage(),
-                _buildTranslateScope(),
-                _buildAutoTranslate(),
-                _buildPreTranslatePageCount(),
                 _buildContextBatchSize(),
                 _buildAutoMergeText(),
                 _buildImageProcessingMode(),

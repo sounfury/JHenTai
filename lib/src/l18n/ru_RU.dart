@@ -1161,9 +1161,9 @@ class ru_RU {
       'preTranslate': 'Предперевод',
       'preTranslateEnabled': 'Предперевод вкл.',
       'preTranslateHint':
-          'При включении при открытии читалки первые @count страниц этой галереи переводятся в фоне.',
+          'При включении сразу переводит в фоне первые @count страниц этой галереи.',
       'preTranslateEnabledToast':
-          'Предперевод включён (первые @count стр.). Запустится при открытии читалки.',
+          'Предперевод включён (первые @count стр.). Запуск в фоне сейчас.',
       'preTranslateDisabledToast': 'Предперевод для этой галереи выключен.',
       'imageTranslationContextPages': 'Страниц в одном контекстном запросе',
       'imageTranslationContextPagesValue': '@count стр.',
