@@ -51,3 +51,4 @@ app.*.map.json
 # Local tooling / build artifacts not intended for the repo
 .claude/worktrees/
 *.dmg
+.gradle/
