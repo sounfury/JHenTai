@@ -1,0 +1,85 @@
+name: Build iOS (jh-test)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    env:
+      FLUTTER_VERSION: 3.44.8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup JHenTai API Secret
+        shell: bash
+        env:
+          JH_API_SECRET_CONFIG: ${{ secrets.JH_API_SECRET_CONFIG }}
+        run: |
+          if [ -n "$JH_API_SECRET_CONFIG" ]; then
+            printf '%s' "$JH_API_SECRET_CONFIG" > lib/src/config/jh_api_secret_config.dart
+            echo "JHenTai API secret configured."
+          else
+            echo "::warning::JH_API_SECRET_CONFIG is not configured; preserving fallback."
+          fi
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'master'
+          cache: true
+
+      - name: Output Flutter Version
+        run: flutter --version
+
+      - name: Cache Pod
+        uses: actions/cache@v3
+        with:
+          key: ios-pods
+          path: ios/Pods
+          restore-keys: ios-pods-${{ hashFiles('ios/Podfile.lock') }}
+
+      - name: Flutter Pub Get
+        run: |
+          git config --global core.longpaths true
+          flutter pub get
+
+      - name: Build Xcode Package Dependencies
+        run: xcodebuild -resolvePackageDependencies -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release
+
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 5 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2)" >> $GITHUB_OUTPUT
+
+      - name: Build iOS IPA
+        run: |
+          flutter precache --ios
+          cd ios
+          pod update
+          cd ..
+          flutter build ios -t lib/src/main.dart --release --no-codesign
+          sh thin-payload.sh build/ios/iphoneos/*.app
+          cd build
+          mkdir -p Payload
+          mv ios/iphoneos/*.app Payload
+          zip -9 jh-test_${{ steps.get_version.outputs.version }}.ipa -r Payload
+
+      - name: Upload iOS IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jh-test-ipa
+          path: build/*.ipa
+          if-no-files-found: error
