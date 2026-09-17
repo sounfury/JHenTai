@@ -1152,6 +1152,19 @@ class ru_RU {
       'imageTranslationTranslateScope': 'Область перевода',
       'imageTranslationScopeCurrent': 'Только текущая страница',
       'imageTranslationScopeSubsequent': 'Текущая и следующие страницы',
+      'enableAutoTranslate': 'Автоперевод',
+      'enableAutoTranslateHint':
+          'При начале чтения или смене страницы автоматически переводить текущую и следующую страницы.',
+      'preTranslatePageCount': 'Число страниц предперевода',
+      'preTranslatePageCountHint':
+          'После включения предперевода на странице галереи заранее переводятся первые N страниц.',
+      'preTranslate': 'Предперевод',
+      'preTranslateEnabled': 'Предперевод вкл.',
+      'preTranslateHint':
+          'При включении при открытии читалки первые @count страниц этой галереи переводятся в фоне.',
+      'preTranslateEnabledToast':
+          'Предперевод включён (первые @count стр.). Запустится при открытии читалки.',
+      'preTranslateDisabledToast': 'Предперевод для этой галереи выключен.',
       'imageTranslationContextPages': 'Страниц в одном контекстном запросе',
       'imageTranslationContextPagesValue': '@count стр.',
       'imageTranslationContextAppleUnsupported':

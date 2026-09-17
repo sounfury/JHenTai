@@ -38,6 +38,7 @@ enum ConfigEnum {
   searchConfig('searchConfig'),
   dismissVersion('dismissVersion'),
   readIndexRecord('readIndexRecord'),
+  galleryPreTranslate('galleryPreTranslate'),
   readerActionPosition('readerActionPosition'),
   quickSearch('quickSearch'),
   oldGalleryHistory('history'),

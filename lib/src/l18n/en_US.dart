@@ -1229,6 +1229,19 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationTranslateScope': 'Translate Scope',
       'imageTranslationScopeCurrent': 'Current page only',
       'imageTranslationScopeSubsequent': 'Current and following pages',
+      'enableAutoTranslate': 'Auto-translate',
+      'enableAutoTranslateHint':
+          'When you start reading or turn pages, automatically translate the current page and the next page.',
+      'preTranslatePageCount': 'Pre-translate page count',
+      'preTranslatePageCountHint':
+          'After enabling pre-translate on a gallery detail page, translate the first N pages in the background.',
+      'preTranslate': 'Pre-translate',
+      'preTranslateEnabled': 'Pre-translate on',
+      'preTranslateHint':
+          'When enabled, opening the reader pre-translates the first @count pages of this gallery in the background.',
+      'preTranslateEnabledToast':
+          'Pre-translate enabled (first @count pages). It starts when you open the reader.',
+      'preTranslateDisabledToast': 'Pre-translate disabled for this gallery.',
       'imageTranslationContextPages': 'Pages per context request',
       'imageTranslationContextPagesValue': '@count page(s)',
       'imageTranslationContextAppleUnsupported':

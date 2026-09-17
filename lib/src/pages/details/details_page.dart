@@ -1079,6 +1079,7 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
             padding: EdgeInsets.zero,
             children: [
               _buildReadButton(context),
+              _buildPreTranslateButton(context),
               _buildDownloadButton(context),
               _buildFavoriteButton(context),
               _buildRatingButton(context),
@@ -1140,6 +1141,43 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
                   onPressed: disabled ? null : logic.goToReadPage,
                 );
               },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPreTranslateButton(BuildContext context) {
+    return GetBuilder<DetailsPageLogic>(
+      id: DetailsPageLogic.preTranslateButtonId,
+      global: false,
+      init: logic,
+      builder: (_) {
+        return FutureBuilder<bool>(
+          future: logic.isPreTranslateEnabled(),
+          initialData: false,
+          builder: (_, AsyncSnapshot<bool> snapshot) {
+            final bool enabled = snapshot.data ?? false;
+            return IconTextButton(
+              width: UIConfig.detailsPageActionExtent,
+              icon: Icon(
+                Icons.translate,
+                color: enabled
+                    ? UIConfig.resumePauseButtonColor(context)
+                    : UIConfig.detailsPageActionIconColor(context),
+              ),
+              text: Text(
+                enabled ? 'preTranslateEnabled'.tr : 'preTranslate'.tr,
+                style: TextStyle(
+                  fontSize: UIConfig.detailsPageActionTextSize,
+                  color: enabled
+                      ? UIConfig.resumePauseButtonColor(context)
+                      : UIConfig.detailsPageActionTextColor(context),
+                  height: 1,
+                ),
+              ),
+              onPressed: logic.togglePreTranslate,
             );
           },
         );

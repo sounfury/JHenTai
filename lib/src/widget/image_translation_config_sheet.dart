@@ -151,6 +151,8 @@ class _ImageTranslationConfigSheetState
                   _buildLocalTranslationSettings(),
                 _buildTargetLanguage(),
                 _buildTranslateScope(),
+                _buildAutoTranslate(),
+                _buildPreTranslatePageCount(),
                 _buildContextBatchSize(),
                 _buildAutoMergeText(),
                 _buildImageProcessingMode(),
@@ -554,6 +556,50 @@ class _ImageTranslationConfigSheetState
             value: true,
             child: Text('imageTranslationScopeSubsequent'.tr),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAutoTranslate() {
+    return Obx(
+      () => EHAppleSwitchListTile(
+        title: Text('enableAutoTranslate'.tr),
+        subtitle: Text(
+          'enableAutoTranslateHint'.tr,
+          style: const TextStyle(fontSize: 12),
+        ),
+        value: imageTranslationSetting.enableAutoTranslate.value,
+        onChanged: (bool value) {
+          imageTranslationSetting.saveEnableAutoTranslate(value);
+        },
+      ),
+    );
+  }
+
+  Widget _buildPreTranslatePageCount() {
+    final List<int> options = <int>[10, 20, 30, 50, 100];
+    final int current = imageTranslationSetting.preTranslatePageCount.value;
+    final List<int> values =
+        options.contains(current) ? options : <int>[...options, current]
+          ..sort();
+    return _dropdownRow(
+      'preTranslatePageCount'.tr,
+      EHCodexStyleDropdown<int>(
+        value: current,
+        onChanged: (int? value) {
+          if (value == null) {
+            return;
+          }
+          setState(() {});
+          imageTranslationSetting.savePreTranslatePageCount(value);
+        },
+        items: [
+          for (final int count in values)
+            DropdownMenuItem<int>(
+              value: count,
+              child: Text('$count'),
+            ),
         ],
       ),
     );

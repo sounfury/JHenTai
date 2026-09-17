@@ -91,6 +91,15 @@ class ImageTranslationSetting
   /// Opacity of the backing plate, independent from the selected color.
   final RxDouble translationBackgroundOpacity = 0.9.obs;
   final RxBool translateSubsequentPages = false.obs;
+
+  /// When reading, automatically translate the current page and the next page.
+  /// Defaults off to match nearby translation toggles (e.g. translate-subsequent).
+  final RxBool enableAutoTranslate = false.obs;
+
+  /// How many leading pages to pre-translate when a gallery opts in on the
+  /// detail page. Global default; per-gallery on/off lives in local config.
+  final RxInt preTranslatePageCount = 30.obs;
+
   final Rx<ContextBatchSize> contextBatchSize = ContextBatchSize.one.obs;
   final Rx<ImageProcessingDisplayMode> imageProcessingDisplayMode =
       ImageProcessingDisplayMode.overlay.obs;
@@ -181,6 +190,13 @@ class ImageTranslationSetting
     }
     translateSubsequentPages.value =
         config['translateSubsequentPages'] ?? translateSubsequentPages.value;
+    enableAutoTranslate.value =
+        config['enableAutoTranslate'] ?? enableAutoTranslate.value;
+    final Object? configuredPreTranslateCount = config['preTranslatePageCount'];
+    if (configuredPreTranslateCount is num) {
+      preTranslatePageCount.value =
+          configuredPreTranslateCount.toInt().clamp(1, 500);
+    }
     contextBatchSize.value = ContextBatchSize.values.firstWhere(
       (ContextBatchSize size) => size.name == config['contextBatchSize'],
       orElse: () => ContextBatchSize.one,
@@ -223,6 +239,8 @@ class ImageTranslationSetting
         translationBackgroundColor.value.withAlpha(255).toARGB32(),
     'translationBackgroundOpacity': translationBackgroundOpacity.value,
     'translateSubsequentPages': translateSubsequentPages.value,
+    'enableAutoTranslate': enableAutoTranslate.value,
+    'preTranslatePageCount': preTranslatePageCount.value,
     'contextBatchSize': contextBatchSize.value.name,
     'imageProcessingDisplayMode': imageProcessingDisplayMode.value.name,
     'autoTranslateGalleryText': autoTranslateGalleryText.value,
@@ -341,6 +359,16 @@ class ImageTranslationSetting
 
   Future<void> saveTranslateSubsequentPages(bool value) async {
     translateSubsequentPages.value = value;
+    await saveBeanConfig();
+  }
+
+  Future<void> saveEnableAutoTranslate(bool value) async {
+    enableAutoTranslate.value = value;
+    await saveBeanConfig();
+  }
+
+  Future<void> savePreTranslatePageCount(int value) async {
+    preTranslatePageCount.value = value.clamp(1, 500);
     await saveBeanConfig();
   }
 
