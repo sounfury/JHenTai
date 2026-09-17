@@ -1327,6 +1327,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
           'The GPL-3.0 CTD model is downloaded at runtime and is not distributed with the app',
       'imageTranslationCtdFallbackHint':
           'Both CTD and MI-GAN are required. Any failure safely falls back to the text overlay.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Custom',
       'imageTranslationAppleLiveTextUseApi':

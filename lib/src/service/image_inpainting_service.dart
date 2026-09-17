@@ -10,6 +10,7 @@ import 'package:path/path.dart';
 import 'engine/engine.dart';
 import 'inference_service.dart';
 import 'jh_service.dart';
+import 'log.dart';
 import 'path_service.dart';
 
 enum InpaintingStatus { idle, queued, running, success, canceled, failed }
@@ -243,7 +244,7 @@ class ImageInpaintingService extends GetxController
       'onnx-migan-inpaint',
     );
     if (engine == null || !engine.isReady) {
-      return _fail(requestKey, 'inpaint_not_ready', sourceHash: sourceHash);
+      return _fail(requestKey, 'model_missing', sourceHash: sourceHash);
     }
     final EngineTask<String> task = engine.inpaint(
       ImageProcessingRequest(
@@ -343,14 +344,31 @@ class ImageInpaintingService extends GetxController
   }
 
   InpaintingResult _fail(String requestKey, String code, {String? sourceHash}) {
+    final String normalized = _normalizeFailureCode(code);
+    log.warning(
+      'CTD/MI-GAN background repair unavailable; falling back to overlay boxes '
+      '($normalized)',
+    );
     final InpaintingResult result = InpaintingResult(
       status: InpaintingStatus.failed,
-      errorCode: code,
+      errorCode: normalized,
       sourceHash: sourceHash,
       fallbackToOverlay: true,
     );
     _set(requestKey, result);
     return result;
+  }
+
+  /// Maps engine-level codes onto the stable reasons shown in UI/logs.
+  String _normalizeFailureCode(String code) {
+    switch (code) {
+      case 'model_unavailable':
+      case 'inpaint_not_ready':
+      case 'migan_not_ready':
+        return 'model_missing';
+      default:
+        return code;
+    }
   }
 
   void _set(String requestKey, InpaintingResult result) {

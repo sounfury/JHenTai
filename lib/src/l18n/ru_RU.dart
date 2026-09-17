@@ -1246,6 +1246,7 @@ class ru_RU {
           'Модель CTD GPL-3.0 загружается во время работы и не входит в приложение',
       'imageTranslationCtdFallbackHint':
           'Нужны CTD и MI-GAN. При любой ошибке безопасно используется текстовое наложение.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Пользовательский',
       'imageTranslationAppleLiveTextUseApi':

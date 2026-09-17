@@ -1150,6 +1150,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
           'GPL-3.0 CTD 모델은 실행 중 다운로드되며 앱에 포함되지 않습니다',
       'imageTranslationCtdFallbackHint':
           'CTD와 MI-GAN이 모두 필요합니다. 실패 시 안전하게 텍스트 오버레이로 전환됩니다.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': '사용자 정의',
       'imageTranslationAppleLiveTextUseApi': '타사 API로 번역',

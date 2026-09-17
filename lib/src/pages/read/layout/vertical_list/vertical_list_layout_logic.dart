@@ -248,18 +248,21 @@ class VerticalListLayoutLogic extends BaseLayoutLogic {
       visibleItems.map((position) => position.index),
       hydrateTranslation: hydrateTranslation,
     );
-    final int? firstImageIndex = visibleItems.firstOrNull?.index;
+    // Bind translation / progress to the page that actually dominates the
+    // viewport. Using the first visible item lagged until the next page
+    // already covered most of the screen in continuous vertical scroll.
+    final int? dominantImageIndex = _dominantVisibleImageIndex(visibleItems);
 
-    if (firstImageIndex == null) {
+    if (dominantImageIndex == null) {
       return;
     }
 
     if (_readProgressThrottleTimer != null) {
-      _pendingReadProgressIndex = firstImageIndex;
+      _pendingReadProgressIndex = dominantImageIndex;
       return;
     }
 
-    _handleReadProgress(firstImageIndex);
+    _handleReadProgress(dominantImageIndex);
     _readProgressThrottleTimer = Timer(const Duration(milliseconds: 100), () {
       _readProgressThrottleTimer = null;
       final int? pending = _pendingReadProgressIndex;
@@ -276,6 +279,29 @@ class VerticalListLayoutLogic extends BaseLayoutLogic {
     }
     readPageLogic.recordReadProgress(index);
     readPageLogic.syncThumbnails(index);
+  }
+
+  /// Page whose visible fraction of the viewport is largest.
+  int? _dominantVisibleImageIndex(List<ItemPosition> visibleItems) {
+    if (visibleItems.isEmpty) {
+      return null;
+    }
+    ItemPosition best = visibleItems.first;
+    double bestFraction = _visibleFraction(best);
+    for (final ItemPosition item in visibleItems.skip(1)) {
+      final double fraction = _visibleFraction(item);
+      if (fraction > bestFraction) {
+        best = item;
+        bestFraction = fraction;
+      }
+    }
+    return best.index;
+  }
+
+  double _visibleFraction(ItemPosition position) {
+    final double start = position.itemLeadingEdge.clamp(0.0, 1.0);
+    final double end = position.itemTrailingEdge.clamp(0.0, 1.0);
+    return max(0.0, end - start);
   }
 
   double _getVisibleHeight() {
