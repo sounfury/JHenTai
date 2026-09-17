@@ -23,6 +23,8 @@ import 'package:jhentai/src/model/read_page_info.dart';
 import 'package:jhentai/src/network/eh_request.dart';
 import 'package:jhentai/src/pages/download/download_base_page.dart';
 import 'package:jhentai/src/service/read_progress_service.dart';
+import 'package:jhentai/src/service/gallery_pre_translate_preference.dart';
+import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/setting/download_setting.dart';
 import 'package:jhentai/src/setting/my_tags_setting.dart';
@@ -104,6 +106,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
   static const String ratingId = 'ratingId';
   static const String favoriteId = 'favoriteId';
   static const String readButtonId = 'readButtonId';
+  static const String preTranslateButtonId = 'preTranslateButtonId';
   static const String thumbnailsId = 'thumbnailsId';
   static const String thumbnailId = 'thumbnailId';
   static const String loadingStateId = 'fullPageLoadingStateId';
@@ -1006,6 +1009,27 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
       ),
     );
     toast('success'.tr);
+  }
+
+  Future<bool> isPreTranslateEnabled() async {
+    return GalleryPreTranslatePreference.isEnabled(state.galleryUrl.gid);
+  }
+
+  Future<void> togglePreTranslate() async {
+    final int gid = state.galleryUrl.gid;
+    final bool currentlyEnabled = await GalleryPreTranslatePreference.isEnabled(gid);
+    final bool next = !currentlyEnabled;
+    await GalleryPreTranslatePreference.setEnabled(gid, next);
+    updateSafely([preTranslateButtonId]);
+    final int count = imageTranslationSetting.preTranslatePageCount.value;
+    if (next) {
+      toast(
+        'preTranslateEnabledToast'.trParams({'count': '$count'}),
+        isShort: false,
+      );
+    } else {
+      toast('preTranslateDisabledToast'.tr);
+    }
   }
 
   Future<void> goToReadPage([int? forceIndex]) async {

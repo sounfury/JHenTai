@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io' as io;
 import 'dart:math';
 
@@ -54,6 +55,7 @@ import '../../service/log.dart';
 import '../../service/lan_sharing_runtime.dart';
 import '../../service/gallery_download/gallery_images_retainer.dart';
 import '../../service/read_progress_service.dart';
+import '../../service/gallery_pre_translate_preference.dart';
 import '../../setting/image_translation_setting.dart';
 import '../../setting/preference_setting.dart';
 import '../../setting/performance_setting.dart';
@@ -550,6 +552,13 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (!delayInitCompleter.isCompleted) {
       delayInitCompleter.complete();
     }
+
+    // Auto/pre-translate need a mounted BuildContext and a settled first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!isClosed) {
+        unawaited(_startReadingTranslationHooks());
+      }
+    });
   }
 
   @override
@@ -1741,6 +1750,7 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     /// The index changed, so this is a page boundary: persist the progress now
     /// instead of waiting for the periodic 5s flush.
     unawaited(_flushReadProgress());
+    unawaited(_autoTranslateAround(index));
   }
 
   void _refreshCurrentTimeAndBatteryLevel() {
@@ -1877,6 +1887,123 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
         );
       },
     );
+  }
+
+  /// Serializes opportunistic auto/pre-translate so they do not start overlapping
+  /// batches against the single active engine task.
+  bool _opportunisticTranslateRunning = false;
+
+  Future<void> _startReadingTranslationHooks() async {
+    final BuildContext? context = Get.context;
+    if (context == null || !context.mounted || isClosed) {
+      return;
+    }
+    final int current = state.readPageInfo.currentImageIndex;
+    // Auto-translate current+next first for immediate reading UX.
+    await _autoTranslateAround(current);
+    if (isClosed) {
+      return;
+    }
+    await _startPreTranslateIfNeeded(context);
+  }
+
+  /// Translates [index] and the following page when the auto-translate setting
+  /// is on. Skips while a user/pre-translate batch already owns the pipeline.
+  Future<void> _autoTranslateAround(int index) async {
+    if (!imageTranslationSetting.enableAutoTranslate.value) {
+      return;
+    }
+    if (isClosed || imageTranslationService.isBatchTranslating) {
+      return;
+    }
+    final BuildContext? context = Get.context;
+    if (context == null || !context.mounted) {
+      return;
+    }
+    final List<int> pages = <int>[index];
+    if (index + 1 < state.readPageInfo.pageCount) {
+      pages.add(index + 1);
+    }
+    if (!state.showImageTranslationOverlay) {
+      state.showImageTranslationOverlay = true;
+      updateSafely([translationMenuId]);
+      layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
+    }
+    await _translatePagesOpportunistically(pages, context);
+  }
+
+  /// When the detail-page toggle is on for this gallery, pre-translate the
+  /// first N pages in the background (existing batch banner / cancel).
+  Future<void> _startPreTranslateIfNeeded(BuildContext context) async {
+    final int? gid = state.readPageInfo.gid;
+    if (gid == null || isClosed) {
+      return;
+    }
+    if (!await GalleryPreTranslatePreference.isEnabled(gid)) {
+      return;
+    }
+    if (imageTranslationService.isBatchTranslating || isClosed) {
+      return;
+    }
+    final int n = imageTranslationSetting.preTranslatePageCount.value;
+    final int count = n.clamp(1, state.readPageInfo.pageCount);
+    final int current = state.readPageInfo.currentImageIndex;
+    // Prefer the pages the user is looking at when they fall inside the window.
+    final LinkedHashSet<int> order = LinkedHashSet<int>();
+    if (current < count) {
+      order.add(current);
+      if (current + 1 < count) {
+        order.add(current + 1);
+      }
+    }
+    for (int i = 0; i < count; i++) {
+      order.add(i);
+    }
+    if (order.isEmpty) {
+      return;
+    }
+    // Keep the overlay visible so cached/pre-translated results show up.
+    if (!state.showImageTranslationOverlay) {
+      state.showImageTranslationOverlay = true;
+      updateSafely([translationMenuId]);
+      layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
+    }
+    await _translatePagesOpportunistically(order.toList(growable: false), context);
+  }
+
+  Future<void> _translatePagesOpportunistically(
+    List<int> order,
+    BuildContext context,
+  ) async {
+    if (order.isEmpty || isClosed) {
+      return;
+    }
+    if (_opportunisticTranslateRunning || imageTranslationService.isBatchTranslating) {
+      return;
+    }
+    _opportunisticTranslateRunning = true;
+    final int generation = imageTranslationService.beginBatch(order.length);
+    try {
+      final ContextBatchSize contextSize =
+          imageTranslationSetting.contextBatchSize.value;
+      final bool useContext =
+          contextSize != ContextBatchSize.one &&
+          imageTranslationService.engineRegistry.selectedContextTranslation !=
+              null;
+      if (useContext) {
+        await _translatePagesWithContext(
+          order,
+          context,
+          contextSize,
+          generation,
+        );
+      } else {
+        await _translatePagesIndividually(order, context, generation);
+      }
+    } finally {
+      imageTranslationService.endBatch(generation);
+      _opportunisticTranslateRunning = false;
+    }
   }
 
   Future<void> _translateCurrentImage(BuildContext context) async {

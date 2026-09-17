@@ -221,3 +221,26 @@ void main() {
     },
   );
 }
+
+
+  test('auto-translate and pre-translate page count survive a config round-trip', () {
+    final ImageTranslationSetting setting = ImageTranslationSetting();
+    expect(setting.enableAutoTranslate.value, isFalse);
+    expect(setting.preTranslatePageCount.value, 30);
+
+    setting.enableAutoTranslate.value = true;
+    setting.preTranslatePageCount.value = 50;
+    final ImageTranslationSetting restored = ImageTranslationSetting();
+    restored.applyBeanConfig(setting.toConfigString());
+    expect(restored.enableAutoTranslate.value, isTrue);
+    expect(restored.preTranslatePageCount.value, 50);
+  });
+
+  test('pre-translate page count is clamped when saving', () async {
+    final _MemoryImageTranslationSetting setting =
+        _MemoryImageTranslationSetting();
+    await setting.savePreTranslatePageCount(0);
+    expect(setting.preTranslatePageCount.value, 1);
+    await setting.savePreTranslatePageCount(999);
+    expect(setting.preTranslatePageCount.value, 500);
+  });

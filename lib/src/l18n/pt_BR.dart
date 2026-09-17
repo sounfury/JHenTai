@@ -1131,6 +1131,19 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationTranslateScope': 'Escopo da tradução',
       'imageTranslationScopeCurrent': 'Apenas a página atual',
       'imageTranslationScopeSubsequent': 'Página atual e seguintes',
+      'enableAutoTranslate': 'Tradução automática',
+      'enableAutoTranslateHint':
+          'Ao começar a ler ou virar páginas, traduz automaticamente a página atual e a seguinte.',
+      'preTranslatePageCount': 'Páginas de pré-tradução',
+      'preTranslatePageCountHint':
+          'Após ativar a pré-tradução na página de detalhes, traduz as primeiras N páginas em segundo plano.',
+      'preTranslate': 'Pré-traduzir',
+      'preTranslateEnabled': 'Pré-tradução on',
+      'preTranslateHint':
+          'Quando ativado, ao abrir o leitor as primeiras @count páginas desta galeria são pré-traduzidas em segundo plano.',
+      'preTranslateEnabledToast':
+          'Pré-tradução ativada (primeiras @count páginas). Começa ao abrir o leitor.',
+      'preTranslateDisabledToast': 'Pré-tradução desativada para esta galeria.',
       'imageTranslationContextPages': 'Páginas por solicitação de contexto',
       'imageTranslationContextPagesValue': '@count página(s)',
       'imageTranslationContextAppleUnsupported':
