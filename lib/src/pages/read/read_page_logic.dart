@@ -136,6 +136,7 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
   late Worker landscapeImageRegionWidthRatioLister;
   late Worker portraitDisplayFirstPageAloneListener;
   late Worker landscapeDisplayFirstPageAloneListener;
+  late Worker targetLanguageFloatingBallListener;
 
   /// Tracks the last known portrait state for orientation-specific read direction
   bool? _lastIsPortrait;
@@ -521,6 +522,13 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
       updateSafely([topMenuId]);
     });
 
+    /// Rebuild translation floating ball when target language changes so
+    /// same-language galleries hide/show the ball without leaving the reader.
+    targetLanguageFloatingBallListener = ever(
+      imageTranslationSetting.targetLanguage,
+      (_) => updateSafely([readerFloatingBallId]),
+    );
+
     preloadListener = everAll([
       readSetting.preloadPageCountLocal,
       readSetting.preloadPageCount,
@@ -612,6 +620,7 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     landscapeImageRegionWidthRatioLister.dispose();
     portraitDisplayFirstPageAloneListener.dispose();
     landscapeDisplayFirstPageAloneListener.dispose();
+    targetLanguageFloatingBallListener.dispose();
 
     restoreVolumeListener();
 
@@ -1907,8 +1916,10 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (_galleryAlreadyInTargetLanguage()) {
       if (state.showImageTranslationOverlay) {
         state.showImageTranslationOverlay = false;
-        updateSafely([translationMenuId]);
+        updateSafely([translationMenuId, readerFloatingBallId]);
         layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
+      } else {
+        updateSafely([readerFloatingBallId]);
       }
       return;
     }
@@ -1920,6 +1931,11 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     }
     await _startPreTranslateIfNeeded(context);
   }
+
+  /// Whether the current reader gallery is already in the image-translation
+  /// target language. Public so the floating ball widget can rebuild via
+  /// [readerFloatingBallId].
+  bool get galleryAlreadyInTargetLanguage => _galleryAlreadyInTargetLanguage();
 
   /// Resolves language signals from [ReadPageInfo] and download metadata.
   bool _galleryAlreadyInTargetLanguage() {

@@ -25,5 +25,8 @@ feat:
    修复：hydrate 只恢复缓存修复；CTD erase 仅保留与已成功译文 OCR block 相交的 mask；强制重译前清掉陈旧 repaired 显示并取消 in-flight CTD；气泡检测框内 OCR 大间隙拆分；OCR 旋转边栏结果按 IoU 合并而非整页丢弃。
    Fixture：`test/fixtures/blue_archive_kotori_sauna_page.png`（离线 RapidOCR 基线 16 blocks）。
 
+
+6. ✅ 已修复 — 同语言画廊（目标「简体中文」+ 熟肉 `language:chinese` 等）时，阅读页「文A」翻译悬浮球仍显示。现：`buildFloatingTranslationBall` 在 `galleryAlreadyInTargetLanguage` 为真时隐藏；书签悬浮球与顶部翻译菜单保留（可手动翻译）。`collectGalleryEhLanguageKeys` 兼容无 `language:` 前缀的 tags CSV 以及 `Chinese`/`ZH`/`中文` 等 language 字段。
+
 仍未实现（非本次范围）:
 - CTD + MI-GAN 成功时白板问题（部分场景）

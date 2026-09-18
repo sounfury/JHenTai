@@ -150,6 +150,14 @@ class GalleryImageTranslationLanguage {
         keys.add(lower);
         return;
       }
+      // Abbreviations shown on EH cards: ZH / EN / JP / …
+      for (final MapEntry<String, String> entry
+          in LocaleConsts.language2Abbreviation.entries) {
+        if (entry.value.toLowerCase() == lower) {
+          keys.add(entry.key);
+          return;
+        }
+      }
       final String? alias = targetAliasToEhKey[token] ?? targetAliasToEhKey[lower];
       if (alias != null) {
         keys.add(alias);
@@ -185,6 +193,9 @@ class GalleryImageTranslationLanguage {
         }
         final int colon = item.indexOf(':');
         if (colon <= 0) {
+          // Download / legacy CSV sometimes stores bare keys (e.g. "chinese")
+          // without a `language:` namespace prefix.
+          addLanguageToken(item);
           continue;
         }
         final String ns = item.substring(0, colon).trim().toLowerCase();

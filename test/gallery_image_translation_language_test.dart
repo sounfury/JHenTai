@@ -134,4 +134,67 @@ void main() {
       );
     });
   });
+
+  group('collectGalleryEhLanguageKeys hardening', () {
+    test('bare CSV keys without language: prefix still map', () {
+      expect(
+        GalleryImageTranslationLanguage.collectGalleryEhLanguageKeys(
+          tagsCsv: 'chinese,translated,female:lolicon',
+        ),
+        contains('chinese'),
+      );
+      expect(
+        GalleryImageTranslationLanguage.matchesTarget(
+          tagsCsv: 'chinese,translated',
+          targetLanguage: '简体中文',
+        ),
+        isTrue,
+      );
+    });
+
+    test('language field Chinese / ZH / 中文 map to chinese', () {
+      expect(
+        GalleryImageTranslationLanguage.collectGalleryEhLanguageKeys(
+          language: 'Chinese',
+        ),
+        {'chinese'},
+      );
+      expect(
+        GalleryImageTranslationLanguage.collectGalleryEhLanguageKeys(
+          language: 'ZH',
+        ),
+        {'chinese'},
+      );
+      expect(
+        GalleryImageTranslationLanguage.collectGalleryEhLanguageKeys(
+          language: '中文',
+        ),
+        {'chinese'},
+      );
+    });
+  });
+
+  group('same-language skip vs target', () {
+    test('target 简体中文 + gallery chinese → skip true', () {
+      expect(
+        GalleryImageTranslationLanguage.matchesTarget(
+          language: 'chinese',
+          tagsCsv: 'language:chinese',
+          targetLanguage: '简体中文',
+        ),
+        isTrue,
+      );
+    });
+
+    test('target English + chinese gallery → skip false', () {
+      expect(
+        GalleryImageTranslationLanguage.matchesTarget(
+          language: 'chinese',
+          tagsCsv: 'language:chinese',
+          targetLanguage: 'English',
+        ),
+        isFalse,
+      );
+    });
+  });
 }

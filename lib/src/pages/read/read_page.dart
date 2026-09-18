@@ -692,18 +692,35 @@ class _ReadPageState extends State<ReadPage>
   Widget buildFloatingTranslationBall(BuildContext context) {
     if (GetPlatform.isDesktop) return const SizedBox.shrink();
     return Obx(
-      () =>
-          readSetting.enableTranslationFloatingBall.isFalse
-              ? const SizedBox.shrink()
-              : GetBuilder<ImageTranslationService>(
-                id: ImageTranslationService.batchProgressId,
-                builder:
-                    (_) => ReaderFloatingTranslationBall(
-                      isTranslating: imageTranslationService.isBatchTranslating,
-                      positionStore: logic.readerFloatingBallPositionStore,
-                      onTap: () => logic.toggleFloatingTranslation(context),
-                    ),
-              ),
+      () {
+        // Track setting toggles and target language so the ball hides/shows
+        // when the user changes either without leaving the reader.
+        final bool enabled = readSetting.enableTranslationFloatingBall.isTrue;
+        imageTranslationSetting.targetLanguage.value;
+        if (!enabled) {
+          return const SizedBox.shrink();
+        }
+        return GetBuilder<ReadPageLogic>(
+          id: logic.readerFloatingBallId,
+          builder: (_) {
+            // Same-language galleries (e.g. Chinese 熟肉 + target 简体中文):
+            // hide the always-on translation ball; top menu still allows
+            // manual translate. Bookmark ball is unaffected.
+            if (logic.galleryAlreadyInTargetLanguage) {
+              return const SizedBox.shrink();
+            }
+            return GetBuilder<ImageTranslationService>(
+              id: ImageTranslationService.batchProgressId,
+              builder:
+                  (_) => ReaderFloatingTranslationBall(
+                    isTranslating: imageTranslationService.isBatchTranslating,
+                    positionStore: logic.readerFloatingBallPositionStore,
+                    onTap: () => logic.toggleFloatingTranslation(context),
+                  ),
+            );
+          },
+        );
+      },
     );
   }
 
