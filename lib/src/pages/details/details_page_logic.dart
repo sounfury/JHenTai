@@ -30,6 +30,7 @@ import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/setting/download_setting.dart';
 import 'package:jhentai/src/setting/my_tags_setting.dart';
 import 'package:jhentai/src/utils/convert_util.dart';
+import 'package:jhentai/src/utils/gallery_image_translation_language.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
 import 'package:jhentai/src/widget/eh_add_tag_dialog.dart';
 import 'package:jhentai/src/widget/eh_alert_dialog.dart';
@@ -725,6 +726,8 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
           readProgressRecordStorageKey: archive.gid.toString(),
           images: images,
           useSuperResolution: superResolutionService.get(archive.gid, SuperResolutionType.archive) != null,
+          galleryLanguage: galleryLanguageForTranslation,
+          galleryTags: galleryTagsCsvForTranslation ?? archive.tags,
         ),
       );
     }
@@ -1016,9 +1019,50 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
     return GalleryPreTranslatePreference.isEnabled(state.galleryUrl.gid);
   }
 
+  /// Language label from detail / list / metadata (whichever is loaded).
+  String? get galleryLanguageForTranslation {
+    return state.galleryDetails?.language ??
+        state.gallery?.language ??
+        state.galleryMetadata?.language;
+  }
+
+  /// Full tag map when available (detail preferred).
+  LinkedHashMap<String, List<GalleryTag>>? get galleryTagsForTranslation {
+    return state.galleryDetails?.tags ??
+        state.gallery?.tags ??
+        state.galleryMetadata?.tags;
+  }
+
+  String? get galleryTagsCsvForTranslation {
+    final LinkedHashMap<String, List<GalleryTag>>? tags = galleryTagsForTranslation;
+    if (tags == null) {
+      return null;
+    }
+    return tagMap2TagString(tags);
+  }
+
+  /// True when this gallery is already in the image-translation target language.
+  bool isGalleryAlreadyInTargetLanguage([String? targetLanguage]) {
+    return GalleryImageTranslationLanguage.matchesTarget(
+      language: galleryLanguageForTranslation,
+      tags: galleryTagsForTranslation,
+      targetLanguage: targetLanguage,
+    );
+  }
+
   Future<void> togglePreTranslate() async {
     final int gid = state.galleryUrl.gid;
     final bool currentlyEnabled = await GalleryPreTranslatePreference.isEnabled(gid);
+
+    // Turning ON is useless (and harmful) when the gallery is already in the
+    // user's target language — e.g. Chinese 熟肉 with target 简体中文.
+    if (!currentlyEnabled && isGalleryAlreadyInTargetLanguage()) {
+      await GalleryPreTranslatePreference.setEnabled(gid, false);
+      updateSafely([preTranslateButtonId]);
+      toast('preTranslateAlreadyTargetLanguageToast'.tr, isShort: false);
+      return;
+    }
+
     final bool next = !currentlyEnabled;
     await GalleryPreTranslatePreference.setEnabled(gid, next);
     updateSafely([preTranslateButtonId]);
@@ -1032,6 +1076,8 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
         galleryUrl: state.galleryUrl,
         pageCount: pageCount,
         seedThumbnails: state.galleryDetails?.thumbnails,
+        galleryLanguage: galleryLanguageForTranslation,
+        galleryTagsCsv: galleryTagsCsvForTranslation,
       );
       toast(
         'preTranslateEnabledToast'.trParams({'count': '$count'}),
@@ -1058,6 +1104,8 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
           readProgressRecordStorageKey: state.galleryUrl.gid.toString(),
           pageCount: state.galleryDetails?.pageCount ?? state.gallery?.pageCount ?? state.galleryMetadata!.pageCount,
           useSuperResolution: false,
+          galleryLanguage: galleryLanguageForTranslation,
+          galleryTags: galleryTagsCsvForTranslation,
         ),
       )?.whenComplete(() => Future.delayed(const Duration(milliseconds: 800))).whenComplete(() => updateSafely([readButtonId]));
       return;
@@ -1088,6 +1136,8 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
         readProgressRecordStorageKey: state.galleryUrl.gid.toString(),
         pageCount: gallery.pageCount,
         useSuperResolution: superResolutionService.get(state.galleryUrl.gid, SuperResolutionType.gallery) != null,
+        galleryLanguage: galleryLanguageForTranslation,
+        galleryTags: galleryTagsCsvForTranslation ?? gallery.tags,
       ),
     )?.whenComplete(() => Future.delayed(const Duration(milliseconds: 800))).whenComplete(() => updateSafely([readButtonId]));
   }

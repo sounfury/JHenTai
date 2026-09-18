@@ -1160,26 +1160,36 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
       global: false,
       init: logic,
       builder: (_) {
+        final bool alreadyTarget = logic.isGalleryAlreadyInTargetLanguage();
         return FutureBuilder<bool>(
           future: logic.isPreTranslateEnabled(),
           initialData: false,
           builder: (_, AsyncSnapshot<bool> snapshot) {
             final bool enabled = snapshot.data ?? false;
+            // Same-language galleries: keep a no-op affordance (toast via toggle)
+            // rather than silently hiding the control; disable enabling when off.
+            final bool disableEnable = alreadyTarget && !enabled;
+            final Color iconColor = enabled
+                ? UIConfig.resumePauseButtonColor(context)
+                : (disableEnable
+                    ? UIConfig.detailsPageActionDisabledIconColor(context)
+                    : UIConfig.detailsPageActionIconColor(context));
+            final Color textColor = enabled
+                ? UIConfig.resumePauseButtonColor(context)
+                : (disableEnable
+                    ? UIConfig.detailsPageActionDisabledIconColor(context)
+                    : UIConfig.detailsPageActionTextColor(context));
             return IconTextButton(
               width: UIConfig.detailsPageActionExtent,
               icon: Icon(
                 Icons.translate,
-                color: enabled
-                    ? UIConfig.resumePauseButtonColor(context)
-                    : UIConfig.detailsPageActionIconColor(context),
+                color: iconColor,
               ),
               text: Text(
                 enabled ? 'preTranslateEnabled'.tr : 'preTranslate'.tr,
                 style: TextStyle(
                   fontSize: UIConfig.detailsPageActionTextSize,
-                  color: enabled
-                      ? UIConfig.resumePauseButtonColor(context)
-                      : UIConfig.detailsPageActionTextColor(context),
+                  color: textColor,
                   height: 1,
                 ),
               ),

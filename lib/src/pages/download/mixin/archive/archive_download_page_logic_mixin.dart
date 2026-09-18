@@ -167,6 +167,7 @@ mixin ArchiveDownloadPageLogicMixin on GetxController
           isOriginal: archive.isOriginal,
           readProgressRecordStorageKey: archive.gid.toString(),
           images: images,
+          galleryTags: archive.tags,
           useSuperResolution: superResolutionService.get(archive.gid, SuperResolutionType.archive) != null,
         ),
       );

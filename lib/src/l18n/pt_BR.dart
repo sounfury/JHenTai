@@ -1144,6 +1144,8 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslateEnabledToast':
           'Pré-tradução ativada (primeiras @count páginas). Iniciando em segundo plano agora.',
       'preTranslateDisabledToast': 'Pré-tradução desativada para esta galeria.',
+      'preTranslateAlreadyTargetLanguageToast':
+          'Esta galeria já está no idioma de destino; a pré-tradução não é necessária.',
       'imageTranslationContextPages': 'Páginas por solicitação de contexto',
       'imageTranslationContextPagesValue': '@count página(s)',
       'imageTranslationContextAppleUnsupported':

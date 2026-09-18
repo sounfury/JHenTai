@@ -173,6 +173,7 @@ mixin GalleryDownloadPageLogicMixin on GetxController
           readProgressRecordStorageKey: gallery.gid.toString(),
           pageCount: gallery.pageCount,
           useSuperResolution: superResolutionService.get(gallery.gid, SuperResolutionType.gallery) != null,
+          galleryTags: gallery.tags,
         ),
       );
     }
