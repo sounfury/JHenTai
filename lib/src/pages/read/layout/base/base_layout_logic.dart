@@ -420,6 +420,19 @@ abstract class BaseLayoutLogic extends GetxController
       return;
     }
     imageInpaintingService.setDisplayMode(mode);
+    // Prefer the request-keyed on-disk repair index so cold start / viewport
+    // hydrate can swap to the cleaned background without waiting on CTD.
+    if (!force) {
+      final InpaintingResult? cached = await imageInpaintingService
+          .hydrateCachedRepair(
+            requestKey: request.cacheKey,
+            sourcePath: sourcePath,
+          );
+      if (cached != null && cached.status == InpaintingStatus.success) {
+        updateSafely([BaseLayoutLogic.pageId]);
+        return;
+      }
+    }
     final InpaintingResult repairResult = await imageInpaintingService
         .detectAndRepair(
           requestKey: request.cacheKey,
@@ -445,6 +458,10 @@ abstract class BaseLayoutLogic extends GetxController
   /// Hydrates a persistent result when a page enters the viewport. This only
   /// reads an already cached source file; it never downloads an image and
   /// never removes the persistent translation result.
+  ///
+  /// When the display mode needs a repaired/translated derivative, also restore
+  /// (or re-run) inpainting so cold start does not paint cached translation
+  /// text onto the original page glyphs.
   Future<void> hydrateTranslation(int index) async {
     final GalleryImage? image = readPageState.images[index];
     if (image == null) return;
@@ -462,8 +479,19 @@ abstract class BaseLayoutLogic extends GetxController
       imageTranslationService.removeResult(previous.cacheKey);
     }
     readPageState.imageTranslationRequests[index] = request;
-    await imageTranslationService.hydrateResult(request);
+    final ImageProcessingDisplayMode mode =
+        imageTranslationSetting.imageProcessingDisplayMode.value;
+    imageInpaintingService.setDisplayMode(mode);
+    final bool hydrated = await imageTranslationService.hydrateResult(request);
     updateSafely([BaseLayoutLogic.pageId]);
+    if (!hydrated) {
+      return;
+    }
+    if (imageTranslationService.resultFor(request.cacheKey).status !=
+        ImageTranslationStatus.success) {
+      return;
+    }
+    await repairTranslatedImage(index);
   }
 
   /// Builds a lightweight translation request. Online requests retain only the

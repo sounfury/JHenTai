@@ -16,6 +16,9 @@ feat:
 
 3. ✅ 已修复 — 目标语言与画廊语言相同时（如目标「简体中文」+ 熟肉 `language:chinese` / `gallery.language=Chinese`，或目标 English + english 画廊等）：详情页预翻译不启动并 toast；阅读页不因预翻译偏好强制打开 overlay；自动翻译跳过。检测按当前 `targetLanguage` 动态映射到 EH language key，非仅中文特例。
 
+
+4. ✅ 已修复 — 冷启动/重开阅读页时，仅水合翻译 JSON 而未恢复 CTD+MI-GAN 修复背景，导致「缓存结果」译文叠在原文字上（尤其 `repairedBackgroundEmbeddedText` + 低/零背板透明度）。现：`hydrateTranslation` 成功后同步 `hydrateCachedRepair`/`detectAndRepair`；修复未就绪前强制不透明背板，避免裸字叠原图。
+
 仍未实现（非本次范围）:
 - CTD + MI-GAN 成功时白板问题
 - 多气泡暴力合并问题

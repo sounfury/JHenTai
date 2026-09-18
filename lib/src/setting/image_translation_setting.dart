@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../enum/config_enum.dart';
 import '../service/engine/context_translation_contract.dart';
 import '../service/engine/engine_contract.dart';
+import '../service/image_inpainting_service.dart';
 import '../service/inference/onnx_model_store.dart';
 import '../service/jh_service.dart';
 import '../service/log.dart';
@@ -252,6 +253,7 @@ class ImageTranslationSetting
 
   @override
   Future<void> doAfterBeanReady() async {
+    imageInpaintingService.setDisplayMode(imageProcessingDisplayMode.value);
     await _autoSelectAppleLiveTextIfNeeded();
   }
 
@@ -385,6 +387,7 @@ class ImageTranslationSetting
         value == ImageProcessingDisplayMode.translatedImage
             ? ImageProcessingDisplayMode.overlay
             : value;
+    imageInpaintingService.setDisplayMode(imageProcessingDisplayMode.value);
     await saveBeanConfig();
   }
 

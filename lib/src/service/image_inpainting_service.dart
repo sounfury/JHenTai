@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:io';
 
@@ -102,6 +103,123 @@ class ImageInpaintingService extends GetxController
   void setDisplayMode(ImageProcessingDisplayMode mode) {
     displayMode = mode;
     update();
+  }
+
+  /// Whether the current display mode expects a repaired/translated derivative
+  /// instead of painting onto the original page glyphs.
+  bool get requiresRepairedBackground =>
+      displayMode == ImageProcessingDisplayMode.repairedBackgroundEmbeddedText ||
+      displayMode == ImageProcessingDisplayMode.translatedImage;
+
+  /// Cold-start / viewport hydrate: restore a previously written repair
+  /// artifact for [requestKey] without re-running CTD/MI-GAN when the
+  /// request-keyed disk index still matches the source file.
+  Future<InpaintingResult?> hydrateCachedRepair({
+    required String requestKey,
+    required String sourcePath,
+  }) async {
+    final InpaintingResult current = resultFor(requestKey);
+    if (current.status == InpaintingStatus.success &&
+        current.outputPath != null &&
+        File(current.outputPath!).existsSync()) {
+      return current;
+    }
+    final File source = File(sourcePath);
+    if (!await source.exists()) {
+      return null;
+    }
+    final String sourceHash = await _sha256(source);
+    final File indexFile = _requestIndexFile(requestKey);
+    if (!await indexFile.exists()) {
+      return null;
+    }
+    try {
+      final dynamic decoded = jsonDecode(await indexFile.readAsString());
+      if (decoded is! Map ||
+          decoded['sourceHash'] != sourceHash ||
+          decoded['artifactKey'] is! String) {
+        return null;
+      }
+      final String artifactKey = decoded['artifactKey'] as String;
+      final File output = File(join(_cacheDirectory.path, '$artifactKey.png'));
+      final File metadata = File(join(_cacheDirectory.path, '$artifactKey.json'));
+      if (!await output.exists() || !await metadata.exists()) {
+        return null;
+      }
+      final dynamic meta = jsonDecode(await metadata.readAsString());
+      if (meta is! Map ||
+          meta['sourceHash'] != sourceHash ||
+          meta['outputPath'] != output.path ||
+          meta['outputHash'] != await _sha256(output)) {
+        return null;
+      }
+      _artifactKeys[requestKey] = artifactKey;
+      final InpaintingResult restored = InpaintingResult(
+        status: InpaintingStatus.success,
+        outputPath: output.path,
+        fromCache: true,
+        sourceHash: sourceHash,
+        translatedImagePath:
+            decoded['translatedImagePath'] is String
+                ? decoded['translatedImagePath'] as String
+                : null,
+      );
+      if (restored.translatedImagePath != null &&
+          File(restored.translatedImagePath!).existsSync()) {
+        _translatedImagePaths[requestKey] = restored.translatedImagePath!;
+      }
+      _set(requestKey, restored);
+      return restored;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// While a repaired-background mode is selected but the cleaned image is not
+  /// yet available (and we have not intentionally fallen back), keep an opaque
+  /// backing plate so hydrated translation text cannot float over original
+  /// glyphs after a cold start.
+  double effectiveOverlayBackgroundOpacity(
+    String requestKey,
+    double userOpacity, {
+    ImageProcessingDisplayMode? displayModeOverride,
+  }) {
+    final ImageProcessingDisplayMode mode = displayModeOverride ?? displayMode;
+    final bool needsRepair =
+        mode == ImageProcessingDisplayMode.repairedBackgroundEmbeddedText ||
+        mode == ImageProcessingDisplayMode.translatedImage;
+    if (!needsRepair) {
+      return userOpacity;
+    }
+    final InpaintingResult repair = resultFor(requestKey);
+    if (repair.fallbackToOverlay ||
+        _usableDisplayPath(requestKey, mode) != null) {
+      return userOpacity;
+    }
+    return math.max(userOpacity, 0.92);
+  }
+
+  String? _usableDisplayPath(
+    String requestKey,
+    ImageProcessingDisplayMode mode,
+  ) {
+    final InpaintingResult result = resultFor(requestKey);
+    if (mode == ImageProcessingDisplayMode.overlay) {
+      return null;
+    }
+    if (mode == ImageProcessingDisplayMode.translatedImage) {
+      final String? translated =
+          _translatedImagePaths[requestKey] ?? result.translatedImagePath;
+      if (translated != null && File(translated).existsSync()) {
+        return translated;
+      }
+    }
+    final String? repaired = result.outputPath;
+    return result.status == InpaintingStatus.success &&
+            repaired != null &&
+            File(repaired).existsSync()
+        ? repaired
+        : null;
   }
 
   /// Returns the derived image for the selected display mode, or null when
@@ -235,6 +353,12 @@ class ImageInpaintingService extends GetxController
         modelFingerprint: modelFingerprint,
       );
       if (cached != null) {
+        _artifactKeys[requestKey] = artifactKey;
+        await _writeRequestIndex(
+          requestKey: requestKey,
+          artifactKey: artifactKey,
+          sourceHash: sourceHash,
+        );
         _set(requestKey, cached);
         return cached;
       }
@@ -284,6 +408,11 @@ class ImageInpaintingService extends GetxController
         outputPath: outputPath,
         sourceHash: sourceHash,
       );
+      await _writeRequestIndex(
+        requestKey: requestKey,
+        artifactKey: artifactKey,
+        sourceHash: sourceHash,
+      );
       _set(requestKey, result);
       return result;
     } on EngineTaskCancelledException {
@@ -314,7 +443,9 @@ class ImageInpaintingService extends GetxController
   Future<void> clearCache({String? requestKey}) async {
     if (requestKey == null) {
       if (await _cacheDirectory.exists()) {
-        await for (final FileSystemEntity entity in _cacheDirectory.list()) {
+        await for (final FileSystemEntity entity in _cacheDirectory.list(
+          recursive: true,
+        )) {
           if (entity is File &&
               (entity.path.endsWith('.png') || entity.path.endsWith('.json'))) {
             await entity.delete();
@@ -337,6 +468,10 @@ class ImageInpaintingService extends GetxController
           await file.delete();
         }
       }
+    }
+    final File indexFile = _requestIndexFile(requestKey);
+    if (await indexFile.exists()) {
+      await indexFile.delete();
     }
     _results.remove(requestKey);
     _translatedImagePaths.remove(requestKey);
@@ -423,6 +558,30 @@ class ImageInpaintingService extends GetxController
         await temporary.delete();
       }
     }
+  }
+
+  File _requestIndexFile(String requestKey) => File(
+    join(
+      _cacheDirectory.path,
+      'by-request',
+      '${sha256.convert(utf8.encode(requestKey)).toString()}.json',
+    ),
+  );
+
+  Future<void> _writeRequestIndex({
+    required String requestKey,
+    required String artifactKey,
+    required String sourceHash,
+  }) async {
+    final File indexFile = _requestIndexFile(requestKey);
+    final String? translated = _translatedImagePaths[requestKey];
+    await _writeMetadata(indexFile, <String, dynamic>{
+      'schemaVersion': 1,
+      'requestKey': requestKey,
+      'artifactKey': artifactKey,
+      'sourceHash': sourceHash,
+      if (translated != null) 'translatedImagePath': translated,
+    });
   }
 
   Future<String> _sha256(File file) async =>
