@@ -221,11 +221,9 @@ RecognizedTextGroupRenderBounds? explicitRenderBoundsForRecognizedTextGroup(
 
 /// Returns one conservative render rectangle for [group].
 ///
-/// Multi-line horizontal groups get a margin based on their line height. For
-/// vertical text, the translated Chinese is laid out horizontally, so the
-/// narrow OCR union is widened to a fraction of the original column height.
-/// Single-line/uncertain groups return the OCR union with only the renderer's
-/// existing small inset, preserving the safe fallback behaviour.
+/// Use a detected container when available, otherwise retain the OCR union.
+/// The renderer preserves the source writing direction inside these bounds;
+/// vertical columns do not need to be widened for horizontal text.
 RecognizedTextGroupRenderBounds renderBoundsForRecognizedTextGroup(
   RecognizedTextGroup group,
   List<RecognizedTextBlock> blocks, {

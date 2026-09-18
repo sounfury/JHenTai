@@ -1104,6 +1104,7 @@ favnote：匹配收藏备注
       'readerTranslation': '阅读页翻译',
       'recognizingImageText': '正在识别图片文字…',
       'translatingImageText': '正在翻译图片文字…',
+      'readerTranslationBallHint': '点击切换原文/译文，长按开始或停止翻译',
       'showTranslation': '查看译文',
       'showOriginal': '查看原文',
       'copy': '复制',

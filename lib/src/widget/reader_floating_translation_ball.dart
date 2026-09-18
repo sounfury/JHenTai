@@ -10,6 +10,7 @@ class ReaderFloatingTranslationBall extends StatefulWidget {
     super.key,
     required this.isTranslating,
     required this.onTap,
+    this.onLongPress,
     this.positionStore,
     this.icon = Icons.translate,
     this.semanticLabel = 'Reader translation',
@@ -18,6 +19,7 @@ class ReaderFloatingTranslationBall extends StatefulWidget {
 
   final bool isTranslating;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final ReaderFloatingBallPositionStore? positionStore;
   final IconData icon;
   final String semanticLabel;
@@ -139,6 +141,12 @@ class _ReaderFloatingTranslationBallState
             _wake();
             widget.onTap();
           },
+          onLongPress: widget.onLongPress == null
+              ? null
+              : () {
+                  _wake();
+                  widget.onLongPress!();
+                },
           onPanStart: _onDragStart,
           onPanUpdate: _onDragUpdate,
           onPanEnd: (_) => _onDragEnd(),
@@ -154,7 +162,7 @@ class _ReaderFloatingTranslationBallState
                 ],
               ),
               child: Icon(
-                widget.isTranslating ? Icons.close : widget.icon,
+                widget.isTranslating ? Icons.hourglass_top : widget.icon,
                 color: Theme.of(context).colorScheme.onPrimary,
                 size: 24,
               ),

@@ -1186,6 +1186,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'readerTranslation': 'Reader translation',
       'recognizingImageText': 'Recognizing image text…',
       'translatingImageText': 'Translating image text…',
+      'readerTranslationBallHint': 'Tap to show/hide translation; hold to start/stop translating',
       'showTranslation': 'Show Translation',
       'showOriginal': 'Show Original',
       'copy': 'Copy',

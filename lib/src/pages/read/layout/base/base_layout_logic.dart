@@ -640,7 +640,10 @@ abstract class BaseLayoutLogic extends GetxController
     if (!readPageState.showImageTranslationOverlay) {
       readPageState.showImageTranslationOverlay = true;
       updateSafely([BaseLayoutLogic.pageId]);
-      readPageLogic.updateSafely([readPageLogic.translationMenuId]);
+      readPageLogic.updateSafely([
+        readPageLogic.translationMenuId,
+        readPageLogic.readerFloatingBallId,
+      ]);
     }
 
     final RecognizedImage? recognized = await recognizeImage(

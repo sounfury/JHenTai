@@ -21,6 +21,9 @@ import 'jh_service.dart';
 import 'log.dart';
 import 'path_service.dart';
 import '../utils/image_text_grouping.dart';
+import '../utils/image_translation_colors.dart';
+import '../utils/ocr_layout_protocol.dart';
+import '../utils/vertical_translation_layout.dart';
 import '../utils/image_text_container_detection.dart';
 import 'engine/engine.dart';
 
@@ -483,7 +486,16 @@ class ImageTranslationService extends GetxController
         imageHash,
       );
       if (!force && cached != null) {
-        _set(request.cacheKey, cached.copyWith(fromCache: true));
+        _set(
+          request.cacheKey,
+          cached.copyWith(
+            fromCache: true,
+            blocks: await _detectColors(
+              sourceBytes, cached.blocks,
+              cached.imageWidth ?? 0, cached.imageHeight ?? 0,
+            ),
+          ),
+        );
         return null;
       }
 
@@ -498,7 +510,7 @@ class ImageTranslationService extends GetxController
       final DetectionResult? bubbleDetection =
           useBubbleDetection ? await _detectBubbleRegions(imagePath) : null;
       final _RecognizeResult recognized = await _recognize(imagePath);
-      final List<RecognizedTextBlock> blocks = recognized.blocks;
+      List<RecognizedTextBlock> blocks = recognized.blocks;
       final bool mergeTextBlocks = imageTranslationSetting.autoMergeText.value;
       // Resolve the source dimensions before accepting detector rectangles so
       // a page-sized false positive can never become a layout container.
@@ -514,6 +526,7 @@ class ImageTranslationService extends GetxController
         imageWidth = width;
         imageHeight = height;
       }
+      blocks = await _detectColors(sourceBytes, blocks, imageWidth, imageHeight);
       List<RecognizedTextContainer> containers =
           useBubbleDetection
               ? _containersFromBubbleDetection(
@@ -1012,7 +1025,16 @@ class ImageTranslationService extends GetxController
     if (cached == null) {
       return false;
     }
-    _set(request.cacheKey, cached.copyWith(fromCache: true));
+    _set(
+      request.cacheKey,
+      cached.copyWith(
+        fromCache: true,
+        blocks: await _detectColors(
+          sourceBytes, cached.blocks,
+          cached.imageWidth ?? 0, cached.imageHeight ?? 0,
+        ),
+      ),
+    );
     return true;
   }
 
@@ -1151,6 +1173,31 @@ class ImageTranslationService extends GetxController
     }
   }
 
+  Future<List<RecognizedTextBlock>> _detectColors(
+    Uint8List bytes,
+    List<RecognizedTextBlock> blocks,
+    int width,
+    int height,
+  ) async {
+    if (width <= 0 ||
+        height <= 0 ||
+        blocks.isEmpty ||
+        blocks.every((block) => block.backgroundColor != null)) {
+      return blocks;
+    }
+    try {
+      return await compute(detectTranslationColors, <String, dynamic>{
+        'bytes': bytes,
+        'blocks': blocks,
+        'width': width,
+        'height': height,
+      });
+    } catch (error) {
+      log.warning('Translation color detection skipped: $error');
+      return blocks;
+    }
+  }
+
   Future<List<RecognizedTextContainer>> _detectTextContainers(
     Uint8List sourceBytes,
     List<RecognizedTextBlock> blocks,
@@ -1243,8 +1290,9 @@ class ImageTranslationService extends GetxController
     // painted every OCR line into its own narrow rect, which made a natural
     // translation wrap into tiny, disconnected fragments. A merged rect lets
     // TextPainter choose one readable size for the whole utterance.
-    final List<(Rect, String, double)> entries = <(Rect, String, double)>[];
-    final List<Rect> mergedBackgrounds = <Rect>[];
+    final List<(Rect, String, double, Color, bool)> entries =
+        <(Rect, String, double, Color, bool)>[];
+    final List<(Rect, Color)> mergedBackgrounds = <(Rect, Color)>[];
     // Container indices are generated against the complete OCR list. If an
     // old cache contains zero-sized blocks that are filtered above, discard
     // the explicit container geometry for this export rather than applying a
@@ -1285,41 +1333,55 @@ class ImageTranslationService extends GetxController
         if (safeRect == null) {
           continue;
         }
-        mergedBackgrounds.add(safeRect);
+        final (plateColor, textColor) = translationBubbleColors(
+          blocks,
+          group.blockIndices,
+          imageTranslationSetting.translationBackgroundColor.value,
+          imageTranslationSetting.translationBackgroundOpacity.value,
+        );
+        mergedBackgrounds.add((safeRect, plateColor));
         final String translation =
             groupIndex < result.translatedGroups.length &&
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
-        final double sourceFont = estimateSourceTranslationFontSize(
+        final bool vertical = translationUsesVerticalLayout(
           blocks,
           group.blockIndices,
         );
+        final double sourceFont = estimateSourceTranslationFontSize(
+          blocks,
+          group.blockIndices,
+          vertical: vertical,
+        );
         final double resolved = fitTranslationFontSize(
           translation,
-          math.max(1, safeRect.width - 8),
-          math.max(1, safeRect.height - 4),
+          math.max(0, safeRect.width - 4),
+          math.max(0, safeRect.height - 4),
           TextDirection.ltr,
           maxFontSize: sourceFont,
+          vertical: vertical,
         );
-        entries.add((safeRect, translation, resolved));
+        entries.add((safeRect, translation, resolved, textColor, vertical));
       }
     }
-    for (final Rect rect in mergedBackgrounds) {
+    for (final (Rect rect, Color plateColor) in mergedBackgrounds) {
       paintTranslationBubbleBackground(
         canvas,
         rect,
-        color: imageTranslationSetting.translationBackgroundColor.value,
+        color: plateColor,
         opacity: imageTranslationSetting.translationBackgroundOpacity.value,
       );
     }
-    for (final (Rect rect, String translation, double fontSize) in entries) {
+    for (final (rect, translation, fontSize, textColor, vertical) in entries) {
       paintTranslationBubbleText(
         canvas,
         rect,
         translation,
         TextDirection.ltr,
         fontSize: fontSize,
+        color: textColor,
+        vertical: vertical,
       );
     }
     final ui.Image image = await recorder.endRecording().toImage(
@@ -1798,6 +1860,35 @@ Rect? safeTranslationBackgroundRect(Rect rect, Size canvasSize) {
   return clipped;
 }
 
+/// Uses the source fill for the default plate, while preserving a custom
+/// background preference. Text contrast follows the actual composited fill.
+(Color, Color) translationBubbleColors(
+  List<RecognizedTextBlock> blocks,
+  List<int> indices,
+  Color configuredBackground,
+  double opacity,
+) {
+  int? detected;
+  double largestArea = 0;
+  for (final index in indices) {
+    final block = blocks[index];
+    final area = block.width * block.height;
+    if (block.backgroundColor != null && area > largestArea) {
+      detected = block.backgroundColor;
+      largestArea = area;
+    }
+  }
+  final source = Color(detected ?? 0xffffffff);
+  final background = configuredBackground == Colors.white
+      ? source : configuredBackground;
+  final visible = Color.alphaBlend(
+    background.withValues(alpha: opacity.clamp(0.0, 1.0)), source,
+  );
+  final foreground = visible.computeLuminance() > 0.179
+      ? Colors.black : Colors.white;
+  return (background, foreground);
+}
+
 void paintTranslationBubbleBackground(
   Canvas canvas,
   Rect rect, {
@@ -1821,108 +1912,166 @@ void paintTranslationBubbleBackground(
   );
 }
 
-/// Paints one translated utterance into its bubble [rect], sized to fit both
-/// the width and the height of the box so a long translation wraps inside the
-/// bubble instead of overflowing it or being chopped by an ellipsis.
-///
-/// [fontSize] overrides the per-line fit so every line of a merged bubble
-/// shares the same size; pass the group's shared size (see
-/// [fitTranslationFontSize]).
+/// Infer direction per text group, not per page: a manga page may contain
+/// vertical dialogue and horizontal captions at the same time.
+bool translationUsesVerticalLayout(
+  List<RecognizedTextBlock> blocks,
+  List<int> blockIndices,
+) => classifyOcrLayout([
+  for (final index in blockIndices)
+    if (index >= 0 && index < blocks.length)
+      OcrLayoutBox(
+        sourceIndex: index,
+        left: blocks[index].left,
+        top: blocks[index].top,
+        width: blocks[index].width,
+        height: blocks[index].height,
+      ),
+]) == OcrLayoutMode.verticalRtl;
+
+/// Paint using the same bounds and metrics as fitting; preserve the original
+/// writing direction and never truncate a translation to an ellipsis.
 void paintTranslationBubbleText(
   Canvas canvas,
   Rect rect,
   String translation,
   TextDirection textDirection, {
   double? fontSize,
+  Color color = Colors.black,
+  bool vertical = false,
 }) {
-  final double maxWidth = math.max(1, rect.width - 4);
-  final double maxHeight = rect.height;
-  final double resolvedFontSize =
-      fontSize ??
-      fitTranslationFontSize(translation, maxWidth, maxHeight, textDirection);
-  final int maxLines = math.max(
-    1,
-    (maxHeight / (resolvedFontSize * 1.05)).floor(),
+  final content = rect.deflate(2);
+  if (content.isEmpty) {
+    return;
+  }
+  final resolved = fontSize ?? fitTranslationFontSize(
+    translation,
+    content.width,
+    content.height,
+    textDirection,
+    vertical: vertical,
   );
-  final TextPainter painter = TextPainter(
-    text: TextSpan(
-      text: translation,
-      style: TextStyle(
-        color: Colors.black,
-        fontSize: resolvedFontSize,
-        height: 1.05,
+  if (resolved <= 0) {
+    return;
+  }
+  canvas.save();
+  canvas.clipRect(content);
+  if (vertical) {
+    final layout = VerticalTranslationLayout(
+      translation,
+      fontSize: resolved,
+      maxHeight: content.height,
+      color: color,
+    );
+    layout.paint(
+      canvas,
+      content.center - Offset(layout.size.width / 2, layout.size.height / 2),
+    );
+    layout.dispose();
+  } else {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: translation,
+        style: TextStyle(color: color, fontSize: resolved, height: 1.05),
       ),
-    ),
-    textAlign: TextAlign.center,
-    textDirection: textDirection,
-    maxLines: maxLines,
-    ellipsis: '…',
-  )..layout(maxWidth: maxWidth);
-  painter.paint(
-    canvas,
-    Offset(rect.left + 2, rect.center.dy - painter.height / 2),
-  );
+      textAlign: TextAlign.center,
+      textDirection: textDirection,
+    )..layout(maxWidth: content.width);
+    painter.paint(
+      canvas,
+      Offset(content.left, content.center.dy - painter.height / 2),
+    );
+    painter.dispose();
+  }
+  canvas.restore();
 }
 
-/// The largest font size whose laid-out wrapped text still fits the box,
-/// found with a binary search over [TextPainter] layouts.
-///
-/// [maxFontSize] caps the search (still clamped to 8-30). Pass the source OCR
-/// line height so a large bubble detector box cannot inflate tiny source text
-/// into an oversized translation that overflows the bubble.
+/// Shrink to fit, but never enlarge beyond the source glyph size. A fixed
+/// 8-pixel floor enlarged small/zoomed-out source text and could still overflow.
 double fitTranslationFontSize(
   String text,
   double maxWidth,
   double maxHeight,
   TextDirection textDirection, {
   double? maxFontSize,
+  bool vertical = false,
 }) {
-  const double minFont = 8;
-  const double absoluteMaxFont = 30;
-  final double maxFont = math.min(
-    absoluteMaxFont,
-    math.max(minFont, maxFontSize ?? absoluteMaxFont),
-  );
-  double low = minFont;
-  double high = maxFont;
-  double best = minFont;
-  while (low <= high) {
-    final double mid = (low + high) / 2;
-    final TextPainter probe = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(fontSize: mid, height: 1.05)),
-      textAlign: TextAlign.center,
-      textDirection: textDirection,
-    )..layout(maxWidth: maxWidth);
-    if (probe.height <= maxHeight) {
-      best = mid;
-      low = mid + 0.5;
+  if (maxWidth <= 0 || maxHeight <= 0) {
+    return 0;
+  }
+  double low = 0;
+  double high = maxFontSize ?? 30;
+  if (!high.isFinite || high <= 0) {
+    return 0;
+  }
+  bool fits(double fontSize) {
+    final Size measured;
+    if (vertical) {
+      final layout = VerticalTranslationLayout(
+        text,
+        fontSize: fontSize,
+        maxHeight: maxHeight,
+      );
+      measured = layout.size;
+      layout.dispose();
     } else {
-      high = mid - 0.5;
+      final probe = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(fontSize: fontSize, height: 1.05),
+        ),
+        textAlign: TextAlign.center,
+        textDirection: textDirection,
+      )..layout(maxWidth: maxWidth);
+      // Long unbreakable runs can exceed the paragraph's constrained width.
+      final widestLine = probe.computeLineMetrics().fold<double>(
+        0,
+        (width, line) => math.max(width, line.width),
+      );
+      measured = Size(widestLine, probe.height);
+      probe.dispose();
+    }
+    return measured.width <= maxWidth && measured.height <= maxHeight;
+  }
+  if (fits(high)) {
+    return high;
+  }
+  for (int iteration = 0; iteration < 12; iteration++) {
+    final mid = (low + high) / 2;
+    if (fits(mid)) {
+      low = mid;
+    } else {
+      high = mid;
     }
   }
-  return best;
+  return low;
 }
 
-/// Median OCR glyph/line height for [blockIndices], scaled into the same
-/// coordinate space as the layout rect. Used as the translation font ceiling
-/// so size tracks the source text rather than the (often larger) bubble box.
+/// A vertical OCR column's width approximates one glyph, not its full height.
+/// Horizontal OCR lines use their height. Keep source and display axes explicit
+/// so reader zoom and original-resolution exports preserve the same scale.
 double estimateSourceTranslationFontSize(
   List<RecognizedTextBlock> blocks,
   List<int> blockIndices, {
   double scaleY = 1,
+  double? scaleX,
+  bool? vertical,
 }) {
-  final List<double> heights = <double>[
-    for (final int index in blockIndices)
-      if (index >= 0 &&
-          index < blocks.length &&
-          blocks[index].height > 0)
-        blocks[index].height * scaleY,
-  ];
-  if (heights.isEmpty) {
+  final isVertical =
+      vertical ?? translationUsesVerticalLayout(blocks, blockIndices);
+  final sizes = <double>[
+    for (final index in blockIndices)
+      if (index >= 0 && index < blocks.length &&
+          blocks[index].width > 0 && blocks[index].height > 0)
+        isVertical
+            ? blocks[index].width * (scaleX ?? scaleY)
+            : blocks[index].height * scaleY,
+  ]..removeWhere((size) => !size.isFinite || size <= 0);
+  if (sizes.isEmpty) {
     return 30;
   }
-  heights.sort();
-  return heights[heights.length ~/ 2];
+  sizes.sort();
+  return sizes[sizes.length ~/ 2];
 }
 
 

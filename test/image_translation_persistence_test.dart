@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image;
 import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 
@@ -56,6 +57,33 @@ void main() {
       expect(hydrated.fromCache, isTrue);
     },
   );
+
+  test('old translation cache acquires source colors without retranslation', () async {
+    final source = image.Image(width: 40, height: 20);
+    image.fill(source, color: image.ColorRgb8(0, 0, 0));
+    await sourceImage.writeAsBytes(image.encodePng(source));
+    final service = ImageTranslationService();
+    service.setTranslationCacheDirectoryForTesting(temporaryDirectory);
+    final request = ImageTranslationRequest(
+      cacheKey: 'old-inverted-page', imagePath: sourceImage.path,
+    );
+    await service.writePersistentResultForRequest(request,
+      const ImageTranslationResult(
+        status: ImageTranslationStatus.success,
+        translatedText: 'cached translation',
+        imageWidth: 40,
+        imageHeight: 20,
+        blocks: [RecognizedTextBlock(
+          text: 'source', confidence: 1, width: 40, height: 20,
+        )],
+      ),
+    );
+    expect(await service.hydrateResult(request), isTrue);
+    final result = service.resultFor(request.cacheKey);
+    expect(result.fromCache, isTrue);
+    expect(result.translatedText, 'cached translation');
+    expect(result.blocks.single.backgroundColor, 0xff000000);
+  });
 
   test(
     'cached recognition does not throw while releasing source bytes',

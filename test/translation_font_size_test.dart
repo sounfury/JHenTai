@@ -72,4 +72,39 @@ void main() {
       24,
     );
   });
+
+  test('vertical column uses glyph width instead of the whole column height', () {
+    const blocks = [
+      RecognizedTextBlock(text: 'ほんのりあったかい', confidence: 1,
+          left: 32, width: 16, height: 160),
+      RecognizedTextBlock(text: 'あったかい', confidence: 1,
+          left: 8, width: 18, height: 100),
+      RecognizedTextBlock(text: 'horizontal', confidence: 1,
+          width: 120, height: 12),
+    ];
+    expect(translationUsesVerticalLayout(blocks, [0, 1]), isTrue);
+    expect(translationUsesVerticalLayout(blocks, [2]), isFalse);
+    expect(estimateSourceTranslationFontSize(blocks, [0, 1]), 18);
+    expect(estimateSourceTranslationFontSize(blocks, [0, 1],
+        scaleX: 0.5, scaleY: 0.25), 9);
+    expect(estimateSourceTranslationFontSize(blocks, [2],
+        scaleX: 0.5, scaleY: 0.25), 3);
+  });
+
+  test('small source glyphs are never enlarged by the old 8px floor', () {
+    for (final vertical in [false, true]) {
+      final fitted = fitTranslationFontSize(
+        '好暖和', 40, 60, TextDirection.ltr,
+        maxFontSize: 5, vertical: vertical,
+      );
+      expect(fitted, greaterThan(0));
+      expect(fitted, lessThanOrEqualTo(5));
+    }
+  });
+
+  test('source-resolution fonts are not capped at 30px when exporting', () {
+    expect(fitTranslationFontSize(
+      '字', 200, 200, TextDirection.ltr, maxFontSize: 48,
+    ), 48);
+  });
 }

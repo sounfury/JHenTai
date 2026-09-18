@@ -1671,15 +1671,15 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     updateSafely([readerBookmarkId]);
   }
 
-  Future<void> toggleFloatingTranslation(BuildContext context) async {
+  bool _translationOverlayManuallyHidden = false;
+
+  Future<void> startFloatingTranslation(BuildContext context) async {
     if (imageTranslationService.isBatchTranslating) {
       imageTranslationService.cancelBatch();
       _cancelInpaintingTasks();
-      state.showImageTranslationOverlay = false;
-      updateSafely([translationMenuId, readerFloatingBallId]);
-      layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
       return;
     }
+    _translationOverlayManuallyHidden = false;
     state.showImageTranslationOverlay = true;
     updateSafely([translationMenuId, readerFloatingBallId]);
     layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
@@ -1977,9 +1977,9 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (index + 1 < state.readPageInfo.pageCount) {
       pages.add(index + 1);
     }
-    if (!state.showImageTranslationOverlay) {
+    if (!state.showImageTranslationOverlay && !_translationOverlayManuallyHidden) {
       state.showImageTranslationOverlay = true;
-      updateSafely([translationMenuId]);
+      updateSafely([translationMenuId, readerFloatingBallId]);
       layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
     }
     await _translatePagesOpportunistically(pages, context);
@@ -2005,9 +2005,9 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
         imageTranslationService.isBatchTranslating ||
         isClosed) {
       // Keep overlay on so hydrated/cached results are visible.
-      if (!state.showImageTranslationOverlay) {
+      if (!state.showImageTranslationOverlay && !_translationOverlayManuallyHidden) {
         state.showImageTranslationOverlay = true;
-        updateSafely([translationMenuId]);
+        updateSafely([translationMenuId, readerFloatingBallId]);
         layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
       }
       return;
@@ -2030,9 +2030,9 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
       return;
     }
     // Keep the overlay visible so cached/pre-translated results show up.
-    if (!state.showImageTranslationOverlay) {
+    if (!state.showImageTranslationOverlay && !_translationOverlayManuallyHidden) {
       state.showImageTranslationOverlay = true;
-      updateSafely([translationMenuId]);
+      updateSafely([translationMenuId, readerFloatingBallId]);
       layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
     }
     await _translatePagesOpportunistically(order.toList(growable: false), context);
@@ -2385,7 +2385,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
   /// Toggles whether the inline translation overlay is drawn on the images.
   void toggleImageTranslationOverlay() {
     state.showImageTranslationOverlay = !state.showImageTranslationOverlay;
-    updateSafely([translationMenuId]);
+    _translationOverlayManuallyHidden = !state.showImageTranslationOverlay;
+    updateSafely([translationMenuId, readerFloatingBallId]);
     layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
   }
 

@@ -473,8 +473,9 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
     // separate narrow box makes a natural translation fragment into tiny,
     // disconnected labels; the merged rect gives the whole utterance one
     // readable size and natural wrapping.
-    final List<(Rect, String, double)> entries = <(Rect, String, double)>[];
-    final List<Rect> mergedBackgrounds = <Rect>[];
+    final List<(Rect, String, double, Color, bool)> entries =
+        <(Rect, String, double, Color, bool)>[];
+    final List<(Rect, Color)> mergedBackgrounds = <(Rect, Color)>[];
     final List<RecognizedTextGroup> groups = translationTextGroups(
       result.blocks,
       merge: result.mergeTextBlocks,
@@ -516,42 +517,57 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
         if (safeRect == null) {
           continue;
         }
-        mergedBackgrounds.add(safeRect);
+        final (plateColor, textColor) = translationBubbleColors(
+          result.blocks,
+          group.blockIndices,
+          backgroundColor,
+          backgroundOpacity,
+        );
+        mergedBackgrounds.add((safeRect, plateColor));
         final String translation =
             groupIndex < result.translatedGroups.length &&
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
+        final bool vertical = translationUsesVerticalLayout(
+          result.blocks,
+          group.blockIndices,
+        );
         final double sourceFont = estimateSourceTranslationFontSize(
           result.blocks,
           group.blockIndices,
+          vertical: vertical,
           scaleY: scaleY,
+          scaleX: scaleX,
         );
         final double resolved = fitTranslationFontSize(
           translation,
-          math.max(1, safeRect.width - 8),
-          math.max(1, safeRect.height - 4),
+          math.max(0, safeRect.width - 4),
+          math.max(0, safeRect.height - 4),
           textDirection,
           maxFontSize: sourceFont,
+          vertical: vertical,
         );
-        entries.add((safeRect, translation, resolved));
+        entries.add((safeRect, translation, resolved, textColor, vertical));
       }
     }
-    for (final Rect rect in mergedBackgrounds) {
+    for (final (Rect rect, Color plateColor) in mergedBackgrounds) {
       paintTranslationBubbleBackground(
         canvas,
         rect,
-        color: backgroundColor,
+        color: plateColor,
         opacity: backgroundOpacity,
       );
     }
-    for (final (Rect rect, String translation, double fontSize) in entries) {
+    for (final (rect, translation, fontSize, textColor, vertical) in entries) {
       paintTranslationBubbleText(
         canvas,
         rect,
         translation,
         textDirection,
         fontSize: fontSize,
+        color: textColor,
+        vertical: vertical,
       );
     }
   }

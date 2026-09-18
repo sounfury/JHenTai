@@ -1089,6 +1089,7 @@ favnote：配對收藏備註
       'removeBookmark': '移除書籤',
       'recognizingImageText': '正在辨識圖片文字…',
       'translatingImageText': '正在翻譯圖片文字…',
+      'readerTranslationBallHint': '點擊切換原文/譯文，長按開始或停止翻譯',
       'showTranslation': '查看譯文',
       'showOriginal': '查看原文',
       'copy': '複製',

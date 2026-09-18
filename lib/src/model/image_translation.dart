@@ -36,6 +36,9 @@ class RecognizedTextBlock {
   final double width;
   final double height;
 
+  /// Dominant source fill as opaque ARGB; absent in older cached results.
+  final int? backgroundColor;
+
   const RecognizedTextBlock({
     required this.text,
     required this.confidence,
@@ -43,6 +46,7 @@ class RecognizedTextBlock {
     this.top = 0,
     this.width = 0,
     this.height = 0,
+    this.backgroundColor,
   });
 
   Map<String, dynamic> toJson() => {
@@ -52,6 +56,7 @@ class RecognizedTextBlock {
     'top': top,
     'width': width,
     'height': height,
+    if (backgroundColor != null) 'backgroundColor': backgroundColor,
   };
 
   factory RecognizedTextBlock.fromJson(Map<String, dynamic> json) =>
@@ -62,6 +67,7 @@ class RecognizedTextBlock {
         top: (json['top'] as num?)?.toDouble() ?? 0,
         width: (json['width'] as num?)?.toDouble() ?? 0,
         height: (json['height'] as num?)?.toDouble() ?? 0,
+        backgroundColor: (json['backgroundColor'] as num?)?.toInt(),
       );
 }
 

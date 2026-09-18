@@ -715,7 +715,12 @@ class _ReadPageState extends State<ReadPage>
                   (_) => ReaderFloatingTranslationBall(
                     isTranslating: imageTranslationService.isBatchTranslating,
                     positionStore: logic.readerFloatingBallPositionStore,
-                    onTap: () => logic.toggleFloatingTranslation(context),
+                    onTap: logic.toggleImageTranslationOverlay,
+                    onLongPress: () => logic.startFloatingTranslation(context),
+                    icon: state.showImageTranslationOverlay
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    semanticLabel: 'readerTranslationBallHint'.tr,
                   ),
             );
           },

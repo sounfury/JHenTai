@@ -19,6 +19,7 @@ void main() {
   ) async {
     final _MemoryStore memory = _MemoryStore();
     int taps = 0;
+    int longPresses = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -28,6 +29,7 @@ void main() {
                 positionStore: ReaderFloatingBallPositionStore(store: memory),
                 isTranslating: false,
                 onTap: () => taps++,
+                onLongPress: () => longPresses++,
               ),
             ],
           ),
@@ -40,11 +42,22 @@ void main() {
     await tester.tap(find.byIcon(Icons.translate));
     expect(taps, 1);
 
+    await tester.longPress(find.byIcon(Icons.translate));
+    expect(longPresses, 1);
+    expect(taps, 1);
+
+    await tester.tap(find.byIcon(Icons.translate));
+    expect(taps, 2);
+    expect(longPresses, 1);
+
     await tester.drag(find.byIcon(Icons.translate), const Offset(-600, 30));
     await tester.pumpAndSettle();
     // Flutter's default test viewport is landscape (800x600), so this also
     // proves the widget writes the orientation-specific slot it is rendered in.
+    expect(taps, 2);
+    expect(longPresses, 1);
     expect(memory.values['landscape'], isNotNull);
     expect(memory.values['landscape'], contains('"x":0.0'));
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
