@@ -53,6 +53,7 @@ import '../../network/eh_request.dart';
 import '../../routes/routes.dart';
 import '../../service/log.dart';
 import '../../service/lan_sharing_runtime.dart';
+import '../../service/gallery_download/gallery_download_service.dart';
 import '../../service/gallery_download/gallery_images_retainer.dart';
 import '../../service/read_progress_service.dart';
 import '../../service/gallery_pre_translate_preference.dart';
@@ -62,6 +63,7 @@ import '../../setting/preference_setting.dart';
 import '../../setting/performance_setting.dart';
 import '../../setting/read_setting.dart';
 import '../../utils/eh_spider_parser.dart';
+import '../../utils/gallery_image_translation_language.dart';
 import '../../utils/route_util.dart';
 import '../../utils/toast_util.dart';
 import '../../widget/auto_mode_interval_dialog.dart';
@@ -1899,6 +1901,17 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (context == null || !context.mounted || isClosed) {
       return;
     }
+    // Same-language galleries (e.g. Chinese 熟肉 with target 简体中文): never
+    // auto-enable the overlay or kick off auto/pre-translate. Manual translate
+    // from the menu still works.
+    if (_galleryAlreadyInTargetLanguage()) {
+      if (state.showImageTranslationOverlay) {
+        state.showImageTranslationOverlay = false;
+        updateSafely([translationMenuId]);
+        layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
+      }
+      return;
+    }
     final int current = state.readPageInfo.currentImageIndex;
     // Auto-translate current+next first for immediate reading UX.
     await _autoTranslateAround(current);
@@ -1908,10 +1921,33 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     await _startPreTranslateIfNeeded(context);
   }
 
+  /// Resolves language signals from [ReadPageInfo] and download metadata.
+  bool _galleryAlreadyInTargetLanguage() {
+    String? language = state.readPageInfo.galleryLanguage;
+    String? tagsCsv = state.readPageInfo.galleryTags;
+    final int? gid = state.readPageInfo.gid;
+    if ((language == null || language.isEmpty) || (tagsCsv == null || tagsCsv.isEmpty)) {
+      if (gid != null) {
+        final GalleryDownloadInfo? info =
+            galleryDownloadService.galleryDownloadInfos[gid];
+        if (info != null) {
+          tagsCsv ??= info.tags;
+        }
+      }
+    }
+    return GalleryImageTranslationLanguage.matchesCurrentTarget(
+      language: language,
+      tagsCsv: tagsCsv,
+    );
+  }
+
   /// Translates [index] and the following page when the auto-translate setting
   /// is on. Skips while a user/pre-translate batch already owns the pipeline.
   Future<void> _autoTranslateAround(int index) async {
     if (!imageTranslationSetting.enableAutoTranslate.value) {
+      return;
+    }
+    if (_galleryAlreadyInTargetLanguage()) {
       return;
     }
     if (isClosed || imageTranslationService.isBatchTranslating) {
@@ -1940,6 +1976,10 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
   Future<void> _startPreTranslateIfNeeded(BuildContext context) async {
     final int? gid = state.readPageInfo.gid;
     if (gid == null || isClosed) {
+      return;
+    }
+    // Do not force overlay / start work when the gallery is already in target.
+    if (_galleryAlreadyInTargetLanguage()) {
       return;
     }
     if (!await GalleryPreTranslatePreference.isEnabled(gid)) {

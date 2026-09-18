@@ -1165,6 +1165,8 @@ class ru_RU {
       'preTranslateEnabledToast':
           'Предперевод включён (первые @count стр.). Запуск в фоне сейчас.',
       'preTranslateDisabledToast': 'Предперевод для этой галереи выключен.',
+      'preTranslateAlreadyTargetLanguageToast':
+          'Галерея уже на целевом языке; предперевод не нужен.',
       'imageTranslationContextPages': 'Страниц в одном контекстном запросе',
       'imageTranslationContextPagesValue': '@count стр.',
       'imageTranslationContextAppleUnsupported':

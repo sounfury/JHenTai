@@ -23,6 +23,7 @@ import 'package:jhentai/src/service/jh_service.dart';
 import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/service/path_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
+import 'package:jhentai/src/utils/gallery_image_translation_language.dart';
 import 'package:jhentai/src/setting/site_setting.dart';
 import 'package:jhentai/src/utils/eh_spider_parser.dart';
 import 'package:jhentai/src/utils/image_cache_util.dart';
@@ -75,13 +76,28 @@ class GalleryPreTranslateRunner extends GetxController
 
   /// Starts (or restarts) pre-translate for [galleryUrl]'s first N pages.
   /// Non-blocking: returns after scheduling the background job.
+  ///
+  /// When [galleryLanguage] / [galleryTagsCsv] indicate the gallery is already
+  /// in [imageTranslationSetting.targetLanguage], the job is not started.
   void startForGallery({
     required GalleryUrl galleryUrl,
     required int pageCount,
     List<GalleryThumbnail>? seedThumbnails,
+    String? galleryLanguage,
+    String? galleryTagsCsv,
   }) {
     final int gid = galleryUrl.gid;
     if (pageCount <= 0) {
+      return;
+    }
+    if (GalleryImageTranslationLanguage.matchesCurrentTarget(
+      language: galleryLanguage,
+      tagsCsv: galleryTagsCsv,
+    )) {
+      log.info(
+        'Skip pre-translate for gid=$gid: gallery already in target language '
+        '(${imageTranslationSetting.targetLanguage.value})',
+      );
       return;
     }
     // Single shared translation pipeline — stop any other gallery's job first.

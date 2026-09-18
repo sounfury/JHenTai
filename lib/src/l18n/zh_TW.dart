@@ -1128,6 +1128,7 @@ favnote：配對收藏備註
       'preTranslateHint': '開啟後立即在背景預翻譯本漫畫前 @count 頁。',
       'preTranslateEnabledToast': '已開啟預翻譯（前 @count 頁），立即在背景開始。',
       'preTranslateDisabledToast': '已關閉本漫畫的預翻譯。',
+      'preTranslateAlreadyTargetLanguageToast': '本漫畫已是目標語言（熟肉），無需預翻譯。',
       'imageTranslationContextPages': '每批上下文頁數',
       'imageTranslationContextPagesValue': '@count 頁',
       'imageTranslationContextAppleUnsupported': 'Apple 翻譯目前僅支援單頁請求。',

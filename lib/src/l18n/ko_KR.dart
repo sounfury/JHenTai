@@ -1072,6 +1072,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslateHint': '켜면 즉시 이 만화의 앞 @count페이지를 백그라운드에서 미리 번역합니다.',
       'preTranslateEnabledToast': '미리 번역이 켜졌습니다(앞 @count페이지). 지금 백그라운드에서 시작합니다.',
       'preTranslateDisabledToast': '이 만화의 미리 번역을 껐습니다.',
+      'preTranslateAlreadyTargetLanguageToast': '이 만화는 이미 대상 언어입니다. 미리 번역이 필요 없습니다.',
       'imageTranslationContextPages': '컨텍스트 요청당 페이지',
       'imageTranslationContextPagesValue': '@count페이지',
       'imageTranslationContextAppleUnsupported':

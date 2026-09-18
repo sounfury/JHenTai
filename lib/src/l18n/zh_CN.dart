@@ -1148,6 +1148,7 @@ favnote：匹配收藏备注
       'preTranslateHint': '开启后立即在后台预翻译本漫画前 @count 页。',
       'preTranslateEnabledToast': '已开启预翻译（前 @count 页），立即在后台开始。',
       'preTranslateDisabledToast': '已关闭本漫画的预翻译。',
+      'preTranslateAlreadyTargetLanguageToast': '本漫画已是目标语言（熟肉），无需预翻译。',
       'imageTranslationContextPages': '每批上下文页数',
       'imageTranslationContextPagesValue': '@count 页',
       'imageTranslationContextAppleUnsupported': 'Apple 翻译目前仅支持单页请求。',
