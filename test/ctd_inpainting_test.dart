@@ -312,6 +312,85 @@ void main() {
     expect(await source.readAsBytes(), <int>[1, 2, 3]);
   });
 
+  test(
+    'cold start hydrates repaired background from request-keyed disk index',
+    () async {
+      final Directory root = await Directory.systemTemp.createTemp(
+        'jhentai-ctd-hydrate-repair-',
+      );
+      addTearDown(() => root.delete(recursive: true));
+      final File source = File('${root.path}/source.bin')
+        ..writeAsBytesSync(<int>[11, 12, 13, 14]);
+      final Directory cache = Directory('${root.path}/cache');
+      final _FakeInpaintEngine fake = _FakeInpaintEngine();
+      final EngineRegistry registry = EngineRegistry(inpaintEngine: fake);
+      final ImageInpaintingService service = ImageInpaintingService(
+        registry: registry,
+      )..setCacheDirectoryForTesting(cache);
+
+      final InpaintingResult first = await service.repair(
+        requestKey: 'downloaded:/comics/page-1.jpg',
+        sourcePath: source.path,
+        polygonMasks: <PolygonMask>[_squareMask()],
+      );
+      expect(first.status, InpaintingStatus.success);
+      expect(first.fromCache, isFalse);
+      expect(fake.calls, 1);
+
+      final ImageInpaintingService restarted = ImageInpaintingService(
+        registry: registry,
+      )..setCacheDirectoryForTesting(cache);
+      restarted.setDisplayMode(
+        ImageProcessingDisplayMode.repairedBackgroundEmbeddedText,
+      );
+
+      // Before hydrate, cold start would otherwise paint translation on the
+      // original page: force opaque plates.
+      expect(
+        restarted.effectiveOverlayBackgroundOpacity(
+          'downloaded:/comics/page-1.jpg',
+          0.0,
+        ),
+        0.92,
+      );
+
+      final InpaintingResult? hydrated = await restarted.hydrateCachedRepair(
+        requestKey: 'downloaded:/comics/page-1.jpg',
+        sourcePath: source.path,
+      );
+      expect(hydrated, isNotNull);
+      expect(hydrated!.status, InpaintingStatus.success);
+      expect(hydrated.fromCache, isTrue);
+      expect(hydrated.outputPath, first.outputPath);
+      expect(fake.calls, 1); // no second MI-GAN run
+      expect(
+        restarted.displayPathFor('downloaded:/comics/page-1.jpg'),
+        first.outputPath,
+      );
+      // Once the cleaned background is restored, honor the user's opacity
+      // (including 0 for embedded text on repaired art).
+      expect(
+        restarted.effectiveOverlayBackgroundOpacity(
+          'downloaded:/comics/page-1.jpg',
+          0.0,
+        ),
+        0.0,
+      );
+    },
+  );
+
+  test(
+    'overlay mode never forces opaque plates while awaiting repair',
+    () {
+      final ImageInpaintingService service = ImageInpaintingService();
+      service.setDisplayMode(ImageProcessingDisplayMode.overlay);
+      expect(
+        service.effectiveOverlayBackgroundOpacity('page-1', 0.15),
+        0.15,
+      );
+    },
+  );
+
   test('ModelScope MI-GAN manifest is pinned to the inspected artifact', () {
     final ModelDescriptor descriptor =
         OnnxModelCatalog().find(OnnxModelStore.miganInpaintManifestId)!;

@@ -199,32 +199,58 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
         // Keep background style independent of GetX.  It must repaint an
         // already translated page immediately when the user changes color or
         // opacity, even if another reader observer is rebuilding.
-        StreamBuilder<Color>(
-          stream: imageTranslationSetting.translationBackgroundColor.stream,
-          initialData: imageTranslationSetting.translationBackgroundColor.value,
-          builder:
-              (context, colorSnapshot) => StreamBuilder<double>(
-                stream:
-                    imageTranslationSetting.translationBackgroundOpacity.stream,
-                initialData:
-                    imageTranslationSetting.translationBackgroundOpacity.value,
-                builder:
-                    (context, opacitySnapshot) => IgnorePointer(
-                      child: LayoutBuilder(
-                        builder:
-                            (context, constraints) => CustomPaint(
-                              size: constraints.biggest,
-                              painter: _ImageTranslationOverlayPainter(
-                                result: result,
-                                textDirection: Directionality.of(context),
-                                backgroundColor:
-                                    colorSnapshot.data ?? Colors.white,
-                                backgroundOpacity: opacitySnapshot.data ?? 0.9,
+        GetBuilder<ImageInpaintingService>(
+          id: request.cacheKey,
+          builder: (ImageInpaintingService inpainting) {
+            return StreamBuilder<Color>(
+              stream:
+                  imageTranslationSetting.translationBackgroundColor.stream,
+              initialData:
+                  imageTranslationSetting.translationBackgroundColor.value,
+              builder:
+                  (context, colorSnapshot) => StreamBuilder<double>(
+                    stream:
+                        imageTranslationSetting
+                            .translationBackgroundOpacity
+                            .stream,
+                    initialData:
+                        imageTranslationSetting
+                            .translationBackgroundOpacity
+                            .value,
+                    builder: (context, opacitySnapshot) {
+                      final double userOpacity =
+                          opacitySnapshot.data ?? 0.9;
+                      // Until a repaired background is restored after hydrate,
+                      // keep plates opaque so cached text cannot overlap the
+                      // original English glyphs (cold-start overlap bug).
+                      final double backgroundOpacity = inpainting
+                          .effectiveOverlayBackgroundOpacity(
+                            request.cacheKey,
+                            userOpacity,
+                            displayModeOverride:
+                                imageTranslationSetting
+                                    .imageProcessingDisplayMode
+                                    .value,
+                          );
+                      return IgnorePointer(
+                        child: LayoutBuilder(
+                          builder:
+                              (context, constraints) => CustomPaint(
+                                size: constraints.biggest,
+                                painter: _ImageTranslationOverlayPainter(
+                                  result: result,
+                                  textDirection: Directionality.of(context),
+                                  backgroundColor:
+                                      colorSnapshot.data ?? Colors.white,
+                                  backgroundOpacity: backgroundOpacity,
+                                ),
                               ),
-                            ),
-                      ),
-                    ),
-              ),
+                        ),
+                      );
+                    },
+                  ),
+            );
+          },
         ),
         if (result.fromCache)
           Positioned(
