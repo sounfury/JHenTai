@@ -22,8 +22,8 @@ import 'log.dart';
 import 'path_service.dart';
 import '../utils/image_text_grouping.dart';
 import '../utils/image_translation_colors.dart';
-import '../utils/ocr_layout_protocol.dart';
-import '../utils/vertical_translation_layout.dart';
+import '../utils/image_translation_typography.dart';
+export '../utils/image_translation_typography.dart';
 import '../utils/image_text_container_detection.dart';
 import 'engine/engine.dart';
 
@@ -72,6 +72,7 @@ class ImageTranslationService extends GetxController
     implements JHLifeCircleBean {
   static const String taskIdPrefix = 'imageTranslation';
   static const String batchProgressId = 'imageTranslationBatchProgress';
+  static const String readerStateId = 'imageTranslationReaderState';
   static const String liveTextOcrChannelName =
       'top.jtmonster.jhentai.live_text_ocr';
 
@@ -114,7 +115,7 @@ class ImageTranslationService extends GetxController
     batchFailedKeys.clear();
     _batchRecordedKeys.clear();
     currentStage = ImageTranslationStage.idle;
-    update([batchProgressId]);
+    update([batchProgressId, readerStateId]);
     return _batchGeneration;
   }
 
@@ -127,7 +128,7 @@ class ImageTranslationService extends GetxController
     isBatchTranslating = false;
     currentStage = ImageTranslationStage.done;
     _cancelRequested = false;
-    update([batchProgressId]);
+    update([batchProgressId, readerStateId]);
   }
 
   void cancelBatch() {
@@ -144,7 +145,7 @@ class ImageTranslationService extends GetxController
     }
     _activeEngineTask?.cancel('image translation cancelled');
     _activeEngineTask = null;
-    update([batchProgressId]);
+    update([batchProgressId, readerStateId]);
   }
 
   bool get isCancelRequested => _cancelRequested;
@@ -250,7 +251,7 @@ class ImageTranslationService extends GetxController
       batchFailed++;
       if (!batchFailedKeys.contains(cacheKey)) batchFailedKeys.add(cacheKey);
     }
-    update([batchProgressId]);
+    update([batchProgressId, readerStateId]);
   }
 
   /// Removes an in-memory result. Used when the source image is reloaded so a
@@ -269,7 +270,7 @@ class ImageTranslationService extends GetxController
 
   void _setStage(ImageTranslationStage stage) {
     currentStage = stage;
-    update([batchProgressId]);
+    update([batchProgressId, readerStateId]);
   }
 
   String taskId(String cacheKey) => '$taskIdPrefix::$cacheKey';
@@ -844,7 +845,7 @@ class ImageTranslationService extends GetxController
 
   void _removeResult(String cacheKey) {
     _results.remove(cacheKey);
-    update([taskId(cacheKey)]);
+    update([taskId(cacheKey), readerStateId]);
   }
 
   String _persistentCacheKey(
@@ -1182,7 +1183,10 @@ class ImageTranslationService extends GetxController
     if (width <= 0 ||
         height <= 0 ||
         blocks.isEmpty ||
-        blocks.every((block) => block.backgroundColor != null)) {
+        blocks.every((block) =>
+            block.backgroundColor != null &&
+            block.sourceGlyphWidth != null &&
+            block.sourceGlyphHeight != null)) {
       return blocks;
     }
     try {
@@ -1828,7 +1832,7 @@ class ImageTranslationService extends GetxController
       );
       update([taskId(evicted)]);
     }
-    update([taskId(cacheKey)]);
+    update([taskId(cacheKey), readerStateId]);
   }
 }
 
@@ -1911,169 +1915,6 @@ void paintTranslationBubbleBackground(
       ..style = PaintingStyle.stroke,
   );
 }
-
-/// Infer direction per text group, not per page: a manga page may contain
-/// vertical dialogue and horizontal captions at the same time.
-bool translationUsesVerticalLayout(
-  List<RecognizedTextBlock> blocks,
-  List<int> blockIndices,
-) => classifyOcrLayout([
-  for (final index in blockIndices)
-    if (index >= 0 && index < blocks.length)
-      OcrLayoutBox(
-        sourceIndex: index,
-        left: blocks[index].left,
-        top: blocks[index].top,
-        width: blocks[index].width,
-        height: blocks[index].height,
-      ),
-]) == OcrLayoutMode.verticalRtl;
-
-/// Paint using the same bounds and metrics as fitting; preserve the original
-/// writing direction and never truncate a translation to an ellipsis.
-void paintTranslationBubbleText(
-  Canvas canvas,
-  Rect rect,
-  String translation,
-  TextDirection textDirection, {
-  double? fontSize,
-  Color color = Colors.black,
-  bool vertical = false,
-}) {
-  final content = rect.deflate(2);
-  if (content.isEmpty) {
-    return;
-  }
-  final resolved = fontSize ?? fitTranslationFontSize(
-    translation,
-    content.width,
-    content.height,
-    textDirection,
-    vertical: vertical,
-  );
-  if (resolved <= 0) {
-    return;
-  }
-  canvas.save();
-  canvas.clipRect(content);
-  if (vertical) {
-    final layout = VerticalTranslationLayout(
-      translation,
-      fontSize: resolved,
-      maxHeight: content.height,
-      color: color,
-    );
-    layout.paint(
-      canvas,
-      content.center - Offset(layout.size.width / 2, layout.size.height / 2),
-    );
-    layout.dispose();
-  } else {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: translation,
-        style: TextStyle(color: color, fontSize: resolved, height: 1.05),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: textDirection,
-    )..layout(maxWidth: content.width);
-    painter.paint(
-      canvas,
-      Offset(content.left, content.center.dy - painter.height / 2),
-    );
-    painter.dispose();
-  }
-  canvas.restore();
-}
-
-/// Shrink to fit, but never enlarge beyond the source glyph size. A fixed
-/// 8-pixel floor enlarged small/zoomed-out source text and could still overflow.
-double fitTranslationFontSize(
-  String text,
-  double maxWidth,
-  double maxHeight,
-  TextDirection textDirection, {
-  double? maxFontSize,
-  bool vertical = false,
-}) {
-  if (maxWidth <= 0 || maxHeight <= 0) {
-    return 0;
-  }
-  double low = 0;
-  double high = maxFontSize ?? 30;
-  if (!high.isFinite || high <= 0) {
-    return 0;
-  }
-  bool fits(double fontSize) {
-    final Size measured;
-    if (vertical) {
-      final layout = VerticalTranslationLayout(
-        text,
-        fontSize: fontSize,
-        maxHeight: maxHeight,
-      );
-      measured = layout.size;
-      layout.dispose();
-    } else {
-      final probe = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(fontSize: fontSize, height: 1.05),
-        ),
-        textAlign: TextAlign.center,
-        textDirection: textDirection,
-      )..layout(maxWidth: maxWidth);
-      // Long unbreakable runs can exceed the paragraph's constrained width.
-      final widestLine = probe.computeLineMetrics().fold<double>(
-        0,
-        (width, line) => math.max(width, line.width),
-      );
-      measured = Size(widestLine, probe.height);
-      probe.dispose();
-    }
-    return measured.width <= maxWidth && measured.height <= maxHeight;
-  }
-  if (fits(high)) {
-    return high;
-  }
-  for (int iteration = 0; iteration < 12; iteration++) {
-    final mid = (low + high) / 2;
-    if (fits(mid)) {
-      low = mid;
-    } else {
-      high = mid;
-    }
-  }
-  return low;
-}
-
-/// A vertical OCR column's width approximates one glyph, not its full height.
-/// Horizontal OCR lines use their height. Keep source and display axes explicit
-/// so reader zoom and original-resolution exports preserve the same scale.
-double estimateSourceTranslationFontSize(
-  List<RecognizedTextBlock> blocks,
-  List<int> blockIndices, {
-  double scaleY = 1,
-  double? scaleX,
-  bool? vertical,
-}) {
-  final isVertical =
-      vertical ?? translationUsesVerticalLayout(blocks, blockIndices);
-  final sizes = <double>[
-    for (final index in blockIndices)
-      if (index >= 0 && index < blocks.length &&
-          blocks[index].width > 0 && blocks[index].height > 0)
-        isVertical
-            ? blocks[index].width * (scaleX ?? scaleY)
-            : blocks[index].height * scaleY,
-  ]..removeWhere((size) => !size.isFinite || size <= 0);
-  if (sizes.isEmpty) {
-    return 30;
-  }
-  sizes.sort();
-  return sizes[sizes.length ~/ 2];
-}
-
 
 /// Maps Manga109 speech-bubble regions onto OCR lines. Oversized page-like
 /// boxes are ignored. When one detector box contains disconnected OCR clusters

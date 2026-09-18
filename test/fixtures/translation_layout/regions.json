@@ -1,0 +1,51 @@
+[
+  {
+    "name": "bold_dialogue",
+    "left": 325,
+    "top": 1618,
+    "width": 191,
+    "height": 320
+  },
+  {
+    "name": "lower_left",
+    "left": 61,
+    "top": 1997,
+    "width": 98,
+    "height": 228
+  },
+  {
+    "name": "small_right_top",
+    "left": 1004,
+    "top": 1667,
+    "width": 70,
+    "height": 179
+  },
+  {
+    "name": "small_right_middle",
+    "left": 837,
+    "top": 1710,
+    "width": 80,
+    "height": 118
+  },
+  {
+    "name": "small_right_bottom",
+    "left": 831,
+    "top": 2029,
+    "width": 84,
+    "height": 168
+  },
+  {
+    "name": "regular_dialogue",
+    "left": 449,
+    "top": 1023,
+    "width": 77,
+    "height": 91
+  },
+  {
+    "name": "large_exclamation",
+    "left": 987,
+    "top": 1014,
+    "width": 82,
+    "height": 347
+  }
+]

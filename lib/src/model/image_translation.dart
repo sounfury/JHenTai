@@ -39,6 +39,11 @@ class RecognizedTextBlock {
   /// Dominant source fill as opaque ARGB; absent in older cached results.
   final int? backgroundColor;
 
+  /// Foreground column/row thickness measured from source pixels, in OCR
+  /// coordinates. Unlike the OCR rectangle, these exclude margins and gaps.
+  final double? sourceGlyphWidth;
+  final double? sourceGlyphHeight;
+
   const RecognizedTextBlock({
     required this.text,
     required this.confidence,
@@ -47,6 +52,8 @@ class RecognizedTextBlock {
     this.width = 0,
     this.height = 0,
     this.backgroundColor,
+    this.sourceGlyphWidth,
+    this.sourceGlyphHeight,
   });
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +64,8 @@ class RecognizedTextBlock {
     'width': width,
     'height': height,
     if (backgroundColor != null) 'backgroundColor': backgroundColor,
+    if (sourceGlyphWidth != null) 'sourceGlyphWidth': sourceGlyphWidth,
+    if (sourceGlyphHeight != null) 'sourceGlyphHeight': sourceGlyphHeight,
   };
 
   factory RecognizedTextBlock.fromJson(Map<String, dynamic> json) =>
@@ -68,6 +77,8 @@ class RecognizedTextBlock {
         width: (json['width'] as num?)?.toDouble() ?? 0,
         height: (json['height'] as num?)?.toDouble() ?? 0,
         backgroundColor: (json['backgroundColor'] as num?)?.toInt(),
+        sourceGlyphWidth: (json['sourceGlyphWidth'] as num?)?.toDouble(),
+        sourceGlyphHeight: (json['sourceGlyphHeight'] as num?)?.toDouble(),
       );
 }
 
@@ -145,6 +156,19 @@ class ImageTranslationResult {
 
   const ImageTranslationResult.idle()
     : this(status: ImageTranslationStatus.idle);
+
+  /// Only a successful, drawable result can be switched back to the source.
+  bool get hasDisplayableTranslation =>
+      status == ImageTranslationStatus.success &&
+      blocks.isNotEmpty &&
+      (translatedText.trim().isNotEmpty ||
+          translatedGroups.any((text) => text.trim().isNotEmpty));
+
+  bool get isProcessing =>
+      status == ImageTranslationStatus.queued ||
+      status == ImageTranslationStatus.downloading ||
+      status == ImageTranslationStatus.recognizing ||
+      status == ImageTranslationStatus.translating;
 
   bool get isTerminal =>
       status == ImageTranslationStatus.success ||

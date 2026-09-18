@@ -1535,7 +1535,7 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
 
   void handleSlide(double pageNo) {
     state.readPageInfo.currentImageIndex = (pageNo - 1).toInt();
-    update([sliderId, pageNoId]);
+    update([sliderId, pageNoId, readerFloatingBallId]);
   }
 
   void handleSlideEnd(double pageNo) {
@@ -1671,6 +1671,27 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     updateSafely([readerBookmarkId]);
   }
 
+  ImageTranslationResult get currentPageTranslationResult {
+    final request = state.imageTranslationRequests[state.readPageInfo.currentImageIndex];
+    return request == null
+        ? const ImageTranslationResult.idle()
+        : imageTranslationService.resultFor(request.cacheKey);
+  }
+
+  Future<void> handleFloatingTranslationTap(BuildContext context) async {
+    final result = currentPageTranslationResult;
+    if (result.hasDisplayableTranslation) {
+      toggleImageTranslationOverlay();
+      return;
+    }
+    // Keep a running job intact. A long press remains the explicit stop action.
+    if (result.isProcessing || imageTranslationService.isBatchTranslating) {
+      return;
+    }
+    _translationOverlayManuallyHidden = false;
+    await layoutLogic.translateImage(state.readPageInfo.currentImageIndex, context);
+  }
+
   bool _translationOverlayManuallyHidden = false;
 
   Future<void> startFloatingTranslation(BuildContext context) async {
@@ -1754,9 +1775,9 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     /// The thumbnail strip is only on screen while the menu is open; skip its
     /// rebuild when the menu is closed.
     if (state.isMenuOpen) {
-      update([sliderId, pageNoId, thumbnailNoId]);
+      update([sliderId, pageNoId, thumbnailNoId, readerFloatingBallId]);
     } else {
-      update([sliderId, pageNoId]);
+      update([sliderId, pageNoId, readerFloatingBallId]);
     }
 
     /// The index changed, so this is a page boundary: persist the progress now

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jhentai/src/service/image_translation_service.dart';
+import 'package:jhentai/src/utils/image_translation_typography.dart';
 import 'package:jhentai/src/utils/vertical_translation_layout.dart';
 
 void main() {

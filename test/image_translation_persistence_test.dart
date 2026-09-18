@@ -46,6 +46,16 @@ void main() {
       await service.writePersistentResultForRequest(request, persisted);
       service.removeResult(request.cacheKey);
 
+      int readerUpdates = 0;
+      final removeListener = service.addListenerId(
+        ImageTranslationService.readerStateId, () => readerUpdates++,
+      );
+      addTearDown(removeListener);
+      expect(await service.hydrateResult(request), isTrue);
+      expect(readerUpdates, greaterThan(0));
+      final updatesAfterHydration = readerUpdates;
+      service.releaseInMemoryResult(request.cacheKey);
+      expect(readerUpdates, greaterThan(updatesAfterHydration));
       expect(await service.hydrateResult(request), isTrue);
       final ImageTranslationResult hydrated = service.resultFor(
         request.cacheKey,

@@ -710,18 +710,26 @@ class _ReadPageState extends State<ReadPage>
               return const SizedBox.shrink();
             }
             return GetBuilder<ImageTranslationService>(
-              id: ImageTranslationService.batchProgressId,
-              builder:
-                  (_) => ReaderFloatingTranslationBall(
-                    isTranslating: imageTranslationService.isBatchTranslating,
-                    positionStore: logic.readerFloatingBallPositionStore,
-                    onTap: logic.toggleImageTranslationOverlay,
-                    onLongPress: () => logic.startFloatingTranslation(context),
-                    icon: state.showImageTranslationOverlay
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                    semanticLabel: 'readerTranslationBallHint'.tr,
-                  ),
+              id: ImageTranslationService.readerStateId,
+              builder: (_) {
+                final result = logic.currentPageTranslationResult;
+                final hasTranslation = result.hasDisplayableTranslation;
+                return ReaderFloatingTranslationBall(
+                  isTranslating: !hasTranslation &&
+                      (result.isProcessing || imageTranslationService.isBatchTranslating),
+                  positionStore: logic.readerFloatingBallPositionStore,
+                  onTap: () => logic.handleFloatingTranslationTap(context),
+                  onLongPress: () => logic.startFloatingTranslation(context),
+                  icon: hasTranslation
+                      ? (state.showImageTranslationOverlay
+                          ? Icons.visibility
+                          : Icons.visibility_off)
+                      : Icons.translate,
+                  semanticLabel: hasTranslation
+                      ? 'readerTranslationBallHint'.tr
+                      : 'translateImageText'.tr,
+                );
+              },
             );
           },
         );

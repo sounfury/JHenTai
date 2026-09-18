@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jhentai/src/model/image_translation.dart';
-import 'package:jhentai/src/service/image_translation_service.dart';
+import 'package:jhentai/src/utils/image_translation_typography.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -84,11 +84,23 @@ void main() {
     ];
     expect(translationUsesVerticalLayout(blocks, [0, 1]), isTrue);
     expect(translationUsesVerticalLayout(blocks, [2]), isFalse);
-    expect(estimateSourceTranslationFontSize(blocks, [0, 1]), 18);
+    expect(estimateSourceTranslationFontSize(blocks, [0, 1]), 17);
     expect(estimateSourceTranslationFontSize(blocks, [0, 1],
-        scaleX: 0.5, scaleY: 0.25), 9);
+        scaleX: 0.5, scaleY: 0.25), 8.5);
     expect(estimateSourceTranslationFontSize(blocks, [2],
         scaleX: 0.5, scaleY: 0.25), 3);
+  });
+
+  test('source stroke thickness overrides padded or multi-column OCR boxes', () {
+    const blocks = [
+      RecognizedTextBlock(text: '縦書きの本文', confidence: 1,
+          width: 60, height: 180, sourceGlyphWidth: 18, sourceGlyphHeight: 20),
+      RecognizedTextBlock(text: '横書き', confidence: 1,
+          width: 180, height: 32, sourceGlyphWidth: 20, sourceGlyphHeight: 16),
+    ];
+    expect(estimateSourceTranslationFontSize(blocks, [0]), 18);
+    expect(estimateSourceTranslationFontSize(blocks, [1]), 16);
+    expect(estimateSourceTranslationFontSize(blocks, [0], scaleY: 0.5), 9);
   });
 
   test('small source glyphs are never enlarged by the old 8px floor', () {
