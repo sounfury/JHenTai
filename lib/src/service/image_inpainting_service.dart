@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart';
 
+import '../model/image_translation.dart';
+import '../utils/image_text_grouping.dart';
 import 'engine/engine.dart';
 import 'inference_service.dart';
 import 'jh_service.dart';
@@ -54,6 +56,77 @@ class InpaintingResult {
     fallbackToOverlay: fallbackToOverlay ?? this.fallbackToOverlay,
     sourceHash: sourceHash ?? this.sourceHash,
   );
+}
+
+/// Keep CTD masks that intersect at least one successfully translated OCR
+/// block. Masks covering untranslated glyphs must not be inpainted — that
+/// erases Japanese/English and leaves blank speech bubbles.
+List<PolygonMask> filterPolygonMasksToTranslatedBlocks({
+  required List<PolygonMask> masks,
+  required List<RecognizedTextBlock> translatedBlocks,
+  double padding = 12,
+}) {
+  if (masks.isEmpty || translatedBlocks.isEmpty) {
+    return const <PolygonMask>[];
+  }
+  return masks
+      .where((PolygonMask mask) {
+        final double left = mask.left - padding;
+        final double top = mask.top - padding;
+        final double right = mask.right + padding;
+        final double bottom = mask.bottom + padding;
+        for (final RecognizedTextBlock block in translatedBlocks) {
+          if (block.width <= 0 || block.height <= 0) {
+            continue;
+          }
+          final double blockRight = block.left + block.width;
+          final double blockBottom = block.top + block.height;
+          if (left < blockRight &&
+              right > block.left &&
+              top < blockBottom &&
+              bottom > block.top) {
+            return true;
+          }
+        }
+        return false;
+      })
+      .toList(growable: false);
+}
+
+/// OCR blocks that actually received a non-empty translation. Used to gate
+/// CTD/MI-GAN erase so sparse recognition cannot blank the rest of the page.
+List<RecognizedTextBlock> translatedBlocksEligibleForErase(
+  ImageTranslationResult result,
+) {
+  if (result.status != ImageTranslationStatus.success || result.blocks.isEmpty) {
+    return const <RecognizedTextBlock>[];
+  }
+  final List<String> lines =
+      const LineSplitter().convert(result.translatedText);
+  final Set<int> indices = <int>{};
+  for (int index = 0; index < result.blocks.length; index++) {
+    if (index < lines.length && lines[index].trim().isNotEmpty) {
+      indices.add(index);
+    }
+  }
+  // Group-level translations still mark every member line as covered.
+  if (result.translatedGroups.isNotEmpty) {
+    final List<RecognizedTextGroup> groups = translationTextGroups(
+      result.blocks,
+      merge: result.mergeTextBlocks,
+      containers: result.containers,
+    );
+    for (int groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      if (groupIndex < result.translatedGroups.length &&
+          result.translatedGroups[groupIndex].trim().isNotEmpty) {
+        indices.addAll(groups[groupIndex].blockIndices);
+      }
+    }
+  }
+  return <RecognizedTextBlock>[
+    for (final int index in indices)
+      if (index >= 0 && index < result.blocks.length) result.blocks[index],
+  ];
 }
 
 /// Owns only derived inpainting artifacts. It never replaces or writes the
@@ -266,11 +339,18 @@ class ImageInpaintingService extends GetxController
     required String requestKey,
     required String sourcePath,
     bool force = false,
+    List<RecognizedTextBlock> eraseOnlyBlocks = const <RecognizedTextBlock>[],
   }) async {
     _set(requestKey, const InpaintingResult(status: InpaintingStatus.queued));
     final File source = File(sourcePath);
     if (!await source.exists()) {
       return _fail(requestKey, 'source_unavailable');
+    }
+    // Never run a full-page CTD erase without translation geometry. Sparse OCR
+    // followed by unrestricted masks blanks every speech bubble that was not
+    // translated.
+    if (eraseOnlyBlocks.isEmpty) {
+      return _fail(requestKey, 'translation_geometry_required');
     }
     final DetectionEngine? detector = engineRegistry.findDetection(
       'ctd-detection',
@@ -288,10 +368,17 @@ class ImageInpaintingService extends GetxController
       if (detection.polygonMasks.isEmpty) {
         return _fail(requestKey, 'ctd_no_text');
       }
+      final List<PolygonMask> masks = filterPolygonMasksToTranslatedBlocks(
+        masks: detection.polygonMasks,
+        translatedBlocks: eraseOnlyBlocks,
+      );
+      if (masks.isEmpty) {
+        return _fail(requestKey, 'no_translated_masks');
+      }
       return repair(
         requestKey: requestKey,
         sourcePath: sourcePath,
-        polygonMasks: detection.polygonMasks,
+        polygonMasks: masks,
         force: force,
       );
     } on EngineTaskCancelledException {
@@ -440,6 +527,16 @@ class ImageInpaintingService extends GetxController
     _activeTasks[requestKey]?.cancel('inpainting cancelled');
   }
 
+  /// Drop the in-memory repaired/translated display for [requestKey] so the
+  /// reader shows the original page again (e.g. before a force re-OCR). Does
+  /// not delete on-disk artifacts.
+  void clearDisplayResult(String requestKey) {
+    cancel(requestKey);
+    _results.remove(requestKey);
+    _translatedImagePaths.remove(requestKey);
+    update([requestKey]);
+  }
+
   Future<void> clearCache({String? requestKey}) async {
     if (requestKey == null) {
       if (await _cacheDirectory.exists()) {
@@ -480,9 +577,15 @@ class ImageInpaintingService extends GetxController
 
   InpaintingResult _fail(String requestKey, String code, {String? sourceHash}) {
     final String normalized = _normalizeFailureCode(code);
-    log.warning(
-      'CTD/MI-GAN background repair unavailable; falling back to overlay boxes '
-      '($normalized)',
+    // warning() is async; swallow init failures so unit tests without
+    // PathService still exercise detectAndRepair fallbacks.
+    unawaited(
+      log
+          .warning(
+            'CTD/MI-GAN background repair unavailable; falling back to overlay boxes '
+            '($normalized)',
+          )
+          .catchError((Object _) {}),
     );
     final InpaintingResult result = InpaintingResult(
       status: InpaintingStatus.failed,

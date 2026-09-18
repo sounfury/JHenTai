@@ -1204,47 +1204,12 @@ class ImageTranslationService extends GetxController
     DetectionResult? detection, {
     required int imageWidth,
     required int imageHeight,
-  }) {
-    if (blocks.isEmpty || detection == null) {
-      return const <RecognizedTextContainer>[];
-    }
-    final List<RecognizedTextContainer> containers =
-        <RecognizedTextContainer>[];
-    for (final DetectedTextRegion region in detection.regions) {
-      if (imageWidth <= 0 ||
-          imageHeight <= 0 ||
-          region.width >= imageWidth * 0.95 ||
-          region.height >= imageHeight * 0.95 ||
-          region.width * region.height >= imageWidth * imageHeight * 0.8) {
-        continue;
-      }
-      final List<int> indices = <int>[];
-      for (int blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
-        final RecognizedTextBlock block = blocks[blockIndex];
-        final double centerX = block.left + block.width / 2;
-        final double centerY = block.top + block.height / 2;
-        if (centerX >= region.left &&
-            centerX <= region.left + region.width &&
-            centerY >= region.top &&
-            centerY <= region.top + region.height) {
-          indices.add(blockIndex);
-        }
-      }
-      if (indices.isNotEmpty) {
-        containers.add(
-          RecognizedTextContainer(
-            blockIndices: indices,
-            left: region.left,
-            top: region.top,
-            width: region.width,
-            height: region.height,
-            confidence: region.confidence,
-          ),
-        );
-      }
-    }
-    return containers;
-  }
+  }) => containersFromBubbleDetection(
+    blocks,
+    detection,
+    imageWidth: imageWidth,
+    imageHeight: imageHeight,
+  );
 
   Future<File> exportOverlay(ImageTranslationRequest request) async {
     final String? imagePath = request.imagePath;
@@ -1958,6 +1923,82 @@ double estimateSourceTranslationFontSize(
   }
   heights.sort();
   return heights[heights.length ~/ 2];
+}
+
+
+/// Maps Manga109 speech-bubble regions onto OCR lines. Oversized page-like
+/// boxes are ignored. When one detector box contains disconnected OCR clusters
+/// (large inter-line / inter-column gaps), each cluster becomes its own
+/// container so distant bubbles are not violently merged into one utterance.
+List<RecognizedTextContainer> containersFromBubbleDetection(
+  List<RecognizedTextBlock> blocks,
+  DetectionResult? detection, {
+  required int imageWidth,
+  required int imageHeight,
+}) {
+  if (blocks.isEmpty || detection == null) {
+    return const <RecognizedTextContainer>[];
+  }
+  final List<RecognizedTextContainer> containers = <RecognizedTextContainer>[];
+  for (final DetectedTextRegion region in detection.regions) {
+    if (imageWidth <= 0 ||
+        imageHeight <= 0 ||
+        region.width >= imageWidth * 0.95 ||
+        region.height >= imageHeight * 0.95 ||
+        region.width * region.height >= imageWidth * imageHeight * 0.8) {
+      continue;
+    }
+    final List<int> indices = <int>[];
+    for (int blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+      final RecognizedTextBlock block = blocks[blockIndex];
+      final double centerX = block.left + block.width / 2;
+      final double centerY = block.top + block.height / 2;
+      if (centerX >= region.left &&
+          centerX <= region.left + region.width &&
+          centerY >= region.top &&
+          centerY <= region.top + region.height) {
+        indices.add(blockIndex);
+      }
+    }
+    if (indices.isEmpty) {
+      continue;
+    }
+    final List<RecognizedTextBlock> members = <RecognizedTextBlock>[
+      for (final int index in indices) blocks[index],
+    ];
+    final List<RecognizedTextGroup> clusters = groupRecognizedTextBlocks(
+      members,
+    );
+    if (clusters.length <= 1) {
+      containers.add(
+        RecognizedTextContainer(
+          blockIndices: indices,
+          left: region.left,
+          top: region.top,
+          width: region.width,
+          height: region.height,
+          confidence: region.confidence,
+        ),
+      );
+      continue;
+    }
+    for (final RecognizedTextGroup cluster in clusters) {
+      final List<int> clusterIndices = <int>[
+        for (final int local in cluster.blockIndices) indices[local],
+      ];
+      containers.add(
+        RecognizedTextContainer(
+          blockIndices: clusterIndices,
+          left: cluster.left,
+          top: cluster.top,
+          width: math.max(0, cluster.right - cluster.left),
+          height: math.max(0, cluster.bottom - cluster.top),
+          confidence: region.confidence,
+        ),
+      );
+    }
+  }
+  return containers;
 }
 
 class ImageTranslationException implements Exception {

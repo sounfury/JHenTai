@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/service/engine/engine.dart';
 import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/inference/ctd_model_evidence.dart';
@@ -91,6 +92,25 @@ PolygonMask _squareMask() => const PolygonMask(
     EnginePoint(x: 1, y: 5),
   ],
   confidence: 0.95,
+);
+
+
+RecognizedTextBlock _blockOverSquareMask() => const RecognizedTextBlock(
+  text: 'hello',
+  confidence: 1,
+  left: 1,
+  top: 1,
+  width: 4,
+  height: 4,
+);
+
+RecognizedTextBlock _blockFarAway() => const RecognizedTextBlock(
+  text: 'elsewhere',
+  confidence: 1,
+  left: 200,
+  top: 200,
+  width: 20,
+  height: 10,
 );
 
 void main() {
@@ -253,6 +273,7 @@ void main() {
     final InpaintingResult result = await service.detectAndRepair(
       requestKey: 'page-1',
       sourcePath: source.path,
+      eraseOnlyBlocks: <RecognizedTextBlock>[_blockOverSquareMask()],
     );
 
     expect(result.status, InpaintingStatus.success);
@@ -280,6 +301,7 @@ void main() {
     final InpaintingResult result = await service.detectAndRepair(
       requestKey: 'page-1',
       sourcePath: source.path,
+      eraseOnlyBlocks: <RecognizedTextBlock>[_blockOverSquareMask()],
     );
 
     expect(result.status, InpaintingStatus.failed);
@@ -378,6 +400,162 @@ void main() {
       );
     },
   );
+
+
+  test('detectAndRepair refuses full-page erase without translation geometry',
+      () async {
+    final Directory root = await Directory.systemTemp.createTemp(
+      'jhentai-ctd-no-geometry-',
+    );
+    addTearDown(() => root.delete(recursive: true));
+    final File source = File('${root.path}/source.bin')
+      ..writeAsBytesSync(<int>[1, 2]);
+    final _FakeInpaintEngine inpainter = _FakeInpaintEngine();
+    final ImageInpaintingService service = ImageInpaintingService(
+      registry: EngineRegistry(
+        detectionEngine: _FakeDetectionEngine(masks: <PolygonMask>[_squareMask()]),
+        inpaintEngine: inpainter,
+      ),
+    )..setCacheDirectoryForTesting(Directory('${root.path}/cache'));
+
+    final InpaintingResult result = await service.detectAndRepair(
+      requestKey: 'page-1',
+      sourcePath: source.path,
+    );
+    expect(result.status, InpaintingStatus.failed);
+    expect(result.errorCode, 'translation_geometry_required');
+    expect(result.fallbackToOverlay, isTrue);
+    expect(inpainter.calls, 0);
+  });
+
+  test('detectAndRepair only inpaints masks overlapping translated blocks',
+      () async {
+    final Directory root = await Directory.systemTemp.createTemp(
+      'jhentai-ctd-filter-masks-',
+    );
+    addTearDown(() => root.delete(recursive: true));
+    final File source = File('${root.path}/source.bin')
+      ..writeAsBytesSync(<int>[3, 4, 5]);
+    final PolygonMask farMask = const PolygonMask(
+      points: <EnginePoint>[
+        EnginePoint(x: 200, y: 200),
+        EnginePoint(x: 220, y: 200),
+        EnginePoint(x: 220, y: 220),
+        EnginePoint(x: 200, y: 220),
+      ],
+      confidence: 0.9,
+    );
+    final _FakeDetectionEngine detector = _FakeDetectionEngine(
+      masks: <PolygonMask>[_squareMask(), farMask],
+    );
+    final _FakeInpaintEngine inpainter = _FakeInpaintEngine();
+    final ImageInpaintingService service = ImageInpaintingService(
+      registry: EngineRegistry(
+        detectionEngine: detector,
+        inpaintEngine: inpainter,
+      ),
+    )..setCacheDirectoryForTesting(Directory('${root.path}/cache'));
+
+    // Only the near square overlaps the translated block; farMask must be dropped.
+    final InpaintingResult result = await service.detectAndRepair(
+      requestKey: 'page-1',
+      sourcePath: source.path,
+      eraseOnlyBlocks: <RecognizedTextBlock>[_blockOverSquareMask()],
+    );
+    expect(result.status, InpaintingStatus.success);
+    expect(detector.calls, 1);
+    expect(inpainter.calls, 1);
+
+    // Far-only translation must not erase anything.
+    final ImageInpaintingService service2 = ImageInpaintingService(
+      registry: EngineRegistry(
+        detectionEngine: _FakeDetectionEngine(
+          masks: <PolygonMask>[_squareMask(), farMask],
+        ),
+        inpaintEngine: _FakeInpaintEngine(),
+      ),
+    )..setCacheDirectoryForTesting(Directory('${root.path}/cache2'));
+    final InpaintingResult skipped = await service2.detectAndRepair(
+      requestKey: 'page-2',
+      sourcePath: source.path,
+      eraseOnlyBlocks: <RecognizedTextBlock>[_blockFarAway()],
+    );
+    // farMask overlaps far block — that one should succeed. Use only near mask
+    // with far block to assert no_translated_masks:
+    final ImageInpaintingService service3 = ImageInpaintingService(
+      registry: EngineRegistry(
+        detectionEngine: _FakeDetectionEngine(masks: <PolygonMask>[_squareMask()]),
+        inpaintEngine: _FakeInpaintEngine(),
+      ),
+    )..setCacheDirectoryForTesting(Directory('${root.path}/cache3'));
+    final InpaintingResult noOverlap = await service3.detectAndRepair(
+      requestKey: 'page-3',
+      sourcePath: source.path,
+      eraseOnlyBlocks: <RecognizedTextBlock>[_blockFarAway()],
+    );
+    expect(noOverlap.status, InpaintingStatus.failed);
+    expect(noOverlap.errorCode, 'no_translated_masks');
+    expect(noOverlap.fallbackToOverlay, isTrue);
+    expect(skipped.status, InpaintingStatus.success);
+  });
+
+  test('translatedBlocksEligibleForErase ignores empty translation lines', () {
+    final ImageTranslationResult result = ImageTranslationResult(
+      status: ImageTranslationStatus.success,
+      translatedText: '你好\n\n世界',
+      blocks: <RecognizedTextBlock>[
+        const RecognizedTextBlock(
+          text: 'a',
+          confidence: 1,
+          left: 0,
+          top: 0,
+          width: 10,
+          height: 10,
+        ),
+        const RecognizedTextBlock(
+          text: 'b',
+          confidence: 1,
+          left: 20,
+          top: 0,
+          width: 10,
+          height: 10,
+        ),
+        const RecognizedTextBlock(
+          text: 'c',
+          confidence: 1,
+          left: 40,
+          top: 0,
+          width: 10,
+          height: 10,
+        ),
+      ],
+    );
+    final List<RecognizedTextBlock> eligible =
+        translatedBlocksEligibleForErase(result);
+    expect(eligible.length, 2);
+    expect(eligible.map((RecognizedTextBlock b) => b.text).toList(),
+        <String>['a', 'c']);
+  });
+
+  test('filterPolygonMasksToTranslatedBlocks drops untranslated regions', () {
+    final List<PolygonMask> kept = filterPolygonMasksToTranslatedBlocks(
+      masks: <PolygonMask>[
+        _squareMask(),
+        const PolygonMask(
+          points: <EnginePoint>[
+            EnginePoint(x: 100, y: 100),
+            EnginePoint(x: 140, y: 100),
+            EnginePoint(x: 140, y: 140),
+            EnginePoint(x: 100, y: 140),
+          ],
+          confidence: 0.8,
+        ),
+      ],
+      translatedBlocks: <RecognizedTextBlock>[_blockOverSquareMask()],
+    );
+    expect(kept.length, 1);
+    expect(kept.single.left, 1);
+  });
 
   test(
     'overlay mode never forces opaque plates while awaiting repair',
