@@ -193,15 +193,44 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       );
     }
     if (rotatedCandidates.isNotEmpty) {
-      final List<_RecognizedCandidate> normalCandidates =
-          candidates.where((_RecognizedCandidate candidate) {
-            final (double left, double _, double width, double _) =
-                candidate.box.rect.bbox;
-            return !_isInTextMargin(left, width, originalWidth);
-          }).toList();
+      // Keep first-pass margin candidates that the rotated pass did not
+      // actually replace. Dropping every margin box whenever the rotated pass
+      // returns anything made a sparse/partial rotated result erase most of
+      // the page's vertical dialogue (the Blue Archive sauna-page regression).
+      final List<_RecognizedCandidate> kept = <_RecognizedCandidate>[];
+      for (final _RecognizedCandidate candidate in candidates) {
+        final (double left, double _, double width, double _) =
+            candidate.box.rect.bbox;
+        if (!_isInTextMargin(left, width, originalWidth)) {
+          kept.add(candidate);
+          continue;
+        }
+        final bool superseded = rotatedCandidates.any((
+          _RecognizedCandidate rotated,
+        ) {
+          final (double aLeft, double aTop, double aWidth, double aHeight) =
+              candidate.box.rect.bbox;
+          final (double bLeft, double bTop, double bWidth, double bHeight) =
+              rotated.box.rect.bbox;
+          return _axisAlignedIoU(
+                aLeft,
+                aTop,
+                aWidth,
+                aHeight,
+                bLeft,
+                bTop,
+                bWidth,
+                bHeight,
+              ) >=
+              0.3;
+        });
+        if (!superseded) {
+          kept.add(candidate);
+        }
+      }
       candidates
         ..clear()
-        ..addAll(normalCandidates)
+        ..addAll(kept)
         ..addAll(rotatedCandidates);
     }
     final List<RecognizedTextBlock> blocks = candidates
@@ -411,6 +440,35 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       _isInTextMargin(left, width, sourceWidth) &&
       height > width * 1.2 &&
       top < sourceHeight;
+
+
+  double _axisAlignedIoU(
+    double aLeft,
+    double aTop,
+    double aWidth,
+    double aHeight,
+    double bLeft,
+    double bTop,
+    double bWidth,
+    double bHeight,
+  ) {
+    final double aRight = aLeft + aWidth;
+    final double aBottom = aTop + aHeight;
+    final double bRight = bLeft + bWidth;
+    final double bBottom = bTop + bHeight;
+    final double interLeft = math.max(aLeft, bLeft);
+    final double interTop = math.max(aTop, bTop);
+    final double interRight = math.min(aRight, bRight);
+    final double interBottom = math.min(aBottom, bBottom);
+    final double interW = interRight - interLeft;
+    final double interH = interBottom - interTop;
+    if (interW <= 0 || interH <= 0) {
+      return 0;
+    }
+    final double inter = interW * interH;
+    final double union = aWidth * aHeight + bWidth * bHeight - inter;
+    return union <= 0 ? 0 : inter / union;
+  }
 
   bool _isInTextMargin(double left, double width, int sourceWidth) {
     final double right = left + width;

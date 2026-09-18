@@ -491,9 +491,17 @@ class GalleryPreTranslateRunner extends GetxController
       return;
     }
     imageInpaintingService.setDisplayMode(mode);
+    final ImageTranslationResult translation =
+        imageTranslationService.resultFor(request.cacheKey);
+    final List<RecognizedTextBlock> eraseBlocks =
+        translatedBlocksEligibleForErase(translation);
+    if (eraseBlocks.isEmpty) {
+      return;
+    }
     await imageInpaintingService.detectAndRepair(
       requestKey: request.cacheKey,
       sourcePath: sourcePath,
+      eraseOnlyBlocks: eraseBlocks,
     );
   }
 }

@@ -41,7 +41,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../exception/eh_image_exception.dart';
 import '../../../../model/gallery_image.dart';
-import '../../../../model/image_translation.dart';
+import 'package:jhentai/src/model/image_translation.dart';
 import '../../../../model/read_page_info.dart';
 import '../../../../service/log.dart';
 import '../../../../setting/read_setting.dart';
@@ -382,6 +382,16 @@ abstract class BaseLayoutLogic extends GetxController
       return null;
     }
 
+    // Stop any in-flight CTD/MI-GAN for this page before OCR/bubble detection
+    // so the shared ONNX runtime is not contended. On force re-translate also
+    // drop a stale repaired display that may already have blanked untranslated
+    // bubbles from a prior unsafe full-page erase.
+    if (force) {
+      imageInpaintingService.clearDisplayResult(request.cacheKey);
+    } else {
+      imageInpaintingService.cancel(request.cacheKey);
+    }
+
     readPageState.imageTranslationRequests[index] = request;
     imageTranslationService.queue(request.cacheKey);
     updateSafely([BaseLayoutLogic.pageId]);
@@ -415,8 +425,9 @@ abstract class BaseLayoutLogic extends GetxController
         readPageState.imageTranslationRequests[index];
     final String? sourcePath = request?.imagePath;
     if (request == null || sourcePath == null) return;
-    if (imageTranslationService.resultFor(request.cacheKey).status !=
-        ImageTranslationStatus.success) {
+    final ImageTranslationResult translation =
+        imageTranslationService.resultFor(request.cacheKey);
+    if (translation.status != ImageTranslationStatus.success) {
       return;
     }
     imageInpaintingService.setDisplayMode(mode);
@@ -433,16 +444,25 @@ abstract class BaseLayoutLogic extends GetxController
         return;
       }
     }
+    final List<RecognizedTextBlock> eraseBlocks =
+        translatedBlocksEligibleForErase(translation);
+    if (eraseBlocks.isEmpty) {
+      // Sparse/empty translation must not trigger a full-page CTD erase.
+      return;
+    }
     final InpaintingResult repairResult = await imageInpaintingService
         .detectAndRepair(
           requestKey: request.cacheKey,
           sourcePath: sourcePath,
           force: force,
+          eraseOnlyBlocks: eraseBlocks,
         );
     if (repairResult.fallbackToOverlay &&
         repairResult.errorCode != null &&
         repairResult.errorCode != 'canceled' &&
-        repairResult.errorCode != 'ctd_no_text') {
+        repairResult.errorCode != 'ctd_no_text' &&
+        repairResult.errorCode != 'no_translated_masks' &&
+        repairResult.errorCode != 'translation_geometry_required') {
       // Surface the concrete reason so a silent white-box fallback is not
       // mistaken for a successful CTD + MI-GAN repair.
       toast(
@@ -483,15 +503,21 @@ abstract class BaseLayoutLogic extends GetxController
         imageTranslationSetting.imageProcessingDisplayMode.value;
     imageInpaintingService.setDisplayMode(mode);
     final bool hydrated = await imageTranslationService.hydrateResult(request);
+    // Restore a previously written repair artifact when present. Never run
+    // synchronous detectAndRepair here: CTD/MI-GAN on the shared ONNX runtime
+    // contends with manga109 bubble detection + OCR and collapses recognition
+    // coverage on the next re-translate. Opaque plates remain via
+    // effectiveOverlayBackgroundOpacity until a cached repair is restored.
+    if (hydrated &&
+        mode != ImageProcessingDisplayMode.overlay &&
+        imageTranslationService.resultFor(request.cacheKey).status ==
+            ImageTranslationStatus.success) {
+      await imageInpaintingService.hydrateCachedRepair(
+        requestKey: request.cacheKey,
+        sourcePath: request.imagePath!,
+      );
+    }
     updateSafely([BaseLayoutLogic.pageId]);
-    if (!hydrated) {
-      return;
-    }
-    if (imageTranslationService.resultFor(request.cacheKey).status !=
-        ImageTranslationStatus.success) {
-      return;
-    }
-    await repairTranslatedImage(index);
   }
 
   /// Builds a lightweight translation request. Online requests retain only the
