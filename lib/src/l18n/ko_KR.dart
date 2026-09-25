@@ -1153,14 +1153,14 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationImageProcessingHint':
           '원본은 항상 보존되며 모델이 없거나 처리에 실패하면 오버레이로 자동 전환됩니다.',
       'imageTranslationDisplayOverlay': '텍스트 오버레이',
-      'imageTranslationDisplayCtdMigan': 'CTD + MI-GAN 배경 복원',
+      'imageTranslationDisplayCtdMigan': 'CTD + LaMa Large 배경 복원',
       'imageTranslationCtdModel': '만화 텍스트 감지 모델 (CTD)',
-      'imageTranslationMiganModel': '배경 복원 모델 (MI-GAN)',
+      'imageTranslationMiganModel': '배경 복원 모델 (LaMa Large)',
       'imageTranslationCtdLicenseNotice':
           'GPL-3.0 CTD 모델은 실행 중 다운로드되며 앱에 포함되지 않습니다',
       'imageTranslationCtdFallbackHint':
-          'CTD와 MI-GAN이 모두 필요합니다. 실패 시 안전하게 텍스트 오버레이로 전환됩니다.',
-      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
+          'CTD와 LaMa Large이 모두 필요합니다. 실패 시 안전하게 텍스트 오버레이로 전환됩니다.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/LaMa Large.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': '사용자 정의',
       'imageTranslationAppleLiveTextUseApi': '타사 API로 번역',

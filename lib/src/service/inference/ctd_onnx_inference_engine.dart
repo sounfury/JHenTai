@@ -283,7 +283,15 @@ List<PolygonMask> ctdPolygonsFromSegmentation({
           }
         }
         if (isBoundary) {
-          boundary.add((cx * sx, cy * sy));
+          // A segmentation pixel covers a cell, not a single point. Using
+          // only its top-left corner loses the final row/column after scaling
+          // and rasterization, leaving strokes outside the repair mask.
+          boundary.addAll(<OcrPoint>[
+            (cx * sx, cy * sy),
+            ((cx + 1) * sx, cy * sy),
+            ((cx + 1) * sx, (cy + 1) * sy),
+            (cx * sx, (cy + 1) * sy),
+          ]);
         }
       }
       if (pixelCount < minimumPixels || boundary.length < 3) {

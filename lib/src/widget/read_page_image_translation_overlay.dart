@@ -523,12 +523,15 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
           backgroundColor,
           backgroundOpacity,
         );
-        mergedBackgrounds.add((safeRect, plateColor));
         final String translation =
             groupIndex < result.translatedGroups.length &&
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
+        if (translationPreservesSource(group.textOf(result.blocks), translation)) {
+          continue;
+        }
+        mergedBackgrounds.add((safeRect, plateColor));
         final bool vertical = translationUsesVerticalLayout(
           result.blocks,
           group.blockIndices,

@@ -1254,14 +1254,14 @@ class ru_RU {
       'imageTranslationImageProcessingHint':
           'Исходник всегда сохраняется. При ошибке автоматически используется наложение.',
       'imageTranslationDisplayOverlay': 'Текстовое наложение',
-      'imageTranslationDisplayCtdMigan': 'Восстановленный фон CTD + MI-GAN',
+      'imageTranslationDisplayCtdMigan': 'Восстановленный фон CTD + LaMa Large',
       'imageTranslationCtdModel': 'Детектор текста комиксов (CTD)',
-      'imageTranslationMiganModel': 'Модель восстановления фона (MI-GAN)',
+      'imageTranslationMiganModel': 'Модель восстановления фона (LaMa Large)',
       'imageTranslationCtdLicenseNotice':
           'Модель CTD GPL-3.0 загружается во время работы и не входит в приложение',
       'imageTranslationCtdFallbackHint':
-          'Нужны CTD и MI-GAN. При любой ошибке безопасно используется текстовое наложение.',
-      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
+          'Нужны CTD и LaMa Large. При любой ошибке безопасно используется текстовое наложение.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/LaMa Large.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Пользовательский',
       'imageTranslationAppleLiveTextUseApi':

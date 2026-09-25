@@ -107,7 +107,7 @@ void main() {
       expect(
         setting.imageProcessingDisplayMode.value,
         ImageProcessingDisplayMode.overlay,
-        reason: 'CTD and MI-GAN must remain opt-in',
+        reason: 'CTD and LaMa Large must remain opt-in',
       );
       setting.imageProcessingDisplayMode.value =
           ImageProcessingDisplayMode.repairedBackgroundEmbeddedText;

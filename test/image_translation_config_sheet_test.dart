@@ -196,7 +196,7 @@ void main() {
     );
   });
 
-  testWidgets('CTD and MI-GAN display mode is opt-in', (
+  testWidgets('CTD and LaMa Large display mode is opt-in', (
     WidgetTester tester,
   ) async {
     final ImageTranslationSetting setting = ImageTranslationSetting();

@@ -1336,14 +1336,14 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationImageProcessingHint':
           'The source is always preserved. Missing models or processing failures automatically fall back to overlays.',
       'imageTranslationDisplayOverlay': 'Text overlay',
-      'imageTranslationDisplayCtdMigan': 'CTD + MI-GAN repaired background',
+      'imageTranslationDisplayCtdMigan': 'CTD + LaMa Large repaired background',
       'imageTranslationCtdModel': 'Comic Text Detector (CTD)',
-      'imageTranslationMiganModel': 'Background repair model (MI-GAN)',
+      'imageTranslationMiganModel': 'Background repair model (LaMa Large)',
       'imageTranslationCtdLicenseNotice':
           'The GPL-3.0 CTD model is downloaded at runtime and is not distributed with the app',
       'imageTranslationCtdFallbackHint':
-          'Both CTD and MI-GAN are required. Any failure safely falls back to the text overlay.',
-      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
+          'Both CTD and LaMa Large are required. Any failure safely falls back to the text overlay.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/LaMa Large.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Custom',
       'imageTranslationAppleLiveTextUseApi':

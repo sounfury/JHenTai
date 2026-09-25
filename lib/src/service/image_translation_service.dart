@@ -709,10 +709,8 @@ class ImageTranslationService extends GetxController
                     : imageTranslationSetting.translatorModel.value,
             'thinking': imageTranslationSetting.enableThinking.value,
           },
-          // Group-level translation is a semantic prompt change. Bumping the
-          // version prevents old line-by-line results from being reused as if
-          // they had been produced by the new bubble-aware contract.
-          promptVersion: 4,
+          // Preserve sound effects; never reuse results from the old prompt.
+          promptVersion: 5,
         ),
       );
       task = activeTask;
@@ -851,7 +849,7 @@ class ImageTranslationService extends GetxController
   String _persistentCacheKey(
     ImageTranslationRequest request,
     String imageHash, {
-    int promptVersion = 4,
+    int promptVersion = 5,
     bool legacy = false,
   }) {
     final String configFingerprint = _translationConfigFingerprint(
@@ -896,7 +894,7 @@ class ImageTranslationService extends GetxController
   }
 
   String _translationConfigFingerprint({
-    int promptVersion = 4,
+    int promptVersion = 5,
     bool legacy = false,
   }) {
     if (legacy) {
@@ -958,53 +956,12 @@ class ImageTranslationService extends GetxController
     });
   }
 
-  /// Removes reasoning markers before a result is persisted or embedded. The
-  /// API adapter also sanitizes its response, while this boundary keeps old
-  /// cache files safe when they are hydrated through the service.
-  List<String> _persistentCacheKeysForHash(
-    ImageTranslationRequest request,
-    String imageHash,
-  ) {
-    final String current = _persistentCacheKey(request, imageHash);
-    final List<String> candidates = <String>[
-      current,
-      _persistentCacheKey(request, imageHash, promptVersion: 2, legacy: true),
-      _persistentCacheKey(request, imageHash, promptVersion: 1, legacy: true),
-    ];
-    return candidates.toSet().toList();
-  }
-
   Future<ImageTranslationResult?> _readPersistentResultForHash(
     ImageTranslationRequest request,
     String imageHash,
   ) async {
-    final List<String> keys = _persistentCacheKeysForHash(request, imageHash);
-    final String currentKey = keys.first;
-    for (final String key in keys) {
-      final ImageTranslationResult? cached = await _readPersistentResult(key);
-      if (cached == null) continue;
-      // Prompt version 4 translates one speech-bubble group at a time. Older
-      // entries only contain line-by-line output, which would reintroduce the
-      // fragmentary layout this cache version is intended to fix.
-      if (key != currentKey && cached.translatedGroups.isEmpty) {
-        continue;
-      }
-      if (key != currentKey &&
-          cached.mergeTextBlocks !=
-              imageTranslationSetting.autoMergeText.value) {
-        continue;
-      }
-      if (key != currentKey) {
-        try {
-          await _writePersistentResult(currentKey, cached);
-        } on FileSystemException catch (e, stack) {
-          log.warning('Failed to migrate image translation cache: $e');
-          log.trace(stack);
-        }
-      }
-      return cached;
-    }
-    return null;
+    // Older prompts translated sound effects, so their results cannot migrate.
+    return _readPersistentResult(_persistentCacheKey(request, imageHash));
   }
 
   Future<bool> _hydrateResultInternal(ImageTranslationRequest request) async {
@@ -1343,12 +1300,15 @@ class ImageTranslationService extends GetxController
           imageTranslationSetting.translationBackgroundColor.value,
           imageTranslationSetting.translationBackgroundOpacity.value,
         );
-        mergedBackgrounds.add((safeRect, plateColor));
         final String translation =
             groupIndex < result.translatedGroups.length &&
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
+        if (translationPreservesSource(group.textOf(blocks), translation)) {
+          continue;
+        }
+        mergedBackgrounds.add((safeRect, plateColor));
         final bool vertical = translationUsesVerticalLayout(
           blocks,
           group.blockIndices,

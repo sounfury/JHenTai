@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:io';
 
@@ -94,7 +93,7 @@ List<PolygonMask> filterPolygonMasksToTranslatedBlocks({
 }
 
 /// OCR blocks that actually received a non-empty translation. Used to gate
-/// CTD/MI-GAN erase so sparse recognition cannot blank the rest of the page.
+/// CTD/LaMa Large erase so sparse recognition cannot blank the rest of the page.
 List<RecognizedTextBlock> translatedBlocksEligibleForErase(
   ImageTranslationResult result,
 ) {
@@ -121,6 +120,24 @@ List<RecognizedTextBlock> translatedBlocksEligibleForErase(
           result.translatedGroups[groupIndex].trim().isNotEmpty) {
         indices.addAll(groups[groupIndex].blockIndices);
       }
+    }
+  }
+  final List<RecognizedTextGroup> renderGroups = translationTextGroups(
+    result.blocks,
+    merge: result.mergeTextBlocks,
+    containers: result.containers,
+  );
+  for (int i = 0; i < renderGroups.length; i++) {
+    final RecognizedTextGroup group = renderGroups[i];
+    final String translation =
+        i < result.translatedGroups.length &&
+            result.translatedGroups[i].trim().isNotEmpty
+        ? result.translatedGroups[i]
+        : group.blockIndices
+              .map((index) => index < lines.length ? lines[index] : '')
+              .join('\n');
+    if (translationPreservesSource(group.textOf(result.blocks), translation)) {
+      indices.removeAll(group.blockIndices);
     }
   }
   return <RecognizedTextBlock>[
@@ -185,7 +202,7 @@ class ImageInpaintingService extends GetxController
       displayMode == ImageProcessingDisplayMode.translatedImage;
 
   /// Cold-start / viewport hydrate: restore a previously written repair
-  /// artifact for [requestKey] without re-running CTD/MI-GAN when the
+  /// artifact for [requestKey] without re-running CTD/LaMa Large when the
   /// request-keyed disk index still matches the source file.
   Future<InpaintingResult?> hydrateCachedRepair({
     required String requestKey,
@@ -209,6 +226,7 @@ class ImageInpaintingService extends GetxController
     try {
       final dynamic decoded = jsonDecode(await indexFile.readAsString());
       if (decoded is! Map ||
+          decoded['schemaVersion'] != 4 ||
           decoded['sourceHash'] != sourceHash ||
           decoded['artifactKey'] is! String) {
         return null;
@@ -249,7 +267,7 @@ class ImageInpaintingService extends GetxController
   }
 
   /// While a repaired-background mode is selected but the cleaned image is not
-  /// yet available (and we have not intentionally fallen back), keep an opaque
+  /// yet available (including failure fallback), keep an opaque
   /// backing plate so hydrated translation text cannot float over original
   /// glyphs after a cold start.
   double effectiveOverlayBackgroundOpacity(
@@ -264,12 +282,10 @@ class ImageInpaintingService extends GetxController
     if (!needsRepair) {
       return userOpacity;
     }
-    final InpaintingResult repair = resultFor(requestKey);
-    if (repair.fallbackToOverlay ||
-        _usableDisplayPath(requestKey, mode) != null) {
+    if (_usableDisplayPath(requestKey, mode) != null) {
       return userOpacity;
     }
-    return math.max(userOpacity, 0.92);
+    return 1.0;
   }
 
   String? _usableDisplayPath(
@@ -332,7 +348,7 @@ class ImageInpaintingService extends GetxController
     update([requestKey]);
   }
 
-  /// Runs the complete optional CTD -> MI-GAN pipeline. CTD polygons are the
+  /// Runs the complete optional CTD -> LaMa Large pipeline. CTD polygons are the
   /// only accepted masks: OCR rectangles are never substituted because that
   /// would erase artwork outside the actual text glyphs.
   Future<InpaintingResult> detectAndRepair({
@@ -419,7 +435,7 @@ class ImageInpaintingService extends GetxController
     final String sourceHash = await _sha256(source);
     final String maskHash = _maskHash(polygonMasks);
     final ModelDescriptor? descriptor = engineRegistry.modelCatalog.find(
-      'migan-pipeline-v2',
+      'lama-large-512px',
     );
     final String modelFingerprint = descriptor?.fingerprint ?? 'unverified';
     final String artifactKey = _artifactKey(
@@ -452,7 +468,7 @@ class ImageInpaintingService extends GetxController
     }
 
     final InpaintEngine? engine = engineRegistry.findInpaint(
-      'onnx-migan-inpaint',
+      'onnx-lama-inpaint',
     );
     if (engine == null || !engine.isReady) {
       return _fail(requestKey, 'model_missing', sourceHash: sourceHash);
@@ -483,7 +499,7 @@ class ImageInpaintingService extends GetxController
       }
       final String outputHash = await _sha256(File(outputPath));
       await _writeMetadata(metadata, <String, dynamic>{
-        'schemaVersion': 1,
+        'schemaVersion': 4,
         'sourceHash': sourceHash,
         'maskHash': maskHash,
         'modelFingerprint': modelFingerprint,
@@ -582,7 +598,7 @@ class ImageInpaintingService extends GetxController
     unawaited(
       log
           .warning(
-            'CTD/MI-GAN background repair unavailable; falling back to overlay boxes '
+            'CTD/LaMa Large background repair unavailable; falling back to overlay boxes '
             '($normalized)',
           )
           .catchError((Object _) {}),
@@ -602,6 +618,7 @@ class ImageInpaintingService extends GetxController
     switch (code) {
       case 'model_unavailable':
       case 'inpaint_not_ready':
+      case 'lama_not_ready':
       case 'migan_not_ready':
         return 'model_missing';
       default:
@@ -627,6 +644,7 @@ class ImageInpaintingService extends GetxController
     try {
       final dynamic decoded = jsonDecode(await metadata.readAsString());
       if (decoded is! Map ||
+          decoded['schemaVersion'] != 4 ||
           decoded['sourceHash'] != sourceHash ||
           decoded['maskHash'] != maskHash ||
           decoded['modelFingerprint'] != modelFingerprint ||
@@ -679,7 +697,7 @@ class ImageInpaintingService extends GetxController
     final File indexFile = _requestIndexFile(requestKey);
     final String? translated = _translatedImagePaths[requestKey];
     await _writeMetadata(indexFile, <String, dynamic>{
-      'schemaVersion': 1,
+      'schemaVersion': 4,
       'requestKey': requestKey,
       'artifactKey': artifactKey,
       'sourceHash': sourceHash,
@@ -709,7 +727,7 @@ class ImageInpaintingService extends GetxController
                 'sourceHash': sourceHash,
                 'maskHash': maskHash,
                 'modelHash': modelHash,
-                'pipeline': 'inpainting-v1',
+                'pipeline': 'lama-refined-v1',
               }),
             ),
           )

@@ -49,7 +49,7 @@ class OnnxModelStore extends GetxController {
   static const String superResolutionFastManifestId =
       'realesrgan-x4plus-anime-4b32f';
 
-  static const String miganInpaintManifestId = 'migan-pipeline-v2';
+  static const String lamaInpaintManifestId = 'lama-large-512px';
   static const String ctdDetectionManifestId = 'comic-text-detector-beta-0.3';
   static const String bubbleSegmentationManifestId =
       'manga109-segmentation-bubble-onnx';
@@ -273,27 +273,23 @@ class OnnxModelStore extends GetxController {
       ],
     ),
     OnnxModelManifest(
-      id: miganInpaintManifestId,
+      id: lamaInpaintManifestId,
       kind: 'inpaint',
-      // ModelScope API revision 78aada3f; artifact SHA-256 is pinned below.
-      version: 'ModelScope-master-78aada3f',
-      displayName: 'MI-GAN Pipeline V2（文字背景修复）',
-      description: 'Verified ModelScope MI-GAN ONNX pipeline.',
-      // The model card README declares Apache-2.0 while the structured
-      // ModelScope license fields are empty. Keep that uncertainty visible.
-      licenseName: 'Apache-2.0 (ModelScope README; metadata unset)',
-      licenseUrl: 'https://www.modelscope.cn/models/phodit/migan-pipeline-v2',
-      sourceProjectUrl: 'https://github.com/lxfater/inpaint-web',
+      version: 'lama-large-107c8306',
+      displayName: 'LaMa Large（文字背景修复）',
+      description: 'LaMa Large ONNX with refined text masks and masked compositing.',
+      licenseName: 'See upstream model distribution',
+      licenseUrl: 'https://github.com/frederik-uni/manga-image-translator-rust',
+      sourceProjectUrl: 'https://github.com/frederik-uni/manga-image-translator-rust',
       files: [
         OnnxModelFile(
           id: 'model',
-          fileName: 'migan_pipeline_v2.onnx',
-          sizeBytes: 28079181,
-          sha256:
-              '6f1f3530a1a2324b19752018ce756088b07973cda8d7d890034ace5c8a48c40b',
+          fileName: 'lamalarge.onnx',
+          sizeBytes: 207482655,
+          sha256: '107c8306ac1d27c83638d6535846986542dfe2707f1498b1ac9be25b4a963864',
           urls: {
             OnnxModelSource.modelScope:
-                'https://www.modelscope.cn/models/phodit/migan-pipeline-v2/resolve/master/migan_pipeline_v2.onnx',
+                'https://www.modelscope.cn/models/hgmzhn/manga-translator-ui/resolve/master/lama_large_512px_inpainting.onnx',
           },
         ),
       ],

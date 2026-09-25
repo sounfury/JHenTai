@@ -1,0 +1,717 @@
+<!-- ========================================================
+  OpenList / AList 极光琉璃主题 (Cyber Aurora Glassmorphism)
+  使用方法：
+  1. 登录 OpenList / AList 管理员后台
+  2. 进入【设置】->【全局】
+  3. 将本文件中的全部内容完整复制粘贴到【自定义头部】中保存即可
+  （也可以将 <style> 部分放入【自定义头部】，<script> 部分放入【自定义内容】）
+======================================================== -->
+
+<!-- 引入外链字体：霞鹜文楷与现代等宽数字字体 -->
+<link rel="stylesheet" href="https://npm.elemecdn.com/lxgw-wenkai-screen-webfont@1.1.0/lxgwwenkaigbscreen.css" media="print" onload="this.media='all'" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ==================== 1. 设计系统全局变量 ==================== */
+:root {
+  /* 品牌核心色彩 - 赛博流光色谱 */
+  --cy-primary: #00f2fe;
+  --cy-secondary: #4facfe;
+  --cy-accent: #8e2de2;
+  --cy-accent-hot: #ff007f;
+  --cy-success: #00f5a0;
+  
+  /* 字体系统 */
+  --cy-font-sans: 'Plus Jakarta Sans', "LXGW WenKai Screen", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --cy-font-mono: 'JetBrains Mono', monospace;
+
+  /* 基础光晕流光渐变 */
+  --cy-gradient-flow: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #8e2de2 100%);
+  --cy-gradient-hot: linear-gradient(135deg, #ff007f 0%, #7928ca 100%);
+  --cy-text-gradient: linear-gradient(135deg, #00f2fe 0%, #a855f7 100%);
+
+  /* 浅色主题变量 */
+  --cy-bg-body: #f1f5f9;
+  --cy-card-bg: rgba(255, 255, 255, 0.72);
+  --cy-card-border: rgba(255, 255, 255, 0.9);
+  --cy-card-border-hover: rgba(0, 242, 254, 0.5);
+  --cy-card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(255, 255, 255, 0.8) inset;
+  --cy-card-hover-shadow: 0 20px 40px -10px rgba(79, 172, 254, 0.25), 0 0 0 1px rgba(79, 172, 254, 0.4);
+  --cy-text-main: #0f172a;
+  --cy-text-muted: #64748b;
+  --cy-nav-bg: rgba(255, 255, 255, 0.65);
+  --cy-item-hover-bg: rgba(79, 172, 254, 0.08);
+}
+
+/* 深色模式变量映射 (覆盖 HopeUI 默认暗黑类与系统媒体查询) */
+.hope-ui-dark,
+[data-theme='dark'],
+body.hope-ui-dark {
+  --cy-bg-body: #070913;
+  --cy-card-bg: rgba(15, 23, 42, 0.68);
+  --cy-card-border: rgba(255, 255, 255, 0.08);
+  --cy-card-border-hover: rgba(0, 242, 254, 0.4);
+  --cy-card-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  --cy-card-hover-shadow: 0 20px 45px -8px rgba(0, 242, 254, 0.2), 0 0 0 1px rgba(0, 242, 254, 0.45);
+  --cy-text-main: #f8fafc;
+  --cy-text-muted: #94a3b8;
+  --cy-nav-bg: rgba(11, 15, 25, 0.75);
+  --cy-item-hover-bg: rgba(0, 242, 254, 0.07);
+}
+
+/* ==================== 2. 全局重置与极光流动背景 ==================== */
+* {
+  font-family: var(--cy-font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--cy-bg-body) !important;
+  color: var(--cy-text-main) !important;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 动态深空极光背景光斑 */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+  animation: cyAuroraFloat 18s ease-in-out infinite alternate;
+}
+
+body::before {
+  top: -15%;
+  left: -10%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.35) 0%, rgba(79, 172, 254, 0.15) 50%, transparent 70%);
+}
+
+body::after {
+  bottom: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(142, 45, 226, 0.3) 0%, rgba(255, 0, 127, 0.15) 50%, transparent 70%);
+  animation-duration: 24s;
+  animation-delay: -5s;
+}
+
+@keyframes cyAuroraFloat {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(60px, 40px) scale(1.1) rotate(60deg); }
+  100% { transform: translate(-30px, 70px) scale(0.95) rotate(120deg); }
+}
+
+/* 页面主视图层级提升，避开背景遮盖 */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==================== 3. 顶部导航与品牌栏美化 ==================== */
+header,
+nav,
+div[class*="hope-c-PJLV"] header {
+  background: var(--cy-nav-bg) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid var(--cy-card-border) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.3s ease;
+}
+
+/* 顶部标题渐变流光色彩 */
+header a,
+header .hope-breadcrumb__item,
+header h1,
+header h2 {
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+header a:hover {
+  background: var(--cy-gradient-flow);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* ==================== 4. 悬浮胶囊面包屑导航 ==================== */
+.hope-breadcrumb,
+nav[aria-label="breadcrumb"],
+div[class*="hope-breadcrumb"] {
+  padding: 8px 16px !important;
+  background: var(--cy-card-bg) !important;
+  backdrop-filter: blur(16px) !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--cy-card-border) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  box-shadow: var(--cy-card-shadow) !important;
+  margin: 12px 0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.hope-breadcrumb:hover {
+  border-color: var(--cy-card-border-hover) !important;
+  box-shadow: var(--cy-card-hover-shadow) !important;
+}
+
+.hope-breadcrumb__separator {
+  color: var(--cy-text-muted) !important;
+  opacity: 0.6;
+  margin: 0 6px !important;
+}
+
+.hope-breadcrumb__item a {
+  color: var(--cy-text-muted) !important;
+  text-decoration: none !important;
+  border-radius: 6px;
+  padding: 2px 6px;
+  transition: all 0.2s ease !important;
+}
+
+.hope-breadcrumb__item a:hover {
+  color: var(--cy-primary) !important;
+  background: var(--cy-item-hover-bg);
+}
+
+/* ==================== 5. 主内容容器与卡片琉璃质感 ==================== */
+.obj-box,
+.readme-box,
+main,
+div[class*="obj-box"],
+div[class*="readme-box"],
+div.hope-stack.hope-c-PJLV-igGkXN-css {
+  background: var(--cy-card-bg) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid var(--cy-card-border) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--cy-card-shadow) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+  overflow: hidden;
+}
+
+.obj-box:hover,
+.readme-box:hover {
+  border-color: var(--cy-card-border-hover) !important;
+}
+
+/* ==================== 6. 文件列表项动态交互美化 ==================== */
+/* 列表模式行样式 */
+table tbody tr,
+div[role="row"],
+.hope-table__row,
+div[class*="hope-c-PJLV"][tabindex="0"] {
+  border-radius: 12px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  margin: 3px 0 !important;
+}
+
+table tbody tr:hover,
+div[role="row"]:hover,
+.hope-table__row:hover,
+div[class*="hope-c-PJLV"][tabindex="0"]:hover {
+  background: var(--cy-item-hover-bg) !important;
+  transform: translateY(-2px) scale(1.002);
+  box-shadow: 0 4px 15px -3px rgba(0, 242, 254, 0.15) !important;
+}
+
+/* 网格宫格卡片模式 */
+.hope-grid > div,
+div[class*="hope-grid"] > div {
+  background: var(--cy-card-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--cy-card-border) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--cy-card-shadow) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hope-grid > div:hover,
+div[class*="hope-grid"] > div:hover {
+  transform: translateY(-6px) scale(1.02) !important;
+  border-color: var(--cy-card-border-hover) !important;
+  box-shadow: var(--cy-card-hover-shadow) !important;
+}
+
+/* 文件图标灵动微动画 */
+.hope-icon,
+svg[class*="hope-icon-"] {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+tr:hover .hope-icon,
+div[role="row"]:hover .hope-icon,
+.hope-grid > div:hover .hope-icon {
+  transform: scale(1.15) rotate(3deg);
+  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.4));
+}
+
+/* ==================== 7. 输入框、按钮与操作组件 ==================== */
+input.hope-input,
+.hope-input-wrapper {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--cy-card-border) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+  color: var(--cy-text-main) !important;
+}
+
+input.hope-input:focus,
+.hope-input-wrapper:focus-within {
+  border-color: var(--cy-primary) !important;
+  box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.25) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 按钮渐变质感 */
+button.hope-button,
+.hope-button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button.hope-button[data-variant="solid"],
+button.hope-button.hope-c-PJLV-solid {
+  background: var(--cy-gradient-flow) !important;
+  border: none !important;
+  color: #0b0f19 !important;
+  box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3) !important;
+}
+
+button.hope-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+button.hope-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ==================== 8. 优雅流光滚动条 ==================== */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cy-primary);
+  box-shadow: 0 0 10px var(--cy-primary);
+}
+
+/* ==================== 9. README 渲染区专属排版 ==================== */
+.readme-box,
+div[class*="readme-box"] {
+  padding: 24px 28px !important;
+  margin-top: 20px !important;
+}
+
+.readme-box h1, .readme-box h2, .readme-box h3 {
+  color: var(--cy-text-main) !important;
+  font-weight: 700 !important;
+  position: relative;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.readme-box h1::after,
+.readme-box h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 48px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--cy-gradient-flow);
+}
+
+.readme-box pre,
+.readme-box code {
+  font-family: var(--cy-font-mono) !important;
+  border-radius: 8px !important;
+}
+
+.readme-box pre {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid var(--cy-card-border) !important;
+}
+
+/* ==================== 10. 页脚与悬浮控件 ==================== */
+footer,
+.footer {
+  background: transparent !important;
+  border-top: none !important;
+  padding: 24px 0 !important;
+  color: var(--cy-text-muted) !important;
+  font-size: 0.85rem !important;
+  text-align: center;
+}
+
+/* ==================== 11. 整活互动挂件界面样式 ==================== */
+/* 底部悬浮赛博胶囊挂件 */
+#cy-cyber-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  background: var(--cy-card-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--cy-card-border);
+  box-shadow: var(--cy-card-shadow);
+  border-radius: 50px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cy-text-main);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#cy-cyber-widget:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: var(--cy-primary);
+  box-shadow: 0 10px 25px rgba(0, 242, 254, 0.25);
+}
+
+#cy-cyber-widget .cy-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cy-success);
+  box-shadow: 0 0 10px var(--cy-success);
+  animation: cyPulseDot 2s infinite ease-in-out;
+}
+
+@keyframes cyPulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* 顶部 HUD 弹窗通知 */
+#cy-toast-notice {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--cy-primary);
+  box-shadow: 0 10px 30px rgba(0, 242, 254, 0.35);
+  border-radius: 14px;
+  padding: 12px 24px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#cy-toast-notice.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* 点击波纹粒子画布 (覆盖全屏且穿透) */
+#cy-fx-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99998;
+}
+</style>
+
+<!-- ==================== 12. 交互与整活脚本引擎 (JS) ==================== -->
+<script>
+(function() {
+  'use strict';
+
+  // 避免重复注入
+  if (window.__OPENLIST_CYBER_THEME_INITIALIZED__) return;
+  window.__OPENLIST_CYBER_THEME_INITIALIZED__ = true;
+
+  /* ---------- 1. 创建全屏动效 Canvas (点击星芒与礼花粒子) ---------- */
+  const canvas = document.createElement('canvas');
+  canvas.id = 'cy-fx-canvas';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // 粒子类定义
+  class Particle {
+    constructor(x, y, color, speed, size, life) {
+      this.x = x;
+      this.y = y;
+      this.color = color;
+      this.size = size || Math.random() * 3 + 2;
+      this.alpha = 1;
+      this.maxLife = life || 45;
+      this.life = this.maxLife;
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = speed || (Math.random() * 4 + 1);
+      this.vx = Math.cos(angle) * velocity;
+      this.vy = Math.sin(angle) * velocity;
+      this.gravity = 0.06;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += this.gravity;
+      this.vx *= 0.98;
+      this.vy *= 0.98;
+      this.life--;
+      this.alpha = Math.max(0, this.life / this.maxLife);
+    }
+    draw(context) {
+      context.save();
+      context.globalAlpha = this.alpha;
+      context.fillStyle = this.color;
+      context.beginPath();
+      context.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+  }
+
+  // 动画循环
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      particles[i].update();
+      particles[i].draw(ctx);
+      if (particles[i].life <= 0) {
+        particles.splice(i, 1);
+      }
+    }
+    requestAnimationFrame(animateParticles);
+  }
+  requestAnimationFrame(animateParticles);
+
+  // 鼠标点击扩散星芒
+  const neonPalette = ['#00f2fe', '#4facfe', '#8e2de2', '#ff007f', '#00f5a0', '#ffea00'];
+  window.addEventListener('pointerdown', (e) => {
+    // 忽略在极客挂件上的点击
+    if (e.target.closest('#cy-cyber-widget')) return;
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+      const color = neonPalette[Math.floor(Math.random() * neonPalette.length)];
+      particles.push(new Particle(e.clientX, e.clientY, color, Math.random() * 3.5 + 1.2, Math.random() * 2.5 + 1.5, 35));
+    }
+  });
+
+  /* ---------- 2. 撒花五彩纸屑彩蛋生成器 (Confetti) ---------- */
+  function triggerConfettiBurst() {
+    const burstCount = 120;
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight * 0.4;
+    for (let i = 0; i < burstCount; i++) {
+      const color = neonPalette[Math.floor(Math.random() * neonPalette.length)];
+      particles.push(new Particle(centerX, centerY, color, Math.random() * 9 + 3, Math.random() * 4 + 2, 70));
+    }
+  }
+
+  /* ---------- 3. 悬浮赛博灵动胶囊挂件 & 骚话台词机 ---------- */
+  const quotes = [
+    "⚡ OpenList 量子网络引擎运转良好",
+    "🚀 内存占用极低，随时准备起飞",
+    "☕ 敲代码累了？记得喝口温水",
+    "🛡️ 已为你拦截 99+ 份无意义卡顿",
+    "✨ 只要不看控制台，就永远没有 Bug",
+    "🎮 试试键盘输入 Konami 秘籍 (↑↑↓↓←→←→BA)",
+    "🌌 愿你的每一次下载都是光速",
+    "🪐 正在全速同步银河系各星区数据"
+  ];
+
+  const widget = document.createElement('div');
+  widget.id = 'cy-cyber-widget';
+  widget.title = '点击切换状态名言 | 双击折叠';
+  widget.innerHTML = `
+    <span class="cy-indicator-dot"></span>
+    <span id="cy-widget-text">⚡ OpenList 极光驱动</span>
+    <span id="cy-fps-badge" style="font-size:11px;opacity:0.6;font-family:var(--cy-font-mono);">60 FPS</span>
+  `;
+  document.body.appendChild(widget);
+
+  let quoteIndex = 0;
+  widget.addEventListener('click', () => {
+    quoteIndex = (quoteIndex + 1) % quotes.length;
+    const textEl = document.getElementById('cy-widget-text');
+    textEl.style.opacity = '0';
+    setTimeout(() => {
+      textEl.innerText = quotes[quoteIndex];
+      textEl.style.opacity = '1';
+    }, 150);
+    // 点击小挂件附带小礼花
+    triggerConfettiBurst();
+  });
+
+  // 简易 FPS 侦测
+  let fpsFrames = 0;
+  let fpsLastTime = performance.now();
+  function checkFps(now) {
+    fpsFrames++;
+    if (now - fpsLastTime >= 1000) {
+      const fps = Math.round((fpsFrames * 1000) / (now - fpsLastTime));
+      const fpsBadge = document.getElementById('cy-fps-badge');
+      if (fpsBadge) fpsBadge.innerText = `${fps} FPS`;
+      fpsFrames = 0;
+      fpsLastTime = now;
+    }
+    requestAnimationFrame(checkFps);
+  }
+  requestAnimationFrame(checkFps);
+
+  /* ---------- 4. HUD 顶部浮动消息弹窗 ---------- */
+  const toast = document.createElement('div');
+  toast.id = 'cy-toast-notice';
+  toast.innerHTML = `<span style="font-size:18px;">🛸</span><span id="cy-toast-msg">系统提示</span>`;
+  document.body.appendChild(toast);
+
+  let toastTimer = null;
+  function showCyberToast(msg, duration = 3000) {
+    const msgEl = document.getElementById('cy-toast-msg');
+    msgEl.innerText = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, duration);
+  }
+
+  /* ---------- 5. 戏精标签页切换 (Visibility Change) ---------- */
+  const originalTitle = document.title;
+  let titleTimer = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearTimeout(titleTimer);
+      document.title = '(つд⊂) 哎呀，你跑到哪里去啦...';
+    } else {
+      document.title = '(≧∇≦)ﾉ 欢迎回归 OpenList！';
+      titleTimer = setTimeout(() => {
+        document.title = originalTitle;
+      }, 2200);
+    }
+  });
+
+  /* ---------- 6. 魂斗罗秘籍彩蛋 (Konami Code) ---------- */
+  const konamiSequence = [
+    'ArrowUp', 'ArrowUp',
+    'ArrowDown', 'ArrowDown',
+    'ArrowLeft', 'ArrowRight',
+    'ArrowLeft', 'ArrowRight',
+    'KeyB', 'KeyA'
+  ];
+  let konamiCurrentIndex = 0;
+
+  window.addEventListener('keydown', (e) => {
+    // 监听 Ctrl+Shift+B 快速触发礼花
+    if (e.ctrlKey && e.shiftKey && e.code === 'KeyB') {
+      e.preventDefault();
+      triggerConfettiBurst();
+      showCyberToast('🎉 快捷礼花喷发！祝你今天心情愉快！');
+      return;
+    }
+
+    // 监听 Konami 秘籍按键
+    const expected = konamiSequence[konamiCurrentIndex];
+    if (e.code === expected) {
+      konamiCurrentIndex++;
+      if (konamiCurrentIndex === konamiSequence.length) {
+        konamiCurrentIndex = 0;
+        triggerConfettiBurst();
+        setTimeout(triggerConfettiBurst, 250);
+        setTimeout(triggerConfettiBurst, 500);
+        showCyberToast('🔥 [Konami 秘籍解锁] 极客模式已全功率启动！');
+      }
+    } else {
+      konamiCurrentIndex = 0;
+    }
+  });
+
+  /* ---------- 7. 智能 DOM 动态探测守护器 (抗哈希类名变更) ---------- */
+  function reinforceDomElements() {
+    // 查找主要列表区域
+    const containers = document.querySelectorAll('.obj-box, .readme-box, main, div[class*="obj-box"]');
+    containers.forEach(el => {
+      if (!el.dataset.cyEnhanced) {
+        el.dataset.cyEnhanced = "true";
+        el.style.transition = 'all 0.3s ease';
+      }
+    });
+
+    // 强化列表每一项的悬浮触发
+    const items = document.querySelectorAll('table tbody tr, div[role="row"], a[class*="hope-link"]');
+    items.forEach(item => {
+      if (!item.dataset.cyItemEnhanced) {
+        item.dataset.cyItemEnhanced = "true";
+      }
+    });
+  }
+
+  // 监听 DOM 树变化并及时加固
+  const observer = new MutationObserver(() => {
+    reinforceDomElements();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  reinforceDomElements();
+
+  // 初始化通知
+  setTimeout(() => {
+    showCyberToast('✨ OpenList 极光琉璃主题已就绪 (输入 ↑↑↓↓←→←→BA 唤醒彩蛋)');
+  }, 1000);
+
+  // 控制台极客欢迎输出
+  console.log(
+    '%c OpenList Cyber-Aurora Theme %c v2.0 Online %c',
+    'background:#00f2fe; color:#0b0f19; font-weight:bold; padding:4px 8px; border-radius:4px 0 0 4px;',
+    'background:#8e2de2; color:#fff; font-weight:bold; padding:4px 8px; border-radius:0 4px 4px 0;',
+    'background:transparent'
+  );
+})();
+</script>

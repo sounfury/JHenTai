@@ -6,6 +6,7 @@ import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
 import 'package:image/image.dart' as image;
 
 import '../engine/engine_contract.dart';
+import '../../utils/inpainting_pixels.dart';
 import 'inference_exception.dart';
 import 'inference_safety.dart';
 import 'inference_task.dart';
@@ -25,8 +26,8 @@ abstract class InpaintingInferenceEngine {
   });
 }
 
-class MiganOnnxModelInfo {
-  const MiganOnnxModelInfo({
+class LamaOnnxModelInfo {
+  const LamaOnnxModelInfo({
     required this.modelPath,
     required this.fingerprint,
   });
@@ -35,13 +36,10 @@ class MiganOnnxModelInfo {
   final String fingerprint;
 }
 
-/// ONNX pipeline adapter for the verified ModelScope MI-GAN artifact.
-///
-/// The model accepts uint8 NCHW image/mask tensors and returns a uint8 NCHW
-/// image. White in the input mask means known pixels and black means the
-/// polygon area to repair, matching the upstream MI-GAN pipeline contract.
-class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
-  MiganOnnxInpaintingInferenceEngine({
+/// LaMa Large uses normalized float RGB and a binary mask (1 = repair).
+/// Refine source glyphs before inference and composite only repaired pixels.
+class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
+  LamaOnnxInpaintingInferenceEngine({
     required this.runtime,
     required this.providerResolver,
     required this.modelResolver,
@@ -50,21 +48,21 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
 
   final OnnxRuntime runtime;
   final OnnxProviderResolver providerResolver;
-  final MiganOnnxModelInfo Function() modelResolver;
+  final LamaOnnxModelInfo Function() modelResolver;
   final InferenceSessionSafetyConfig? safetyConfig;
 
-  static const String modelId = 'migan-pipeline-v2';
+  static const String modelId = 'lama-large-512px';
   static const int _maxInputBytes = 80 * 1024 * 1024;
 
   @override
-  String get displayName => 'ONNX · MI-GAN Pipeline V2';
+  String get displayName => 'ONNX · LaMa Large';
 
-  MiganOnnxModelInfo get _model => modelResolver();
+  LamaOnnxModelInfo get _model => modelResolver();
 
   @override
   bool get isReady {
     try {
-      final MiganOnnxModelInfo model = _model;
+      final LamaOnnxModelInfo model = _model;
       final String? path = model.modelPath;
       return runtime.isAvailable &&
           providerResolver().isNotEmpty &&
@@ -95,7 +93,7 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       throw const InferenceNotReadyException(modelId);
     }
 
-    final MiganOnnxModelInfo model = _model;
+    final LamaOnnxModelInfo model = _model;
     final String modelPath = model.modelPath!;
     final File inputFile = File(inputPath);
     if (!await inputFile.exists() ||
@@ -120,10 +118,19 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         '$maxPixels pixel budget',
       );
     }
-    final Uint8List mask = _rasterizePolygonMask(
+    final Uint8List coarseMask = _rasterizePolygonMask(
       source.width,
       source.height,
       polygonMasks,
+    );
+    final Uint8List mask = refineInpaintingMask(source, coarseMask);
+    if (!mask.contains(0)) {
+      throw StateError('no text pixels remain after mask refinement');
+    }
+    // Mobile allocations grow sharply with LaMa feature maps; use a bounded
+    // input while retaining the full-resolution source for final compositing.
+    final LamaInput prepared = prepareLamaInput(
+      source, mask, maxSide: Platform.isAndroid || Platform.isIOS ? 1024 : 2048,
     );
     token.throwIfCancelled();
     onProgress?.call(0.12);
@@ -143,18 +150,13 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     token.throwIfCancelled();
     onProgress?.call(0.25);
 
-    final int pixels = source.width * source.height;
-    final Uint8List imageInput = _toNchw(source);
+    final int pixels = prepared.width * prepared.height;
     final ort.OrtValue imageTensor = await ort.OrtValue.fromList(
-      imageInput,
-      <int>[1, 3, source.height, source.width],
+      prepared.rgb, <int>[1, 3, prepared.height, prepared.width],
     );
-    final ort.OrtValue maskTensor = await ort.OrtValue.fromList(mask, <int>[
-      1,
-      1,
-      source.height,
-      source.width,
-    ]);
+    final ort.OrtValue maskTensor = await ort.OrtValue.fromList(
+      prepared.mask, <int>[1, 1, prepared.height, prepared.width],
+    );
     Map<String, ort.OrtValue>? outputs;
     try {
       token.throwIfCancelled();
@@ -171,19 +173,19 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
           result.shape.length != 4 ||
           result.shape[0] != 1 ||
           result.shape[1] != 3 ||
-          result.shape[2] != source.height ||
-          result.shape[3] != source.width) {
-        throw StateError('unexpected MI-GAN output shape: ${result?.shape}');
+          result.shape[2] != prepared.height ||
+          result.shape[3] != prepared.width) {
+        throw StateError('unexpected LaMa Large output shape: ${result?.shape}');
       }
       final List<dynamic> values = await result.asFlattenedList();
       if (values.length != pixels * 3) {
-        throw StateError('MI-GAN output data/shape mismatch');
+        throw StateError('LaMa Large output data/shape mismatch');
       }
-      final image.Image repaired = _fromNchw(
-        values,
-        source.width,
-        source.height,
+      final image.Image predicted = _fromNchw(values, prepared.width, prepared.height);
+      final image.Image cropped = image.copyCrop(
+        predicted, x: 0, y: 0, width: prepared.contentWidth, height: prepared.contentHeight,
       );
+      final image.Image repaired = compositeLamaOutput(source, mask, cropped);
       final List<int> png = image.encodePng(repaired, level: 6);
       token.throwIfCancelled();
       await _writeAtomically(outputPath, png, token);
@@ -199,21 +201,6 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     }
   }
 
-  Uint8List _toNchw(image.Image source) {
-    final int pixels = source.width * source.height;
-    final Uint8List result = Uint8List(pixels * 3);
-    for (int y = 0; y < source.height; y++) {
-      for (int x = 0; x < source.width; x++) {
-        final image.Pixel pixel = source.getPixel(x, y);
-        final int index = y * source.width + x;
-        result[index] = _clamp(pixel.r);
-        result[pixels + index] = _clamp(pixel.g);
-        result[pixels * 2 + index] = _clamp(pixel.b);
-      }
-    }
-    return result;
-  }
-
   image.Image _fromNchw(List<dynamic> values, int width, int height) {
     final int plane = width * height;
     final image.Image result = image.Image(
@@ -227,9 +214,9 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         result.setPixelRgba(
           x,
           y,
-          _clamp(values[index]),
-          _clamp(values[plane + index]),
-          _clamp(values[plane * 2 + index]),
+          _clamp((values[index] as num) * 255),
+          _clamp((values[plane + index] as num) * 255),
+          _clamp((values[plane * 2 + index] as num) * 255),
           255,
         );
       }
@@ -292,7 +279,7 @@ class MiganOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     InferenceCancellationToken token,
   ) async {
     final File destination = File(outputPath);
-    final File temporary = File('$outputPath.migan.tmp');
+    final File temporary = File('$outputPath.lama.tmp');
     await destination.parent.create(recursive: true);
     try {
       await temporary.writeAsBytes(bytes, flush: true);

@@ -650,7 +650,7 @@ abstract class BaseLayout extends StatelessWidget {
       id: request.cacheKey,
       builder: (ImageInpaintingService inpainting) {
         // A failed/restarted translation must never keep displaying a stale
-        // CTD/MI-GAN derivative from an earlier attempt.  The derivative is
+        // CTD/LaMa Large derivative from an earlier attempt.  The derivative is
         // only meaningful while the matching translation result is complete;
         // otherwise it looks like a full-page backing even though the current
         // OCR/translation operation failed.

@@ -3,8 +3,8 @@ import '../inference/inference_task.dart';
 import '../inference/inpainting_inference_engine.dart';
 import 'engine_contract.dart';
 
-class MiganOnnxInpaintEngineAdapter implements InpaintEngine {
-  MiganOnnxInpaintEngineAdapter({
+class LamaOnnxInpaintEngineAdapter implements InpaintEngine {
+  LamaOnnxInpaintEngineAdapter({
     required InpaintingInferenceEngine Function() resolver,
   }) : _resolver = resolver;
 
@@ -12,9 +12,9 @@ class MiganOnnxInpaintEngineAdapter implements InpaintEngine {
 
   @override
   final EngineDescriptor descriptor = const EngineDescriptor(
-    id: 'onnx-migan-inpaint',
+    id: 'onnx-lama-inpaint',
     kind: EngineKind.inpaint,
-    displayName: 'MI-GAN Pipeline V2 inpainting',
+    displayName: 'LaMa Large inpainting',
     platforms: <EnginePlatform>{
       EnginePlatform.android,
       EnginePlatform.ios,
@@ -22,7 +22,7 @@ class MiganOnnxInpaintEngineAdapter implements InpaintEngine {
       EnginePlatform.macos,
       EnginePlatform.windows,
     },
-    modelId: 'migan-pipeline-v2',
+    modelId: 'lama-large-512px',
   );
 
   @override
@@ -50,8 +50,9 @@ class MiganOnnxInpaintEngineAdapter implements InpaintEngine {
               outputPath: request.outputPath,
               polygonMasks: request.polygonMasks,
               cancellationToken: token,
-              onProgress: (double progress) =>
-                  context.report(EngineTaskStage.processing, progress),
+              onProgress:
+                  (double progress) =>
+                      context.report(EngineTaskStage.processing, progress),
             );
             context.report(EngineTaskStage.finalizing, 0.98);
             return request.outputPath;

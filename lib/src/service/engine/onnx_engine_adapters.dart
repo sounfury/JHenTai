@@ -154,7 +154,7 @@ class OnnxModelCatalog extends ModelCatalog {
             switch (manifest.kind) {
               'ocr' => 'onnx-ocr',
               'superResolution' => 'onnx-super-resolution',
-              'inpaint' => 'onnx-migan-inpaint',
+              'inpaint' => 'onnx-lama-inpaint',
               'detection' => manifest.id ==
                       OnnxModelStore.bubbleSegmentationManifestId
                   ? 'manga109-bubble-segmentation'

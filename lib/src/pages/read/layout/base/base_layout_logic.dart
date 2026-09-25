@@ -382,7 +382,7 @@ abstract class BaseLayoutLogic extends GetxController
       return null;
     }
 
-    // Stop any in-flight CTD/MI-GAN for this page before OCR/bubble detection
+    // Stop any in-flight CTD/LaMa Large for this page before OCR/bubble detection
     // so the shared ONNX runtime is not contended. On force re-translate also
     // drop a stale repaired display that may already have blanked untranslated
     // bubbles from a prior unsafe full-page erase.
@@ -464,7 +464,7 @@ abstract class BaseLayoutLogic extends GetxController
         repairResult.errorCode != 'no_translated_masks' &&
         repairResult.errorCode != 'translation_geometry_required') {
       // Surface the concrete reason so a silent white-box fallback is not
-      // mistaken for a successful CTD + MI-GAN repair.
+      // mistaken for a successful CTD + LaMa Large repair.
       toast(
         'imageTranslationInpaintFallback'.trParams({
           'reason': repairResult.errorCode!,
@@ -504,7 +504,7 @@ abstract class BaseLayoutLogic extends GetxController
     imageInpaintingService.setDisplayMode(mode);
     final bool hydrated = await imageTranslationService.hydrateResult(request);
     // Restore a previously written repair artifact when present. Never run
-    // synchronous detectAndRepair here: CTD/MI-GAN on the shared ONNX runtime
+    // synchronous detectAndRepair here: CTD/LaMa Large on the shared ONNX runtime
     // contends with manga109 bubble detection + OCR and collapses recognition
     // coverage on the next re-translate. Opaque plates remain via
     // effectiveOverlayBackgroundOpacity until a cached repair is restored.

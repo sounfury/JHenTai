@@ -699,3 +699,11 @@ double? _verticalGroupMatchScore(
   }
   return 1 - horizontalGap / maxGap;
 }
+
+/// Unchanged text needs neither a backing plate nor erasure. Ignore whitespace
+/// because grouped translations may flatten the OCR's visual line breaks.
+bool translationPreservesSource(String source, String translation) {
+  String compact(String value) => value.replaceAll(RegExp(r'\s+'), '');
+  final String original = compact(source);
+  return original.isNotEmpty && original == compact(translation);
+}

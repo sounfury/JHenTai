@@ -10,7 +10,7 @@ export 'llama_server_translation_engine.dart';
 export 'local_translation_model_catalog.dart';
 export 'model_catalog.dart';
 export 'manga_ocr_engine_adapter.dart';
-export 'migan_inpaint_engine.dart';
+export 'lama_inpaint_engine.dart';
 export 'onnx_engine_adapters.dart';
 export 'unavailable_engine_adapters.dart';
 export 'engine_registry.dart';

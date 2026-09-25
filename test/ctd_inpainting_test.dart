@@ -8,7 +8,7 @@ import 'package:jhentai/src/service/engine/engine.dart';
 import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/inference/ctd_model_evidence.dart';
 import 'package:jhentai/src/service/inference/ctd_onnx_inference_engine.dart';
-import 'package:jhentai/src/service/inference/migan_model_evidence.dart';
+import 'package:jhentai/src/service/inference/lama_model_evidence.dart';
 import 'package:jhentai/src/service/inference/onnx_model_store.dart';
 
 class _FakeInpaintEngine implements InpaintEngine {
@@ -19,7 +19,7 @@ class _FakeInpaintEngine implements InpaintEngine {
 
   @override
   final EngineDescriptor descriptor = const EngineDescriptor(
-    id: 'onnx-migan-inpaint',
+    id: 'onnx-lama-inpaint',
     kind: EngineKind.inpaint,
     displayName: 'fake inpaint',
     platforms: <EnginePlatform>{EnginePlatform.macos},
@@ -190,8 +190,8 @@ void main() {
     expect(masks.single.points.length, greaterThanOrEqualTo(4));
     expect(masks.single.left, closeTo(10, 0.01));
     expect(masks.single.top, closeTo(40, 0.01));
-    expect(masks.single.right, closeTo(30, 0.01));
-    expect(masks.single.bottom, closeTo(80, 0.01));
+    expect(masks.single.right, closeTo(40, 0.01));
+    expect(masks.single.bottom, closeTo(100, 0.01));
   });
 
   test(
@@ -252,7 +252,7 @@ void main() {
     },
   );
 
-  test('production pipeline passes CTD polygons to MI-GAN', () async {
+  test('production pipeline passes CTD polygons to LaMa Large', () async {
     final Directory root = await Directory.systemTemp.createTemp(
       'jhentai-ctd-migan-pipeline-',
     );
@@ -283,7 +283,7 @@ void main() {
     expect(await source.readAsBytes(), <int>[9, 8, 7]);
   });
 
-  test('CTD with no text falls back without invoking MI-GAN', () async {
+  test('CTD with no text falls back without invoking LaMa Large', () async {
     final Directory root = await Directory.systemTemp.createTemp(
       'jhentai-ctd-no-text-',
     );
@@ -331,6 +331,15 @@ void main() {
     expect(result.status, InpaintingStatus.failed);
     expect(result.errorCode, 'native_failed');
     expect(result.fallbackToOverlay, isTrue);
+    expect(
+      service.effectiveOverlayBackgroundOpacity(
+        'page-1',
+        0.15,
+        displayModeOverride:
+            ImageProcessingDisplayMode.repairedBackgroundEmbeddedText,
+      ),
+      1.0,
+    );
     expect(await source.readAsBytes(), <int>[1, 2, 3]);
   });
 
@@ -373,7 +382,7 @@ void main() {
           'downloaded:/comics/page-1.jpg',
           0.0,
         ),
-        0.92,
+        1.0,
       );
 
       final InpaintingResult? hydrated = await restarted.hydrateCachedRepair(
@@ -384,7 +393,7 @@ void main() {
       expect(hydrated!.status, InpaintingStatus.success);
       expect(hydrated.fromCache, isTrue);
       expect(hydrated.outputPath, first.outputPath);
-      expect(fake.calls, 1); // no second MI-GAN run
+      expect(fake.calls, 1); // no second LaMa Large run
       expect(
         restarted.displayPathFor('downloaded:/comics/page-1.jpg'),
         first.outputPath,
@@ -569,15 +578,15 @@ void main() {
     },
   );
 
-  test('ModelScope MI-GAN manifest is pinned to the inspected artifact', () {
+  test('ModelScope LaMa Large manifest is pinned to the inspected artifact', () {
     final ModelDescriptor descriptor =
-        OnnxModelCatalog().find(OnnxModelStore.miganInpaintManifestId)!;
+        OnnxModelCatalog().find(OnnxModelStore.lamaInpaintManifestId)!;
     final ModelArtifactDescriptor artifact = descriptor.artifacts.single;
-    expect(artifact.sizeBytes, MiganModelEvidence.artifactSizeBytes);
-    expect(artifact.sha256, MiganModelEvidence.artifactSha256);
-    expect(artifact.sources.single.url, MiganModelEvidence.artifactUrl);
-    expect(descriptor.engineIds, contains('onnx-migan-inpaint'));
-    expect(descriptor.licenseName, contains('metadata unset'));
+    expect(artifact.sizeBytes, LamaModelEvidence.artifactSizeBytes);
+    expect(artifact.sha256, LamaModelEvidence.artifactSha256);
+    expect(artifact.sources.single.url, LamaModelEvidence.artifactUrl);
+    expect(descriptor.engineIds, contains('onnx-lama-inpaint'));
+    expect(descriptor.licenseName, isNotEmpty);
     expect(descriptor.supportsImages, isFalse);
   });
 

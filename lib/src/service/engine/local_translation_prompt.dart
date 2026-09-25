@@ -32,6 +32,8 @@ LocalContextTranslationPrompt buildLocalContextTranslationPrompt(
 ) {
   const String instruction =
       'Translate comic dialogue using neighboring pages as context. '
+      'Preserve onomatopoeia and sound effects exactly as written in the source; do not translate, transliterate, explain, or replace them. '
+      'For a sound-effect-only item, return its original text with the same pageId and lineId. Do not mistake ordinary dialogue or narration for sound effects. '
       'Return only one JSON object with a translations array. Every item must contain the exact input pageId and lineId plus translated text. '
       'Return items only for targetPageIds, preserve every target line exactly once, and never add markdown, commentary, or reasoning.';
   return LocalContextTranslationPrompt(
@@ -109,7 +111,9 @@ LocalTranslationPrompt buildLocalTranslationPrompt(
   const String instruction =
       'You translate comic dialogue accurately. Each numbered group is one speech bubble or utterance. '
       'Translate the whole group as one natural, context-aware utterance. Keep names, tone, hesitation, '
-      'sound effects and profanity faithful to the source. Return exactly one translated line per group, '
+      'and profanity faithful to the source. Preserve onomatopoeia and sound effects exactly as written in the source; '
+      'do not translate, transliterate, explain, or replace them. For a sound-effect-only group, return its original text with the same group number. '
+      'Do not mistake ordinary dialogue or narration for sound effects. Return exactly one translated line per group, '
       'using the same group number (for example "1: ..."). Do not split a group into extra lines, '
       'add headings or commentary, or include reasoning/think blocks.';
   return LocalTranslationPrompt(

@@ -175,7 +175,7 @@ class _SettingImageTranslationPageState
                               title: 'imageTranslationCtdModel'.tr,
                             ),
                             OnnxModelTile(
-                              manifestId: OnnxModelStore.miganInpaintManifestId,
+                              manifestId: OnnxModelStore.lamaInpaintManifestId,
                               title: 'imageTranslationMiganModel'.tr,
                             ),
                             ListTile(

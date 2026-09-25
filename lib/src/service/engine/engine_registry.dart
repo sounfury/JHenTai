@@ -14,7 +14,7 @@ import 'gguf_model_store.dart';
 import 'llama_cpp_ffi_engine.dart';
 import 'llama_server_translation_engine.dart';
 import 'local_translation_model_catalog.dart';
-import 'migan_inpaint_engine.dart';
+import 'lama_inpaint_engine.dart';
 import 'model_catalog.dart';
 import 'manga_ocr_engine_adapter.dart';
 import 'onnx_engine_adapters.dart';
@@ -235,8 +235,8 @@ class EngineRegistry {
                 },
           ),
     );
-    final MiganOnnxInpaintingInferenceEngine miganInference =
-        MiganOnnxInpaintingInferenceEngine(
+    final LamaOnnxInpaintingInferenceEngine lamaInference =
+        LamaOnnxInpaintingInferenceEngine(
           runtime: OnnxRuntime.instance,
           // CPU is the only provider enabled by this adapter until a CTD/
           // inpainting-specific canary is wired into InferenceService.
@@ -249,12 +249,12 @@ class EngineRegistry {
           },
           modelResolver: () {
             final Map<String, String>? files = OnnxModelStore.instance
-                .manifestFilePaths(OnnxModelStore.miganInpaintManifestId);
-            return MiganOnnxModelInfo(
+                .manifestFilePaths(OnnxModelStore.lamaInpaintManifestId);
+            return LamaOnnxModelInfo(
               modelPath: files?['model'],
               fingerprint:
                   OnnxModelStore.instance.fingerprintOf(
-                    OnnxModelStore.miganInpaintManifestId,
+                    OnnxModelStore.lamaInpaintManifestId,
                   ) ??
                   '',
             );
@@ -272,7 +272,7 @@ class EngineRegistry {
         );
     registerInpaint(
       inpaintEngine ??
-          MiganOnnxInpaintEngineAdapter(resolver: () => miganInference),
+          LamaOnnxInpaintEngineAdapter(resolver: () => lamaInference),
     );
     final OnnxModelCatalog onnxCatalog = OnnxModelCatalog();
     final OnnxModelDownloadManager onnxDownloads = OnnxModelDownloadManager();

@@ -1235,14 +1235,14 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationImageProcessingHint':
           'A imagem original é sempre preservada. Falhas usam automaticamente a sobreposição.',
       'imageTranslationDisplayOverlay': 'Sobreposição de texto',
-      'imageTranslationDisplayCtdMigan': 'Fundo restaurado com CTD + MI-GAN',
+      'imageTranslationDisplayCtdMigan': 'Fundo restaurado com CTD + LaMa Large',
       'imageTranslationCtdModel': 'Detector de texto de quadrinhos (CTD)',
-      'imageTranslationMiganModel': 'Modelo de restauração de fundo (MI-GAN)',
+      'imageTranslationMiganModel': 'Modelo de restauração de fundo (LaMa Large)',
       'imageTranslationCtdLicenseNotice':
           'O modelo CTD GPL-3.0 é baixado em tempo de execução e não acompanha o app',
       'imageTranslationCtdFallbackHint':
-          'CTD e MI-GAN são necessários. Qualquer falha retorna com segurança à sobreposição.',
-      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/MI-GAN.',
+          'CTD e LaMa Large são necessários. Qualquer falha retorna com segurança à sobreposição.',
+      'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/LaMa Large.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Personalizado',
       'imageTranslationAppleLiveTextUseApi':
