@@ -100,7 +100,7 @@ class CtdOnnxInferenceEngine {
 
     final CtdOnnxModelInfo model = modelResolver();
     final List<ort.OrtProvider> providers = providerResolver();
-    final ort.OrtSession? session = await runtime.session(
+    final ort.OrtSession? session = await runtime.sessionWithCpuFallback(
       model.modelPath!,
       modelFingerprint: model.fingerprint,
       providers: providers,

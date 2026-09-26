@@ -22,9 +22,8 @@ TensorManager::~TensorManager() {
 
 std::string TensorManager::generateTensorId() {
   // Create a random tensor ID
-  static std::random_device rd;
-  static std::mt19937 gen(rd());
-  static std::uniform_int_distribution<> dis(0, 15);
+  thread_local std::mt19937 gen(std::random_device{}());
+  thread_local std::uniform_int_distribution<> dis(0, 15);
 
   std::stringstream ss;
   ss << "tensor_";

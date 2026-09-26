@@ -73,6 +73,9 @@ class ArchiveDownloadService extends GetxController with GridBasePageServiceMixi
   late Worker timeoutListener;
 
   @override
+  List<JHLifeCircleBean> get initDependencies => [downloadSetting, ehRequest];
+
+  @override
   Future<void> doInitBean() async {
     Get.put(this, permanent: true);
 

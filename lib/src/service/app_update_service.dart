@@ -76,6 +76,14 @@ class AppUpdateService
   @override
   Future<void> doInitBean() async {
     file = File(join(pathService.jhDataDir.path, 'jhentai.version'));
+    if (!file.existsSync()) {
+      File oldVersionFile = File(join(pathService.getVisibleDir().path, 'jhentai.version'));
+      if (oldVersionFile.existsSync()) {
+        try {
+          oldVersionFile.copySync(file.path);
+        } catch (_) {}
+      }
+    }
     if (file.existsSync()) {
       fromVersion = int.tryParse(await file.readAsString());
     } else {

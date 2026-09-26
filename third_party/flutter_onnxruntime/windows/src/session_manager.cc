@@ -21,10 +21,11 @@ SessionManager::~SessionManager() {
 }
 
 std::string SessionManager::createSession(const char *model_path, const Ort::SessionOptions &session_options) {
-  std::lock_guard<std::mutex> lock(mutex_);
-
-  // Generate a session ID
-  std::string session_id = generateSessionId();
+  std::string session_id;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    session_id = generateSessionId();
+  }
 
   try {
     // On Windows, need to convert the model path from char* to wchar_t*
@@ -39,8 +40,8 @@ std::string SessionManager::createSession(const char *model_path, const Ort::Ses
     }
 
     // Create a new session with the provided options
-    std::unique_ptr<Ort::Session> ort_session =
-        std::make_unique<Ort::Session>(env_, wide_model_path.c_str(), session_options);
+    std::shared_ptr<Ort::Session> ort_session =
+        std::make_shared<Ort::Session>(env_, wide_model_path.c_str(), session_options);
 
     // Create session info
     SessionInfo session_info;
@@ -66,7 +67,10 @@ std::string SessionManager::createSession(const char *model_path, const Ort::Ses
     }
 
     // Store the session info
-    sessions_[session_id] = std::move(session_info);
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      sessions_[session_id] = std::move(session_info);
+    }
 
     return session_id;
   } catch (const Ort::Exception &e) {
@@ -302,15 +306,20 @@ std::vector<Ort::Value> SessionManager::runInference(const std::string &session_
                                                      const std::vector<std::string> &input_names,
                                                      Ort::RunOptions *run_options) {
 
-  std::lock_guard<std::mutex> lock(mutex_);
   std::vector<Ort::Value> output_tensors;
-
-  auto it = sessions_.find(session_id);
-  if (it == sessions_.end()) {
-    throw Ort::Exception("Session not found", ORT_INVALID_ARGUMENT);
+  std::shared_ptr<Ort::Session> session;
+  std::shared_ptr<std::mutex> run_mutex;
+  std::vector<std::string> output_names;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = sessions_.find(session_id);
+    if (it == sessions_.end()) {
+      throw Ort::Exception("Session not found", ORT_INVALID_ARGUMENT);
+    }
+    session = it->second.session;
+    run_mutex = it->second.run_mutex;
+    output_names = it->second.output_names;
   }
-
-  Ort::Session *session = it->second.session.get();
   if (!session) {
     throw Ort::Exception("Session is invalid", ORT_INVALID_ARGUMENT);
   }
@@ -331,7 +340,7 @@ std::vector<Ort::Value> SessionManager::runInference(const std::string &session_
 
   // Prepare output names
   std::vector<const char *> output_names_char;
-  for (const auto &name : it->second.output_names) {
+  for (const auto &name : output_names) {
     output_names_char.push_back(name.c_str());
   }
 
@@ -340,8 +349,12 @@ std::vector<Ort::Value> SessionManager::runInference(const std::string &session_
   Ort::RunOptions *run_opts = run_options ? run_options : &default_run_options;
 
   // Run inference - let exceptions propagate out
-  output_tensors = session->Run(*run_opts, input_names_char.data(), input_tensors.data(), input_tensors.size(),
-                                output_names_char.data(), output_names_char.size());
+  {
+    // DirectML permits only one concurrent Run for a given session.
+    std::lock_guard<std::mutex> run_lock(*run_mutex);
+    output_tensors = session->Run(*run_opts, input_names_char.data(), input_tensors.data(), input_tensors.size(),
+                                  output_names_char.data(), output_names_char.size());
+  }
 
   return output_tensors;
 }

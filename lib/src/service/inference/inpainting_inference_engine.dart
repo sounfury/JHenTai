@@ -127,19 +127,21 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     if (!mask.contains(0)) {
       throw StateError('no text pixels remain after mask refinement');
     }
-    // Mobile allocations grow sharply with LaMa feature maps; use a bounded
-    // input while retaining the full-resolution source for final compositing.
+    // LaMa feature maps grow sharply with input area. The 1024-pixel path has
+    // been validated on Windows and keeps the first CPU run responsive.
     final LamaInput prepared = prepareLamaInput(
-      source, mask, maxSide: Platform.isAndroid || Platform.isIOS ? 1024 : 2048,
+      source, mask,
+      maxSide: Platform.isAndroid || Platform.isIOS || Platform.isWindows
+          ? 1024
+          : 2048,
     );
     token.throwIfCancelled();
     onProgress?.call(0.12);
 
-    final List<ort.OrtProvider> providers = providerResolver();
-    final ort.OrtSession? session = await runtime.session(
+    final ort.OrtSession? session = await runtime.sessionWithCpuFallback(
       modelPath,
       modelFingerprint: model.fingerprint,
-      providers: providers,
+      providers: providerResolver(),
       safetyConfig: safetyConfig,
       intraOpNumThreads: 2,
       interOpNumThreads: 1,

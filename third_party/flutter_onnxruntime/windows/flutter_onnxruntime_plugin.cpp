@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <sstream>
+#include <thread>
 
 // Include our implementation headers
 #include "src/session_manager.h"
@@ -55,7 +56,7 @@ void FlutterOnnxruntimePlugin::RegisterWithRegistrar(flutter::PluginRegistrarWin
   registrar->AddPlugin(std::move(plugin));
 }
 
-FlutterOnnxruntimePlugin::FlutterOnnxruntimePlugin() : impl_(std::make_unique<FlutterOnnxruntimePluginImpl>()) {}
+FlutterOnnxruntimePlugin::FlutterOnnxruntimePlugin() : impl_(std::make_shared<FlutterOnnxruntimePluginImpl>()) {}
 
 FlutterOnnxruntimePlugin::~FlutterOnnxruntimePlugin() {}
 
@@ -63,6 +64,27 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   const auto &method_name = method_call.method_name();
+
+  // ONNX session creation and inference can take tens of seconds. A Windows
+  // method-channel handler runs on the platform/window thread, so doing either
+  // operation here makes the entire app appear frozen. The response handler is
+  // safe to invoke from another thread and retains the messenger lifetime.
+  if (method_name == "createSession" || method_name == "runInference") {
+    auto arguments = method_call.arguments()
+        ? std::make_unique<flutter::EncodableValue>(*method_call.arguments())
+        : nullptr;
+    auto impl = impl_;
+    std::thread([method_name, arguments = std::move(arguments),
+                 result = std::move(result), impl = std::move(impl)]() mutable {
+      flutter::MethodCall<flutter::EncodableValue> call(method_name, std::move(arguments));
+      if (method_name == "createSession") {
+        HandleCreateSession(call, std::move(result), impl);
+      } else {
+        HandleRunInference(call, std::move(result), impl);
+      }
+    }).detach();
+    return;
+  }
 
   if (method_name == "getPlatformVersion") {
     std::ostringstream version_stream;
@@ -93,17 +115,11 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
   }
 
   // Session-related methods
-  if (method_name == "createSession") {
-    HandleCreateSession(method_call, std::move(result));
-    return;
-  } else if (method_name == "getAvailableProviders") {
+  if (method_name == "getAvailableProviders") {
     HandleGetAvailableProviders(method_call, std::move(result));
     return;
   } else if (method_name == "getRuntimeInfo") {
     HandleGetRuntimeInfo(method_call, std::move(result));
-    return;
-  } else if (method_name == "runInference") {
-    HandleRunInference(method_call, std::move(result));
     return;
   } else if (method_name == "closeSession") {
     HandleCloseSession(method_call, std::move(result));
@@ -413,7 +429,8 @@ void FlutterOnnxruntimePlugin::HandleReleaseOrtValue(
 
 void FlutterOnnxruntimePlugin::HandleCreateSession(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
-    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+    std::shared_ptr<FlutterOnnxruntimePluginImpl> impl) {
 
   // Extract parameters
   const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
@@ -584,6 +601,17 @@ void FlutterOnnxruntimePlugin::HandleCreateSession(
 
             // Append CUDA execution provider to session options
             session_options.AppendExecutionProvider_CUDA_V2(*cuda_options_ptr);
+          } else if (provider == "DIRECT_ML") {
+#ifdef ORT_HAS_DIRECTML
+            // The DirectML EP supports neither memory-pattern optimization nor
+            // parallel execution; ORT rejects the session if either is enabled.
+            session_options.DisableMemPattern();
+            session_options.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
+            session_options.AppendExecutionProvider("DML", {{"device_id", device_id_str}});
+#else
+            result->Error("INVALID_PROVIDER", "This build of ONNX Runtime does not include DirectML", nullptr);
+            return;
+#endif
           } else if (provider == "TENSOR_RT") {
             // Use TensorRT if available
             // This is just a placeholder - actual implementation would depend on TensorRT availability
@@ -602,7 +630,7 @@ void FlutterOnnxruntimePlugin::HandleCreateSession(
     }
 
     // Create the session
-    std::string session_id = impl_->sessionManager_->createSession(model_path.c_str(), session_options);
+    std::string session_id = impl->sessionManager_->createSession(model_path.c_str(), session_options);
 
     if (session_id.empty()) {
       result->Error("SESSION_CREATION_ERROR", "Failed to create ONNX Runtime session", nullptr);
@@ -610,8 +638,8 @@ void FlutterOnnxruntimePlugin::HandleCreateSession(
     }
 
     // Get input and output names
-    std::vector<std::string> input_names = impl_->sessionManager_->getInputNames(session_id);
-    std::vector<std::string> output_names = impl_->sessionManager_->getOutputNames(session_id);
+    std::vector<std::string> input_names = impl->sessionManager_->getInputNames(session_id);
+    std::vector<std::string> output_names = impl->sessionManager_->getOutputNames(session_id);
 
     // Prepare response
     flutter::EncodableMap response;
@@ -726,7 +754,8 @@ void FlutterOnnxruntimePlugin::HandleGetRuntimeInfo(
 
 void FlutterOnnxruntimePlugin::HandleRunInference(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
-    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+    std::shared_ptr<FlutterOnnxruntimePluginImpl> impl) {
 
   // Extract parameters
   const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
@@ -746,7 +775,7 @@ void FlutterOnnxruntimePlugin::HandleRunInference(
     std::string session_id = std::get<std::string>(session_id_it->second);
 
     // Check if session exists
-    if (!impl_->sessionManager_->hasSession(session_id)) {
+    if (!impl->sessionManager_->hasSession(session_id)) {
       result->Error("INVALID_SESSION", "Session not found", nullptr);
       return;
     }
@@ -788,7 +817,7 @@ void FlutterOnnxruntimePlugin::HandleRunInference(
       }
     }
 
-    std::vector<std::string> output_names = impl_->sessionManager_->getOutputNames(session_id);
+    std::vector<std::string> output_names = impl->sessionManager_->getOutputNames(session_id);
 
     // Prepare input tensors and input names
     // Use ClonedTensor to keep backing buffers alive during inference
@@ -814,20 +843,17 @@ void FlutterOnnxruntimePlugin::HandleRunInference(
 
       std::string tensor_id = std::get<std::string>(tensor_id_it->second);
 
-      // Get the tensor value
-      Ort::Value *tensor_ptr = impl_->tensorManager_->getTensor(tensor_id);
-      if (tensor_ptr != nullptr) {
-        try {
-          // Clone the tensor — ClonedTensor owns both the Ort::Value and its backing buffer
-          ClonedTensor cloned = impl_->tensorManager_->cloneTensor(tensor_id);
-          if (cloned.value) {
-            cloned_inputs.push_back(std::move(cloned));
-            input_names.push_back(input_name);
-          }
-        } catch (const std::exception &e) {
-          // Log the error but continue with the next tensor
-          std::cerr << "Failed to clone tensor " << tensor_id << ": " << e.what() << std::endl;
+      try {
+        // Clone under TensorManager's lock so a concurrent release cannot
+        // invalidate a raw pointer between lookup and copy.
+        ClonedTensor cloned = impl->tensorManager_->cloneTensor(tensor_id);
+        if (cloned.value) {
+          cloned_inputs.push_back(std::move(cloned));
+          input_names.push_back(input_name);
         }
+      } catch (const std::exception &e) {
+        // Log the error but continue with the next tensor
+        std::cerr << "Failed to clone tensor " << tensor_id << ": " << e.what() << std::endl;
       }
     }
 
@@ -842,7 +868,7 @@ void FlutterOnnxruntimePlugin::HandleRunInference(
     // Note: cloned_inputs (with backing buffers) stays alive through this scope
     std::vector<Ort::Value> output_tensors;
     if (!input_tensors.empty()) {
-      output_tensors = impl_->sessionManager_->runInference(session_id, input_tensors, input_names, &run_options);
+      output_tensors = impl->sessionManager_->runInference(session_id, input_tensors, input_names, &run_options);
     }
 
     // Process outputs
@@ -851,15 +877,15 @@ void FlutterOnnxruntimePlugin::HandleRunInference(
     // For each output tensor, store it using TensorManager
     for (size_t i = 0; i < output_tensors.size(); i++) {
       // Create a tensor ID
-      std::string value_id = impl_->tensorManager_->generateTensorId();
+      std::string value_id = impl->tensorManager_->generateTensorId();
 
       // Store the tensor - this transfers ownership
       // TensorManager::storeTensor returns void (not bool)
-      impl_->tensorManager_->storeTensor(value_id, std::move(output_tensors[i]));
+      impl->tensorManager_->storeTensor(value_id, std::move(output_tensors[i]));
 
       // Get the tensor type and shape
-      std::string tensor_type = impl_->tensorManager_->getTensorType(value_id);
-      std::vector<int64_t> shape = impl_->tensorManager_->getTensorShape(value_id);
+      std::string tensor_type = impl->tensorManager_->getTensorType(value_id);
+      std::vector<int64_t> shape = impl->tensorManager_->getTensorShape(value_id);
 
       // Add the value ID to the outputs map
       flutter::EncodableList shape_list;

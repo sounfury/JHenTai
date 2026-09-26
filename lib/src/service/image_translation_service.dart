@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
+
+import 'image_translation/onomatopoeia_filter.dart';
 import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
@@ -528,6 +530,19 @@ class ImageTranslationService extends GetxController
         imageHeight = height;
       }
       blocks = await _detectColors(sourceBytes, blocks, imageWidth, imageHeight);
+      // Sound effects stay as drawn: drop them before containers, translation,
+      // overlay and inpainting so they are neither translated nor erased.
+      blocks = blocks
+          .where(
+            (RecognizedTextBlock block) => !isOnomatopoeia(
+              block.text,
+              insideBubble:
+                  bubbleDetection == null
+                      ? null
+                      : isBlockInsideAnyRegion(block, bubbleDetection.regions),
+            ),
+          )
+          .toList();
       List<RecognizedTextContainer> containers =
           useBubbleDetection
               ? _containersFromBubbleDetection(
@@ -875,6 +890,8 @@ class ImageTranslationService extends GetxController
         'mangaAutoSuggest': imageTranslationSetting.mangaOcrAutoSuggest.value,
         'bubbleDetection': configuration['bubbleDetection'],
         'bubbleModel': configuration['bubbleModel'],
+        // Bump when onomatopoeia filtering changes which blocks translate.
+        'sfxFilter': 2,
       },
       translationModel: configuration['model'] as String?,
       translationConfiguration: <String, dynamic>{
@@ -1880,6 +1897,21 @@ void paintTranslationBubbleBackground(
 /// boxes are ignored. When one detector box contains disconnected OCR clusters
 /// (large inter-line / inter-column gaps), each cluster becomes its own
 /// container so distant bubbles are not violently merged into one utterance.
+bool isBlockInsideAnyRegion(
+  RecognizedTextBlock block,
+  List<DetectedTextRegion> regions,
+) {
+  final double centerX = block.left + block.width / 2;
+  final double centerY = block.top + block.height / 2;
+  return regions.any(
+    (DetectedTextRegion region) =>
+        centerX >= region.left &&
+        centerX <= region.left + region.width &&
+        centerY >= region.top &&
+        centerY <= region.top + region.height,
+  );
+}
+
 List<RecognizedTextContainer> containersFromBubbleDetection(
   List<RecognizedTextBlock> blocks,
   DetectionResult? detection, {

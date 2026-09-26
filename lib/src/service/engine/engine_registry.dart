@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
 import 'package:jhentai/src/service/inference_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
+import 'package:jhentai/src/setting/inference_setting.dart';
 
 import 'api_translation_engine.dart';
 import 'apple_engine_adapters.dart';
@@ -25,6 +26,25 @@ import '../inference/inference_task.dart';
 import '../inference/inference_safety.dart';
 import '../inference/onnx_model_store.dart';
 import '../inference/onnx_runtime.dart';
+
+/// Providers for the image-translation detection models (CTD, bubble
+/// segmentation): the GPU backend selected for OCR on Windows first,
+/// then CPU so [OnnxRuntime.sessionWithCpuFallback] can recover.
+List<ort.OrtProvider> _visionModelProviders() {
+  final List<ort.OrtProvider> available =
+      OnnxRuntime.instance.availableProviders;
+  final ort.OrtProvider? gpu = Platform.isWindows
+      ? switch (inferenceService.resolveBackendFor(InferenceDomain.ocr)) {
+          InferenceBackend.directml => ort.OrtProvider.DIRECT_ML,
+          InferenceBackend.cuda => ort.OrtProvider.CUDA,
+          _ => null,
+        }
+      : null;
+  return <ort.OrtProvider>[
+    if (gpu != null && available.contains(gpu)) gpu,
+    if (available.contains(ort.OrtProvider.CPU)) ort.OrtProvider.CPU,
+  ];
+}
 
 EnginePlatform get currentEnginePlatform {
   if (Platform.isAndroid) {
@@ -135,13 +155,7 @@ class EngineRegistry {
     );
     final CtdOnnxInferenceEngine ctdInference = CtdOnnxInferenceEngine(
       runtime: OnnxRuntime.instance,
-      providerResolver: () {
-        final List<ort.OrtProvider> available =
-            OnnxRuntime.instance.availableProviders;
-        return available.contains(ort.OrtProvider.CPU)
-            ? <ort.OrtProvider>[ort.OrtProvider.CPU]
-            : const <ort.OrtProvider>[];
-      },
+      providerResolver: _visionModelProviders,
       modelResolver: () {
         final Map<String, String>? files = OnnxModelStore.instance
             .manifestFilePaths(OnnxModelStore.ctdDetectionManifestId);
@@ -186,13 +200,7 @@ class EngineRegistry {
     final BubbleSegmentationInferenceEngine bubbleInference =
         BubbleSegmentationInferenceEngine(
           runtime: OnnxRuntime.instance,
-          providerResolver: () {
-            final List<ort.OrtProvider> available =
-                OnnxRuntime.instance.availableProviders;
-            return available.contains(ort.OrtProvider.CPU)
-                ? <ort.OrtProvider>[ort.OrtProvider.CPU]
-                : const <ort.OrtProvider>[];
-          },
+          providerResolver: _visionModelProviders,
           modelResolver: () {
             final Map<String, String>? files = OnnxModelStore.instance
                 .manifestFilePaths(
@@ -238,15 +246,14 @@ class EngineRegistry {
     final LamaOnnxInpaintingInferenceEngine lamaInference =
         LamaOnnxInpaintingInferenceEngine(
           runtime: OnnxRuntime.instance,
-          // CPU is the only provider enabled by this adapter until a CTD/
-          // inpainting-specific canary is wired into InferenceService.
-          providerResolver: () {
-            final List<ort.OrtProvider> available =
-                OnnxRuntime.instance.availableProviders;
-            return available.contains(ort.OrtProvider.CPU)
-                ? <ort.OrtProvider>[ort.OrtProvider.CPU]
-                : const <ort.OrtProvider>[];
-          },
+          // LaMa's FFC convolutions open on DirectML but fail at Run
+          // (DmlFusedConv E_INVALIDARG), so it stays on CPU.
+          providerResolver: () =>
+              OnnxRuntime.instance.availableProviders.contains(
+                ort.OrtProvider.CPU,
+              )
+              ? const <ort.OrtProvider>[ort.OrtProvider.CPU]
+              : const <ort.OrtProvider>[],
           modelResolver: () {
             final Map<String, String>? files = OnnxModelStore.instance
                 .manifestFilePaths(OnnxModelStore.lamaInpaintManifestId);

@@ -86,7 +86,7 @@ class BubbleSegmentationInferenceEngine {
     onProgress?.call(0.16);
 
     final BubbleSegmentationModelInfo model = modelResolver();
-    final ort.OrtSession? session = await runtime.session(
+    final ort.OrtSession? session = await runtime.sessionWithCpuFallback(
       model.modelPath!,
       modelFingerprint: model.fingerprint,
       providers: providerResolver(),

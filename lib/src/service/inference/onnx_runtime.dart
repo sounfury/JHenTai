@@ -143,6 +143,43 @@ class OnnxRuntime {
     return _available;
   }
 
+  /// Like [session], but when an accelerated provider list fails to open,
+  /// retries once on CPU alone so GPU driver issues never block a pipeline.
+  Future<ort.OrtSession?> sessionWithCpuFallback(
+    String modelPath, {
+    required String modelFingerprint,
+    required List<ort.OrtProvider> providers,
+    InferenceSessionSafetyConfig? safetyConfig,
+    int? intraOpNumThreads,
+    int? interOpNumThreads,
+  }) async {
+    final ort.OrtSession? primary = await session(
+      modelPath,
+      modelFingerprint: modelFingerprint,
+      providers: providers,
+      safetyConfig: safetyConfig,
+      intraOpNumThreads: intraOpNumThreads,
+      interOpNumThreads: interOpNumThreads,
+    );
+    if (primary != null ||
+        providers.length < 2 ||
+        providers.first == ort.OrtProvider.CPU ||
+        !providers.contains(ort.OrtProvider.CPU)) {
+      return primary;
+    }
+    _log.warning(
+      'ONNX session on ${providers.first.name} failed for $modelPath, retrying on CPU',
+    );
+    return session(
+      modelPath,
+      modelFingerprint: modelFingerprint,
+      providers: const <ort.OrtProvider>[ort.OrtProvider.CPU],
+      safetyConfig: safetyConfig,
+      intraOpNumThreads: intraOpNumThreads,
+      interOpNumThreads: interOpNumThreads,
+    );
+  }
+
   Future<ort.OrtSession?> session(
     String modelPath, {
     required String modelFingerprint,

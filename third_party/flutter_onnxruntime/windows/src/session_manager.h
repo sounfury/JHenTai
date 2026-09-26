@@ -22,7 +22,8 @@ class TensorManager;
 
 // Session information structure
 struct SessionInfo {
-  std::unique_ptr<Ort::Session> session;
+  std::shared_ptr<Ort::Session> session;
+  std::shared_ptr<std::mutex> run_mutex = std::make_shared<std::mutex>();
   std::vector<std::string> input_names;
   std::vector<std::string> output_names;
 };

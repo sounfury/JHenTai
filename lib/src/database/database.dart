@@ -577,6 +577,16 @@ LazyDatabase _openConnection() {
     final file = io.File(join(pathService.tempDir.path, 'db', 'db.sqlite'));
     await file.parent.create(recursive: true);
 
+    // 若新路径尚无数据库，且旧应用目录下存在旧数据库，则自动迁移以保留用户Cookie和数据
+    if (!file.existsSync()) {
+      final oldDbFile = io.File(join(pathService.getVisibleDir().path, 'db.sqlite'));
+      if (oldDbFile.existsSync()) {
+        try {
+          await oldDbFile.copy(file.path);
+        } catch (_) {}
+      }
+    }
+
     // Resolve on the main isolate: `isolateSetup` is sent to the spawned
     // database isolate, so it may only capture sendable values.
     final String tempDir = pathService.tempDir.path;

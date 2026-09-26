@@ -35,8 +35,9 @@ private:
                         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   // Session management method handlers
-  void HandleCreateSession(const flutter::MethodCall<flutter::EncodableValue> &method_call,
-                           std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  static void HandleCreateSession(const flutter::MethodCall<flutter::EncodableValue> &method_call,
+                           std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+                           std::shared_ptr<FlutterOnnxruntimePluginImpl> impl);
 
   void HandleGetAvailableProviders(const flutter::MethodCall<flutter::EncodableValue> &method_call,
                                    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
@@ -44,8 +45,9 @@ private:
   void HandleGetRuntimeInfo(const flutter::MethodCall<flutter::EncodableValue> &method_call,
                             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
-  void HandleRunInference(const flutter::MethodCall<flutter::EncodableValue> &method_call,
-                          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  static void HandleRunInference(const flutter::MethodCall<flutter::EncodableValue> &method_call,
+                          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+                          std::shared_ptr<FlutterOnnxruntimePluginImpl> impl);
 
   void HandleCloseSession(const flutter::MethodCall<flutter::EncodableValue> &method_call,
                           std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
@@ -73,7 +75,7 @@ private:
                              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   // Private implementation
-  std::unique_ptr<FlutterOnnxruntimePluginImpl> impl_;
+  std::shared_ptr<FlutterOnnxruntimePluginImpl> impl_;
 };
 
 } // namespace flutter_onnxruntime

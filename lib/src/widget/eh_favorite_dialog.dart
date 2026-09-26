@@ -15,7 +15,6 @@ import 'package:jhentai/src/widget/loading_state_indicator.dart';
 import '../exception/eh_site_exception.dart';
 import '../setting/favorite_setting.dart';
 import '../service/log.dart';
-import '../utils/route_util.dart';
 import '../utils/snack_util.dart';
 
 typedef GalleryNoteFetchFunction = Future<GalleryNote> Function();
@@ -94,8 +93,10 @@ class _EHFavoriteDialogState extends State<EHFavoriteDialog> {
                           style: TextStyle(fontSize: UIConfig.favoriteDialogTrailingTextSize, color: UIConfig.favoriteDialogCountTextColor(context)),
                         ),
                         onTap: () {
-                          backRoute(
-                            result: (
+                          // Pop via this dialog's own navigator: Get.back() only
+                          // closes a (possibly stale) snackbar when one is open.
+                          Navigator.of(context).pop(
+                            (
                               isDelete: index == selectedIndex,
                               favIndex: index,
                               note: _controller.text,
@@ -150,8 +151,10 @@ class _EHFavoriteDialogState extends State<EHFavoriteDialog> {
                             return;
                           }
 
-                          backRoute(
-                            result: (
+                          // Pop via this dialog's own navigator: Get.back() only
+                          // closes a (possibly stale) snackbar when one is open.
+                          Navigator.of(context).pop(
+                            (
                               isDelete: false,
                               favIndex: selectedIndex,
                               note: _controller.text,

@@ -406,7 +406,7 @@ class ImageInpaintingService extends GetxController
       _set(requestKey, result);
       return result;
     } on EngineException catch (error) {
-      return _fail(requestKey, error.code);
+      return _fail(requestKey, error.code, detail: error.message);
     } catch (_) {
       return _fail(requestKey, 'ctd_failed');
     } finally {
@@ -528,7 +528,12 @@ class ImageInpaintingService extends GetxController
       _set(requestKey, result);
       return result;
     } on EngineException catch (error) {
-      return _fail(requestKey, error.code, sourceHash: sourceHash);
+      return _fail(
+        requestKey,
+        error.code,
+        sourceHash: sourceHash,
+        detail: error.message,
+      );
     } catch (_) {
       return _fail(requestKey, 'inpaint_failed', sourceHash: sourceHash);
     } finally {
@@ -591,7 +596,12 @@ class ImageInpaintingService extends GetxController
     update([requestKey]);
   }
 
-  InpaintingResult _fail(String requestKey, String code, {String? sourceHash}) {
+  InpaintingResult _fail(
+    String requestKey,
+    String code, {
+    String? sourceHash,
+    String? detail,
+  }) {
     final String normalized = _normalizeFailureCode(code);
     // warning() is async; swallow init failures so unit tests without
     // PathService still exercise detectAndRepair fallbacks.
@@ -599,7 +609,7 @@ class ImageInpaintingService extends GetxController
       log
           .warning(
             'CTD/LaMa Large background repair unavailable; falling back to overlay boxes '
-            '($normalized)',
+            '($normalized)${detail == null ? '' : ': $detail'}',
           )
           .catchError((Object _) {}),
     );

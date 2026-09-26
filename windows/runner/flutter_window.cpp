@@ -26,6 +26,10 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+
+  // The first frame may have been produced before the view was attached.
+  // Request another frame so Windows paints the newly attached child view.
+  flutter_controller_->ForceRedraw();
   return true;
 }
 

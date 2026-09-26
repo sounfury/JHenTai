@@ -133,6 +133,9 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
   Worker? _downloadSettingListener;
 
   @override
+  List<JHLifeCircleBean> get initDependencies => [downloadSetting];
+
+  @override
   Future<void> doInitBean() async {
     Get.put(this, permanent: true);
 

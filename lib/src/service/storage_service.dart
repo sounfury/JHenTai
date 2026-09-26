@@ -48,13 +48,20 @@ class StorageService
           File(join(pathService.getVisibleDir().path, '.GetStorage.gs'));
       File oldBakFile =
           File(join(pathService.getVisibleDir().path, '.GetStorage.bak'));
-      if (oldConfigFile.existsSync()) {
-        oldConfigFile.copySync(join(pathService.jhDataDir.path, 'jhentai.gs'));
-        oldConfigFile.delete();
+      File targetGsFile = File(join(pathService.jhDataDir.path, 'jhentai.gs'));
+      File targetBakFile = File(join(pathService.jhDataDir.path, 'jhentai.bak'));
+
+      if (!targetGsFile.existsSync()) {
+        File oldDirectGsFile = File(join(pathService.getVisibleDir().path, 'jhentai.gs'));
+        if (oldDirectGsFile.existsSync()) {
+          oldDirectGsFile.copySync(targetGsFile.path);
+        }
       }
-      if (oldBakFile.existsSync()) {
-        oldBakFile.copySync(join(pathService.jhDataDir.path, 'jhentai.bak'));
-        oldBakFile.delete();
+      if (!targetBakFile.existsSync()) {
+        File oldDirectBakFile = File(join(pathService.getVisibleDir().path, 'jhentai.bak'));
+        if (oldDirectBakFile.existsSync()) {
+          oldDirectBakFile.copySync(targetBakFile.path);
+        }
       }
     } on Exception catch (e) {
       log.uploadError(e);

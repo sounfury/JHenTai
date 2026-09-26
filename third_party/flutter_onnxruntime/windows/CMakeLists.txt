@@ -75,6 +75,53 @@ if(NOT USE_SYSTEM_ONNXRUNTIME)
     set(ONNXRUNTIME_ARCH "x86")
   endif()
 
+  # The DirectML build is a superset of the CPU build: it keeps the CPU EP and adds a vendor-neutral GPU EP (NVIDIA, AMD
+  # and Intel via Direct3D 12) without requiring CUDA/cuDNN on the user's machine.
+  option(ONNXRUNTIME_USE_DIRECTML "Bundle the DirectML build of ONNX Runtime" ON)
+  if(NOT DEFINED DIRECTML_VERSION)
+    set(DIRECTML_VERSION
+        "1.15.4"
+        CACHE STRING "DirectML redistributable version matching ONNXRUNTIME_VERSION")
+  endif()
+endif()
+
+if(NOT USE_SYSTEM_ONNXRUNTIME AND ONNXRUNTIME_USE_DIRECTML AND ONNXRUNTIME_ARCH STREQUAL "x64")
+  set(ONNXRUNTIME_DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/onnxruntime")
+  set(ONNXRUNTIME_EXTRACT_DIR "${ONNXRUNTIME_DOWNLOAD_DIR}/onnxruntime-directml-${ONNXRUNTIME_VERSION}")
+  set(DIRECTML_EXTRACT_DIR "${ONNXRUNTIME_DOWNLOAD_DIR}/directml-${DIRECTML_VERSION}")
+
+  # NuGet packages are plain zip archives.
+  function(download_nupkg PACKAGE VERSION DEST)
+    if(EXISTS "${DEST}/.complete")
+      return()
+    endif()
+    string(TOLOWER "${PACKAGE}" PACKAGE_LOWER)
+    set(URL "https://api.nuget.org/v3-flatcontainer/${PACKAGE_LOWER}/${VERSION}/${PACKAGE_LOWER}.${VERSION}.nupkg")
+    set(ARCHIVE "${ONNXRUNTIME_DOWNLOAD_DIR}/${PACKAGE_LOWER}.${VERSION}.zip")
+    message(STATUS "Downloading ${PACKAGE} ${VERSION} from: ${URL}")
+    file(MAKE_DIRECTORY "${DEST}")
+    file(DOWNLOAD "${URL}" "${ARCHIVE}" SHOW_PROGRESS STATUS DOWNLOAD_STATUS)
+    list(GET DOWNLOAD_STATUS 0 DOWNLOAD_CODE)
+    if(NOT DOWNLOAD_CODE EQUAL 0)
+      message(FATAL_ERROR "Failed to download ${URL}: ${DOWNLOAD_STATUS}")
+    endif()
+    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xf "${ARCHIVE}" WORKING_DIRECTORY "${DEST}")
+    file(REMOVE "${ARCHIVE}")
+    file(WRITE "${DEST}/.complete" "")
+  endfunction()
+
+  download_nupkg("Microsoft.ML.OnnxRuntime.DirectML" "${ONNXRUNTIME_VERSION}" "${ONNXRUNTIME_EXTRACT_DIR}")
+  download_nupkg("Microsoft.AI.DirectML" "${DIRECTML_VERSION}" "${DIRECTML_EXTRACT_DIR}")
+
+  set(ONNXRUNTIME_NATIVE_DIR "${ONNXRUNTIME_EXTRACT_DIR}/runtimes/win-x64/native")
+  set(ONNXRUNTIME_INCLUDE_DIRS "${ONNXRUNTIME_EXTRACT_DIR}/build/native/include")
+  set(ONNXRUNTIME_LIBRARIES "${ONNXRUNTIME_NATIVE_DIR}/onnxruntime.lib")
+  set(flutter_onnxruntime_bundled_libraries
+      "${ONNXRUNTIME_NATIVE_DIR}/onnxruntime.dll" "${ONNXRUNTIME_NATIVE_DIR}/onnxruntime_providers_shared.dll"
+      "${DIRECTML_EXTRACT_DIR}/bin/x64-win/DirectML.dll")
+  set(ONNXRUNTIME_HAS_DIRECTML TRUE)
+  message(STATUS "Using ONNX Runtime DirectML ${ONNXRUNTIME_VERSION} with DirectML ${DIRECTML_VERSION}")
+elseif(NOT USE_SYSTEM_ONNXRUNTIME)
   # Set download URL with correct naming pattern for Windows
   set(ONNXRUNTIME_URL
       "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-${ONNXRUNTIME_ARCH}-${ONNXRUNTIME_VERSION}.zip"
@@ -166,11 +213,15 @@ add_library(${PLUGIN_NAME} SHARED "flutter_onnxruntime_plugin.cpp" "flutter_onnx
 # Apply a standard set of build settings that are configured in the application-level CMakeLists.txt. This can be
 # removed for plugins that want full control over build settings.
 apply_standard_settings(${PLUGIN_NAME})
+target_compile_options(${PLUGIN_NAME} PRIVATE /utf-8 /wd"4819")
 
 # Symbols are hidden by default to reduce the chance of accidental conflicts between plugins. This should not be
 # removed; any symbols that should be exported should be explicitly exported with the FLUTTER_PLUGIN_EXPORT macro.
 set_target_properties(${PLUGIN_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions(${PLUGIN_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
+if(ONNXRUNTIME_HAS_DIRECTML)
+  target_compile_definitions(${PLUGIN_NAME} PRIVATE ORT_HAS_DIRECTML)
+endif()
 
 # Add WINDOWS_EXPORT_ALL_SYMBOLS to ensure the generation of the import library (.lib file)
 set_target_properties(${PLUGIN_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
