@@ -1,8 +1,9 @@
 import 'dart:math' as math;
 
-import 'package:image/image.dart' as image;
+import 'dart:typed_data';
 
 import 'oriented_rect.dart';
+import 'rgba_raster.dart';
 
 /// Rectifies a quadrilateral into an axis-aligned image for OCR.
 ///
@@ -10,8 +11,8 @@ import 'oriented_rect.dart';
 /// top-left, top-right, bottom-right, bottom-left. A projective homography is
 /// used instead of an axis-aligned crop plus rotation, so keystone distortion
 /// from comic-page scans is corrected before recognition.
-image.Image? perspectiveStraightenOcrCrop(
-  image.Image source,
+RgbaRaster? perspectiveStraightenOcrCrop(
+  RgbaRaster source,
   List<OcrPoint> corners,
 ) {
   if (corners.length != 4 || source.width < 2 || source.height < 2) {
@@ -41,24 +42,22 @@ image.Image? perspectiveStraightenOcrCrop(
   );
   if (h == null) return null;
 
-  final image.Image result = image.Image(
-    width: outputWidth,
-    height: outputHeight,
-    numChannels: 3,
-  );
+  // Unsampled pixels (degenerate projection) stay opaque black, as before.
+  final Uint8List result = Uint8List(outputWidth * outputHeight * 4);
   for (int y = 0; y < outputHeight; y++) {
     for (int x = 0; x < outputWidth; x++) {
+      final int index = (y * outputWidth + x) * 4;
+      result[index + 3] = 255;
       final double denominator = h[6] * (x + 0.5) + h[7] * (y + 0.5) + 1;
       if (denominator.abs() < 1e-9) continue;
       final double sourceX =
           (h[0] * (x + 0.5) + h[1] * (y + 0.5) + h[2]) / denominator;
       final double sourceY =
           (h[3] * (x + 0.5) + h[4] * (y + 0.5) + h[5]) / denominator;
-      final (int r, int g, int b) rgb = _sampleRgb(source, sourceX, sourceY);
-      result.setPixelRgb(x, y, rgb.$1, rgb.$2, rgb.$3);
+      _sampleRgb(source, sourceX, sourceY, result, index);
     }
   }
-  return result;
+  return RgbaRaster(outputWidth, outputHeight, result);
 }
 
 List<OcrPoint> _canonicalizeQuad(List<OcrPoint> corners) {
@@ -145,7 +144,14 @@ List<double>? _solveHomography(
   return values;
 }
 
-(int, int, int) _sampleRgb(image.Image source, double x, double y) {
+/// Bilinear RGB sample of [source] at (x, y), rounded, written to [output].
+void _sampleRgb(
+  RgbaRaster source,
+  double x,
+  double y,
+  Uint8List output,
+  int index,
+) {
   final double px = x.clamp(0, source.width - 1).toDouble();
   final double py = y.clamp(0, source.height - 1).toDouble();
   final int x0 = px.floor();
@@ -154,21 +160,17 @@ List<double>? _solveHomography(
   final int y1 = math.min(source.height - 1, y0 + 1);
   final double dx = px - x0;
   final double dy = py - y0;
-  final image.Pixel p00 = source.getPixel(x0, y0);
-  final image.Pixel p10 = source.getPixel(x1, y0);
-  final image.Pixel p01 = source.getPixel(x0, y1);
-  final image.Pixel p11 = source.getPixel(x1, y1);
-  int blend(num a, num b, num c, num d) =>
-      (a * (1 - dx) * (1 - dy) +
-              b * dx * (1 - dy) +
-              c * (1 - dx) * dy +
-              d * dx * dy)
-          .round()
-          .clamp(0, 255)
-          .toInt();
-  return (
-    blend(p00.r, p10.r, p01.r, p11.r),
-    blend(p00.g, p10.g, p01.g, p11.g),
-    blend(p00.b, p10.b, p01.b, p11.b),
-  );
+  final Uint8List pixels = source.pixels;
+  final int p00 = (y0 * source.width + x0) * 4;
+  final int p10 = (y0 * source.width + x1) * 4;
+  final int p01 = (y1 * source.width + x0) * 4;
+  final int p11 = (y1 * source.width + x1) * 4;
+  for (int c = 0; c < 3; c++) {
+    output[index + c] = (pixels[p00 + c] * (1 - dx) * (1 - dy) +
+            pixels[p10 + c] * dx * (1 - dy) +
+            pixels[p01 + c] * (1 - dx) * dy +
+            pixels[p11 + c] * dx * dy)
+        .round()
+        .clamp(0, 255);
+  }
 }

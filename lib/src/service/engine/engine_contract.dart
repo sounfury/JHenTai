@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 import 'package:jhentai/src/model/image_translation.dart';
+import 'package:jhentai/src/utils/rgba_raster.dart';
 
 /// Stable names for the independent stages of the image pipeline.
 enum EngineKind {
@@ -294,10 +295,15 @@ class EngineDescriptor {
 class EngineImageRequest {
   const EngineImageRequest({
     required this.imagePath,
+    this.image,
     this.configuration = const <String, dynamic>{},
   });
 
   final String imagePath;
+
+  /// The already decoded [imagePath], shared by pipeline stages so the page
+  /// is decoded once. Engines that cannot use it read [imagePath] instead.
+  final RgbaRaster? image;
   final Map<String, dynamic> configuration;
 }
 
@@ -397,6 +403,7 @@ abstract class DetectionEngine {
 class OcrEngineRequest extends EngineImageRequest {
   const OcrEngineRequest({
     required super.imagePath,
+    super.image,
     super.configuration,
     this.maxDimension = 2200,
     this.regions = const <DetectedTextRegion>[],

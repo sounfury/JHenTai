@@ -1220,7 +1220,7 @@ favnote：配對收藏備註
       'autoTranslateGalleryTextHint': '開啟後，你看到的圖庫標題和評論將自動翻譯（需要 Apple 裝置端翻譯）。',
       'imageTranslationTranslationUnavailable':
           'Apple 端側翻譯需 iOS 26 / macOS 26 以上系統。目前系統請改選第三方 API 翻譯。',
-      'imageTranslationTranslationFailed': 'Apple 端側翻譯失敗。',
+      'imageTranslationTranslationFailed': '文字翻譯失敗，請重試。',
       'imageTranslationShow': '顯示翻譯',
       'imageTranslationHide': '隱藏翻譯',
       'imageTranslationRetranslate': '重新翻譯',

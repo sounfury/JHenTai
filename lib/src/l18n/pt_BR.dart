@@ -1258,7 +1258,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationTranslationUnavailable':
           'A tradução no dispositivo da Apple exige iOS 26 / macOS 26 ou superior. Selecione a API de terceiros neste sistema.',
       'imageTranslationTranslationFailed':
-          'Falha na tradução no dispositivo da Apple.',
+          'Falha na tradução do texto. Tente novamente.',
       'imageTranslationShow': 'Mostrar tradução',
       'imageTranslationHide': 'Ocultar tradução',
       'imageTranslationRetranslate': 'Retraduzir',

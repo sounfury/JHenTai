@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
-import 'package:image/image.dart' as image;
 import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/utils/oriented_rect.dart';
+import 'package:jhentai/src/utils/rgba_raster.dart';
 
 import 'inference_exception.dart';
 import 'inference_timings.dart';
@@ -37,8 +37,9 @@ class OnnxOcrModelInfo {
   final String fingerprint;
 }
 
-/// End-to-end PP-OCRv6 small pipeline: DB detection, line orientation and CTC
-/// recognition. The detector uses connected DB regions and conservative
+/// End-to-end PP-OCRv6 small pipeline: DB detection and CTC recognition.
+/// The 0/180-degree line classifier is not run: upside-down lines practically
+/// never occur in comics, and it cost one native round trip per detected line. The detector uses connected DB regions and conservative
 /// rectangle expansion; this avoids native OpenCV while preserving original
 /// image coordinates for the translation overlay.
 ///
@@ -84,6 +85,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
   @override
   Future<OcrInferenceResult> recognize(
     String imagePath, {
+    RgbaRaster? image,
     int maxDimension = 2200,
     InferenceCancellationToken? cancellationToken,
     InferenceProgressCallback? onProgress,
@@ -95,8 +97,9 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       throw const InferenceNotReadyException('onnx-ocr');
     }
     final File inputFile = File(imagePath);
-    if (!await inputFile.exists() ||
-        await inputFile.length() > _maxInputBytes) {
+    if (image == null &&
+        (!await inputFile.exists() ||
+            await inputFile.length() > _maxInputBytes)) {
       throw StateError('OCR input is missing or exceeds 80 MiB');
     }
 
@@ -111,12 +114,6 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
             safetyConfig: safetyConfig,
           ),
           runtime.session(
-            model.clsPath,
-            modelFingerprint: '${model.fingerprint}:cls',
-            providers: providers,
-            safetyConfig: safetyConfig,
-          ),
-          runtime.session(
             model.recPath,
             modelFingerprint: '${model.fingerprint}:rec',
             providers: providers,
@@ -124,40 +121,31 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           ),
         ]);
     final ort.OrtSession? detSession = sessions[0];
-    final ort.OrtSession? clsSession = sessions[1];
-    final ort.OrtSession? recSession = sessions[2];
-    if (detSession == null || clsSession == null || recSession == null) {
+    final ort.OrtSession? recSession = sessions[1];
+    if (detSession == null || recSession == null) {
       throw const InferenceNotReadyException('onnx-ocr');
     }
 
     timings?.record('ocr.sessions', sessionStart!, {'providers': providers.map((p) => p.name).join(',')});
     _sessionRoles[detSession.id] = 'det';
-    _sessionRoles[clsSession.id] = 'cls';
     _sessionRoles[recSession.id] = 'rec';
     final int? decodeStart = timings?.now;
-    final image.Image? decoded = image.decodeImage(
-      await inputFile.readAsBytes(),
-    );
-    if (decoded == null) {
+    final RgbaRaster? original =
+        image ?? RgbaRaster.decode(await inputFile.readAsBytes());
+    if (original == null) {
       throw StateError('unsupported OCR image');
     }
-    final image.Image original = image.bakeOrientation(decoded);
     final int originalWidth = original.width;
     final int originalHeight = original.height;
-    timings?.record('ocr.decode', decodeStart!);
-    final int? resizeStart = timings?.now;
-    final image.Image working = _resizeForDetection(original, maxDimension);
-    timings?.record('ocr.resize', resizeStart!);
-    timings?.record('ocr.decode_resize', decodeStart!, {'width': originalWidth, 'height': originalHeight, 'detWidth': working.width, 'detHeight': working.height});
+    timings?.record('ocr.decode', decodeStart!, {'width': originalWidth, 'height': originalHeight, 'predecoded': image != null});
     onProgress?.call(0.08);
 
     token.throwIfCancelled();
     final int? detStart = timings?.now;
     final List<_DetectedBox> boxes = await _detect(
       detSession,
-      working,
-      originalWidth,
-      originalHeight,
+      original,
+      maxDimension,
       token,
     );
     timings?.record('ocr.primary_detection', detStart!, {'boxes': boxes.length});
@@ -171,13 +159,12 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     }
 
     // Pass 1: straighten each detected box (min-area rect + unclip) into an
-    // axis-aligned crop and run the 180-degree orientation classifier.
+    // axis-aligned crop.
     final int? linesStart = timings?.now;
     final List<String> characters = await _loadCharacters(model.dictPath);
     final List<_RecognizedCandidate> candidates = await _recognizeBoxes(
       source: original,
       boxes: boxes,
-      clsSession: clsSession,
       recSession: recSession,
       characters: characters,
       token: token,
@@ -198,7 +185,6 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           original: original,
           boxes: boxes,
           detSession: detSession,
-          clsSession: clsSession,
           recSession: recSession,
           characters: characters,
           token: token,
@@ -278,19 +264,18 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
   }
 
   Future<List<_RecognizedCandidate>> _recognizeBoxes({
-    required image.Image source,
+    required RgbaRaster source,
     required List<_DetectedBox> boxes,
-    required ort.OrtSession clsSession,
     required ort.OrtSession recSession,
     required List<String> characters,
     required InferenceCancellationToken token,
   }) async {
     final List<_DetectedBox> validBoxes = <_DetectedBox>[];
-    final List<image.Image> crops = <image.Image>[];
+    final List<RgbaRaster> crops = <RgbaRaster>[];
     for (final _DetectedBox box in boxes) {
       token.throwIfCancelled();
       final int? cropStart = timings?.now;
-      final image.Image? crop = straightenOcrCrop(source, box.rect);
+      final RgbaRaster? crop = straightenOcrCrop(source, box.rect);
       if (crop == null) continue;
       // PP-OCR's mobile angle classifier only distinguishes 0°/180°. A
       // tategaki column therefore reaches recognition as a narrow vertical
@@ -301,10 +286,8 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           box.rect.bbox;
       final bool vertical =
           boxHeight > boxWidth * OcrScoringProtocol.verticalAspectRatio;
-      final image.Image recognitionCrop =
-          vertical ? image.copyRotate(crop, angle: -90) : crop;
+      crops.add(vertical ? crop.rotate90(clockwise: false) : crop);
       timings?.record('ocr.crop', cropStart!);
-      crops.add(await _classifyAndRotate(clsSession, recognitionCrop, token));
       validBoxes.add(box);
     }
     if (crops.isEmpty) return const <_RecognizedCandidate>[];
@@ -326,10 +309,9 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
   }
 
   Future<List<_RecognizedCandidate>> _recognizeRotatedMarginsIfNeeded({
-    required image.Image original,
+    required RgbaRaster original,
     required List<_DetectedBox> boxes,
     required ort.OrtSession detSession,
-    required ort.OrtSession clsSession,
     required ort.OrtSession recSession,
     required List<String> characters,
     required InferenceCancellationToken token,
@@ -356,43 +338,33 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     final List<_RecognizedCandidate> result = <_RecognizedCandidate>[];
     for (final _VerticalMargin margin in margins) {
       token.throwIfCancelled();
-      final image.Image sourceMargin = image.copyCrop(
-        original,
-        x: margin.left,
-        y: 0,
-        width: margin.width,
-        height: original.height,
+      final RgbaRaster sourceMargin = original.crop(
+        margin.left,
+        0,
+        margin.width,
+        original.height,
       );
-      // image.copyRotate(angle: 90) maps source (x, y) to rotated
-      // (height - 1 - y, x). The Japanese glyphs remain upright in the
-      // recognizer's horizontal reading direction after this page-level
-      // rotation, unlike rotating each detected glyph box independently.
-      final image.Image rotatedSource = image.copyRotate(
-        sourceMargin,
-        angle: 90,
-      );
-      final image.Image rotatedWorking = _resizeForDetection(
-        rotatedSource,
-        maxDimension,
-      );
+      // A counterclockwise rotation maps source (x, y) to rotated
+      // (y, width - 1 - x): each top-to-bottom column becomes a left-to-right
+      // line, the same contract as the per-box rotation of tall crops. (A
+      // clockwise turn would read right-to-left and needs a 180-degree flip.)
+      final RgbaRaster rotatedSource = sourceMargin.rotate90(clockwise: false);
       final List<_DetectedBox> rotatedBoxes = await _detect(
         detSession,
-        rotatedWorking,
-        rotatedSource.width,
-        rotatedSource.height,
+        rotatedSource,
+        maxDimension,
         token,
       );
       if (rotatedBoxes.isEmpty) continue;
       final List<_RecognizedCandidate> recognized = await _recognizeBoxes(
         source: rotatedSource,
         boxes: rotatedBoxes,
-        clsSession: clsSession,
         recSession: recSession,
         characters: characters,
         token: token,
       );
       for (final _RecognizedCandidate candidate in recognized) {
-        final OrientedRect mapped = _mapClockwiseRotatedRect(
+        final OrientedRect mapped = _mapCounterclockwiseRotatedRect(
           candidate.box.rect,
           sourceMargin.width,
           margin.left,
@@ -497,7 +469,9 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     return left <= sourceWidth * 0.22 || right >= sourceWidth * 0.78;
   }
 
-  OrientedRect _mapClockwiseRotatedRect(
+  /// Maps a rect detected on the counterclockwise-rotated margin back to
+  /// page coordinates: rotated (x, y) is margin (width - 1 - y, x).
+  OrientedRect _mapCounterclockwiseRotatedRect(
     OrientedRect rect,
     int sourceMarginWidth,
     int marginLeft,
@@ -505,15 +479,17 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     final List<OcrPoint> mappedCorners = rect.corners
         .map(
           (OcrPoint point) => (
-            point.$2 + marginLeft,
-            sourceMarginWidth - 1 - point.$1,
+            marginLeft + sourceMarginWidth - 1 - point.$2,
+            point.$1,
           ),
         )
         .toList(growable: false);
     return minAreaRect(mappedCorners);
   }
 
-  image.Image _resizeForDetection(image.Image source, int maxDimension) {
+  /// Detector input size: the longer side capped at [maxDimension], both
+  /// sides aligned to 32 and bounded by the session's pixel budget.
+  InferencePixelSize _detectionSize(RgbaRaster source, int maxDimension) {
     final int safeMax = maxDimension.clamp(640, 2600);
     double scale = math.min(1, safeMax / math.max(source.width, source.height));
     int width = math.max(32, (source.width * scale / 32).round() * 32);
@@ -523,39 +499,42 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     final InferencePixelSize bounded = InferencePixelBudget(
       safetyConfig?.maxInputPixels ?? 4 * 1024 * 1024,
     ).fit(width, height, alignment: 32);
-    return image.copyResize(
-      source,
-      width: bounded.width,
-      height: bounded.height,
-      interpolation: image.Interpolation.linear,
-    );
+    return bounded;
   }
 
+  /// Runs DB detection on [source] and returns boxes in its pixel space.
   Future<List<_DetectedBox>> _detect(
     ort.OrtSession session,
-    image.Image working,
-    int originalWidth,
-    int originalHeight,
+    RgbaRaster source,
+    int maxDimension,
     InferenceCancellationToken token,
   ) async {
     final int? prepStart = timings?.now;
-    final Float32List input = _normalizedNchw(
-      working,
-      working.width,
-      working.height,
+    final InferencePixelSize size = _detectionSize(source, maxDimension);
+    final int mapWidth = size.width;
+    final int mapHeight = size.height;
+    final Float32List input = Float32List(mapWidth * mapHeight * 3);
+    source.writeResizedNchw(
+      input,
+      targetWidth: mapWidth,
+      targetHeight: mapHeight,
+      rowStride: mapWidth,
+      planeSize: mapWidth * mapHeight,
+      scale: 2,
+      offset: -1,
     );
-    timings?.record('det.normalize', prepStart!);
+    timings?.record('det.normalize', prepStart!, {'width': mapWidth, 'height': mapHeight});
     final List<dynamic> output = await _runSingleOutput(
       session,
       input,
-      <int>[1, 3, working.height, working.width],
+      <int>[1, 3, mapHeight, mapWidth],
       token,
       expectedRank: 4,
       expectedChannels: 1,
     );
     final int? postStart = timings?.now;
-    final int mapWidth = working.width;
-    final int mapHeight = working.height;
+    final int originalWidth = source.width;
+    final int originalHeight = source.height;
     if (output.length != mapWidth * mapHeight) {
       throw StateError(
         'unexpected PP-OCR detector output: ${output.length} != ${mapWidth * mapHeight}',
@@ -649,43 +628,12 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
         .toList(growable: false);
   }
 
-  Future<image.Image> _classifyAndRotate(
-    ort.OrtSession session,
-    image.Image crop,
-    InferenceCancellationToken token,
-  ) async {
-    final int? prepStart = timings?.now;
-    const int targetHeight = 48;
-    const int targetWidth = 192;
-    final Float32List input = _normalizedPaddedNchw(
-      crop,
-      targetWidth,
-      targetHeight,
-    );
-    timings?.record('cls.normalize', prepStart!);
-    final List<dynamic> output = await _runSingleOutput(
-      session,
-      input,
-      const <int>[1, 3, targetHeight, targetWidth],
-      token,
-      expectedRank: 2,
-    );
-    if (output.length != 2) {
-      throw StateError('unexpected PP-OCR classifier output');
-    }
-    final double upright = (output[0] as num).toDouble();
-    final double rotated = (output[1] as num).toDouble();
-    return rotated > upright && rotated > 0.9
-        ? image.copyRotate(crop, angle: 180)
-        : crop;
-  }
-
   /// Recognizes [crops] with a single dynamic-batch ONNX call per group of
   /// similar-width lines (width-sorted so each batch's right-padding stays
   /// small), returning one [RecognizedLine] per crop in input order.
   Future<List<_RecognizedLine>> _recognizeLines(
     ort.OrtSession session,
-    List<image.Image> crops,
+    List<RgbaRaster> crops,
     List<String> characters,
     InferenceCancellationToken token,
   ) async {
@@ -709,7 +657,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
         );
       }
       final int? prepStart = timings?.now;
-      final Float32List input = _normalizedBatchNchw(<image.Image>[
+      final Float32List input = _normalizedBatchNchw(<RgbaRaster>[
         for (final int index in batch) crops[index],
       ], maxTargetWidth);
       timings?.record('rec.normalize', prepStart!);
@@ -759,12 +707,14 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
   /// batched call fails — e.g. a model export with a fixed batch dimension.
   Future<_RecognizedLine> _recognizeSingle(
     ort.OrtSession session,
-    image.Image crop,
+    RgbaRaster crop,
     List<String> characters,
     InferenceCancellationToken token,
   ) async {
     final int targetWidth = _recTargetWidth(crop);
-    final Float32List input = _normalizedPaddedNchw(crop, targetWidth, 48);
+    final Float32List input = _normalizedBatchNchw(<RgbaRaster>[
+      crop,
+    ], targetWidth);
     final _TensorOutput output = await _runOutput(
       session,
       input,
@@ -785,7 +735,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
 
   /// The recognition input width for [crop]: height 48, width from the aspect
   /// ratio rounded up to a multiple of 8, bounded to [320, 2048].
-  int _recTargetWidth(image.Image crop) {
+  int _recTargetWidth(RgbaRaster crop) {
     const int targetHeight = 48;
     final double ratio = crop.width / math.max(1, crop.height);
     final int targetWidth =
@@ -837,77 +787,29 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     return <String>['blank', ...dictionary, ' '];
   }
 
-  Float32List _normalizedNchw(image.Image source, int width, int height) {
-    final Float32List output = Float32List(width * height * 3);
-    final int pixels = width * height;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        final image.Pixel pixel = source.getPixel(x, y);
-        final int index = y * width + x;
-        output[index] = pixel.rNormalized * 2 - 1;
-        output[pixels + index] = pixel.gNormalized * 2 - 1;
-        output[pixels * 2 + index] = pixel.bNormalized * 2 - 1;
-      }
-    }
-    return output;
-  }
-
-  Float32List _normalizedPaddedNchw(image.Image source, int width, int height) {
-    final double ratio = source.width / math.max(1, source.height);
-    final int resizedWidth = math.min(
-      width,
-      math.max(1, (height * ratio).ceil()),
-    );
-    final image.Image resized = image.copyResize(
-      source,
-      width: resizedWidth,
-      height: height,
-      interpolation: image.Interpolation.linear,
-    );
-    final Float32List output = Float32List(width * height * 3);
-    final int pixels = width * height;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < resizedWidth; x++) {
-        final image.Pixel pixel = resized.getPixel(x, y);
-        final int index = y * width + x;
-        output[index] = pixel.rNormalized * 2 - 1;
-        output[pixels + index] = pixel.gNormalized * 2 - 1;
-        output[pixels * 2 + index] = pixel.bNormalized * 2 - 1;
-      }
-    }
-    return output;
-  }
-
   /// Batch [C, H, W] normalization for recognition: every crop resized to
   /// height 48 at its own aspect-preserving width, then right-padded to
   /// [targetWidth] so the batch shares one dynamic-width input tensor.
-  Float32List _normalizedBatchNchw(List<image.Image> crops, int targetWidth) {
+  Float32List _normalizedBatchNchw(List<RgbaRaster> crops, int targetWidth) {
     const int targetHeight = 48;
     final int pixels = targetHeight * targetWidth;
     final Float32List output = Float32List(crops.length * 3 * pixels);
     for (int b = 0; b < crops.length; b++) {
-      final image.Image crop = crops[b];
+      final RgbaRaster crop = crops[b];
       final double ratio = crop.width / math.max(1, crop.height);
-      final int resizedWidth = math.min(
-        targetWidth,
-        math.max(1, (targetHeight * ratio).ceil()),
+      crop.writeResizedNchw(
+        output,
+        targetWidth: math.min(
+          targetWidth,
+          math.max(1, (targetHeight * ratio).ceil()),
+        ),
+        targetHeight: targetHeight,
+        rowStride: targetWidth,
+        planeSize: pixels,
+        start: b * 3 * pixels,
+        scale: 2,
+        offset: -1,
       );
-      final image.Image resized = image.copyResize(
-        crop,
-        width: resizedWidth,
-        height: targetHeight,
-        interpolation: image.Interpolation.linear,
-      );
-      final int offset = b * 3 * pixels;
-      for (int y = 0; y < targetHeight; y++) {
-        for (int x = 0; x < resizedWidth; x++) {
-          final image.Pixel pixel = resized.getPixel(x, y);
-          final int index = offset + y * targetWidth + x;
-          output[index] = pixel.rNormalized * 2 - 1;
-          output[pixels + index] = pixel.gNormalized * 2 - 1;
-          output[2 * pixels + index] = pixel.bNormalized * 2 - 1;
-        }
-      }
     }
     return output;
   }
@@ -1022,5 +924,5 @@ class _VerticalMargin {
 /// enclosing region around the box center so the text direction becomes
 /// horizontal, then cropping the inner box. Slanted text that an axis-aligned
 /// crop would feed to the recognizer on a tilt now arrives upright.
-image.Image? straightenOcrCrop(image.Image source, OrientedRect rect) =>
+RgbaRaster? straightenOcrCrop(RgbaRaster source, OrientedRect rect) =>
     perspectiveStraightenOcrCrop(source, rect.corners);

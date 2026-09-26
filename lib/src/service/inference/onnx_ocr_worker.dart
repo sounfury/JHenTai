@@ -11,6 +11,7 @@ import 'package:jhentai/src/service/inference/ocr_inference_engine.dart';
 import 'package:jhentai/src/service/inference/onnx_model_store.dart';
 import 'package:jhentai/src/service/inference/onnx_ocr_engine.dart';
 import 'package:jhentai/src/service/inference/onnx_runtime.dart';
+import 'package:jhentai/src/utils/rgba_raster.dart';
 
 typedef OnnxOcrProviderAttempt<T> =
     Future<T> Function({
@@ -146,6 +147,7 @@ class OnnxOcrWorker {
     required OnnxOcrModelInfo model,
     required List<ort.OrtProvider> providers,
     required String imagePath,
+    RgbaRaster? image,
     int maxDimension = 2200,
     required InferenceCancellationToken cancellationToken,
     InferenceProgressCallback? onProgress,
@@ -200,6 +202,7 @@ class OnnxOcrWorker {
       'providers':
           providers.map((ort.OrtProvider provider) => provider.name).toList(),
       'imagePath': imagePath,
+      'image': image,
       'maxDimension': maxDimension,
       'safetyConfig': safetyConfig.toMap(),
       'reply': callPort.sendPort,
@@ -354,12 +357,14 @@ class OnnxOcrIsolateEngine implements OcrInferenceEngine {
   @override
   Future<OcrInferenceResult> recognize(
     String imagePath, {
+    RgbaRaster? image,
     int maxDimension = 2200,
     InferenceCancellationToken? cancellationToken,
     InferenceProgressCallback? onProgress,
   }) => _inferenceQueue.run(
     () => _recognize(
       imagePath,
+      image: image,
       maxDimension: maxDimension,
       cancellationToken: cancellationToken,
       onProgress: onProgress,
@@ -368,6 +373,7 @@ class OnnxOcrIsolateEngine implements OcrInferenceEngine {
 
   Future<OcrInferenceResult> _recognize(
     String imagePath, {
+    RgbaRaster? image,
     int maxDimension = 2200,
     InferenceCancellationToken? cancellationToken,
     InferenceProgressCallback? onProgress,
@@ -425,6 +431,7 @@ class OnnxOcrIsolateEngine implements OcrInferenceEngine {
             model: model,
             providers: providers,
             imagePath: imagePath,
+            image: image,
             maxDimension: maxDimension,
             cancellationToken: token,
             onProgress: onProgress,
@@ -624,6 +631,7 @@ Future<void> _handleRecognize(
     );
     final OcrInferenceResult result = await engine.recognize(
       message['imagePath'] as String,
+      image: message['image'] as RgbaRaster?,
       maxDimension: message['maxDimension'] as int? ?? 2200,
       cancellationToken: token,
       onProgress:

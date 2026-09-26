@@ -1244,7 +1244,7 @@ favnote：匹配收藏备注
       'autoTranslateGalleryTextHint': '开启后，你看到的图库标题和评论将自动翻译（需要 Apple 端侧翻译）。',
       'imageTranslationTranslationUnavailable':
           'Apple 端侧翻译需要 iOS 26 / macOS 26 及以上系统。当前系统请改选第三方 API 翻译。',
-      'imageTranslationTranslationFailed': 'Apple 端侧翻译失败。',
+      'imageTranslationTranslationFailed': '文字翻译失败，请重试。',
       'imageTranslationShow': '显示翻译',
       'imageTranslationHide': '隐藏翻译',
       'imageTranslationRetranslate': '重新翻译',

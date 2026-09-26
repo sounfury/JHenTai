@@ -5,7 +5,6 @@ import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
-import 'package:image/image.dart' as img;
 
 import '../engine/engine_contract.dart';
 import 'inference_exception.dart';
@@ -14,6 +13,7 @@ import 'inference_safety.dart';
 import 'inference_task.dart';
 import 'onnx_ocr_engine.dart' show OnnxProviderResolver;
 import 'onnx_runtime.dart';
+import '../../utils/rgba_raster.dart';
 
 class BubbleSegmentationModelInfo {
   const BubbleSegmentationModelInfo({
@@ -67,6 +67,7 @@ class BubbleSegmentationInferenceEngine {
 
   Future<DetectionResult> detect(
     String imagePath, {
+    RgbaRaster? image,
     required InferenceCancellationToken cancellationToken,
     void Function(double progress)? onProgress,
   }) async {
@@ -77,13 +78,17 @@ class BubbleSegmentationInferenceEngine {
       );
     }
     final File file = File(imagePath);
-    if (!await file.exists() || await file.length() > 80 * 1024 * 1024) {
+    if (image == null &&
+        (!await file.exists() || await file.length() > 80 * 1024 * 1024)) {
       throw StateError(
         'bubble segmentation input is missing or exceeds 80 MiB',
       );
     }
     final int? prepStart = timings?.now;
-    final _BubbleInput prepared = await compute(_prepareInput, imagePath);
+    final _BubbleInput prepared = await compute(_prepareInput, (
+      imagePath,
+      image,
+    ));
     timings?.record('bubble.preprocess', prepStart!);
     timings?.events.addAll(prepared.preparationTimings);
     cancellationToken.throwIfCancelled();
@@ -164,23 +169,20 @@ class BubbleSegmentationInferenceEngine {
     }
   }
 
-  static _BubbleInput _prepareInput(String imagePath) {
+  static _BubbleInput _prepareInput((String, RgbaRaster?) request) {
+    final (String imagePath, RgbaRaster? image) = request;
     final clock = Stopwatch()..start();
     final events = <Map<String, Object>>[];
-    final img.Image? decoded = img.decodeImage(
-      File(imagePath).readAsBytesSync(),
-    );
-    if (decoded == null) {
+    final RgbaRaster? source =
+        image ?? RgbaRaster.decode(File(imagePath).readAsBytesSync());
+    if (source == null) {
       throw StateError('unsupported bubble segmentation input image');
     }
-    final img.Image source = img.bakeOrientation(decoded);
     events.add({'stage': 'bubble.decode', 'ms': clock.elapsedMicroseconds / 1000});
     clock.reset();
     final _Letterbox letterbox = _Letterbox.fromSource(source);
+    final Float32List input = letterbox.toNchw(source);
     events.add({'stage': 'bubble.resize_pad', 'ms': clock.elapsedMicroseconds / 1000});
-    clock.reset();
-    final Float32List input = _toNchw(letterbox.image);
-    events.add({'stage': 'bubble.normalize', 'ms': clock.elapsedMicroseconds / 1000});
     return _BubbleInput(input, letterbox, source.width, source.height, events);
   }
 
@@ -254,21 +256,6 @@ class BubbleSegmentationInferenceEngine {
     return selected;
   }
 
-  static Float32List _toNchw(img.Image source) {
-    const int plane = inputSize * inputSize;
-    final Float32List result = Float32List(plane * 3);
-    for (int y = 0; y < inputSize; y++) {
-      for (int x = 0; x < inputSize; x++) {
-        final img.Pixel pixel = source.getPixel(x, y);
-        final int index = y * inputSize + x;
-        result[index] = pixel.r.toDouble() / 255;
-        result[plane + index] = pixel.g.toDouble() / 255;
-        result[plane * 2 + index] = pixel.b.toDouble() / 255;
-      }
-    }
-    return result;
-  }
-
   static Rect _mapRect(
     double left,
     double top,
@@ -330,46 +317,57 @@ class _BubbleCandidate {
 
 class _Letterbox {
   const _Letterbox({
-    required this.image,
+    required this.width,
+    required this.height,
     required this.scale,
     required this.padX,
     required this.padY,
   });
 
-  final img.Image image;
+  final int width;
+  final int height;
   final double scale;
   final double padX;
   final double padY;
 
-  factory _Letterbox.fromSource(img.Image source) {
+  factory _Letterbox.fromSource(RgbaRaster source) {
     final double scale = math.min(
       BubbleSegmentationInferenceEngine.inputSize / source.width,
       BubbleSegmentationInferenceEngine.inputSize / source.height,
     );
     final int width = math.max(1, (source.width * scale).round());
     final int height = math.max(1, (source.height * scale).round());
-    final img.Image resized = img.copyResize(
-      source,
-      width: width,
-      height: height,
-      interpolation: img.Interpolation.linear,
-    );
-    final img.Image canvas = img.Image(
-      width: BubbleSegmentationInferenceEngine.inputSize,
-      height: BubbleSegmentationInferenceEngine.inputSize,
-      numChannels: 3,
-    );
-    img.fill(canvas, color: img.ColorRgb8(114, 114, 114));
     final int padX = (BubbleSegmentationInferenceEngine.inputSize - width) ~/ 2;
     final int padY =
         (BubbleSegmentationInferenceEngine.inputSize - height) ~/ 2;
-    img.compositeImage(canvas, resized, dstX: padX, dstY: padY);
     return _Letterbox(
-      image: canvas,
+      width: width,
+      height: height,
       scale: scale,
       padX: padX.toDouble(),
       padY: padY.toDouble(),
     );
+  }
+
+  /// The [0, 1] NCHW model input: [source] resized into the centre of a
+  /// 114-grey square canvas.
+  Float32List toNchw(RgbaRaster source) {
+    const int size = BubbleSegmentationInferenceEngine.inputSize;
+    const int plane = size * size;
+    final Float32List result = Float32List(plane * 3)..fillRange(
+      0,
+      plane * 3,
+      114 / 255,
+    );
+    source.writeResizedNchw(
+      result,
+      targetWidth: width,
+      targetHeight: height,
+      rowStride: size,
+      planeSize: plane,
+      start: padY.toInt() * size + padX.toInt(),
+    );
+    return result;
   }
 }
 

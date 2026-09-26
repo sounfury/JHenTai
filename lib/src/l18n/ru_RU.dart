@@ -1276,7 +1276,7 @@ class ru_RU {
       'imageTranslationTranslationUnavailable':
           'Встроенный перевод Apple требует iOS 26 / macOS 26 или новее. На этой системе выберите сторонний API.',
       'imageTranslationTranslationFailed':
-          'Не удалось выполнить встроенный перевод Apple.',
+          'Не удалось перевести текст. Повторите попытку.',
       'imageTranslationShow': 'Показать перевод',
       'imageTranslationHide': 'Скрыть перевод',
       'imageTranslationRetranslate': 'Перевести заново',

@@ -4,7 +4,7 @@ import '../inference/inference_task.dart';
 import 'engine_contract.dart';
 
 typedef BubbleDetectionRunner = Future<DetectionResult> Function(
-  String imagePath,
+  EngineImageRequest request,
   EngineCancellationToken cancellation,
   void Function(double progress) onProgress,
 );
@@ -49,7 +49,7 @@ class BubbleSegmentationEngineAdapter implements DetectionEngine {
           try {
             context.report(EngineTaskStage.loading, 0);
             final DetectionResult result = await run(
-              request.imagePath,
+              request,
               context.cancellation,
               (double progress) =>
                   context.report(EngineTaskStage.processing, progress),

@@ -28,6 +28,7 @@ import '../utils/image_translation_typography.dart';
 export '../utils/image_translation_typography.dart';
 import '../utils/image_text_container_detection.dart';
 import '../utils/connected_bubble_layout.dart';
+import '../utils/rgba_raster.dart';
 import 'engine/engine.dart';
 
 ImageTranslationService imageTranslationService = ImageTranslationService();
@@ -496,17 +497,24 @@ class ImageTranslationService extends GetxController
         return null;
       }
 
-      // Bubble detection is deliberately started before OCR.  OCR still runs
-      // on the complete page (the PP-OCRv6 adapter has no region-aware
-      // recognizer yet), while the resulting boxes are joined to OCR lines
-      // below.  This keeps the user-visible order deterministic and leaves a
-      // safe full-page OCR fallback when the optional model is unavailable.
+      // Decode the page once for every pixel stage below. A decode failure
+      // leaves each stage to read the file itself, as before.
+      final RgbaRaster? page = await _decodePage(sourceBytes);
+
+      // Bubble detection runs concurrently with OCR. OCR still runs on the
+      // complete page (the PP-OCRv6 adapter has no region-aware recognizer
+      // yet), while the resulting boxes are joined to OCR lines below. The
+      // detector never throws, leaving a safe full-page OCR fallback when the
+      // optional model is unavailable.
       final bool useBubbleDetection =
           imageTranslationSetting.autoMergeText.value &&
           imageTranslationSetting.enableBubbleDetection.value;
-      final DetectionResult? bubbleDetection =
-          useBubbleDetection ? await _detectBubbleRegions(imagePath) : null;
-      final _RecognizeResult recognized = await _recognize(imagePath);
+      final Future<DetectionResult?> pendingBubbles =
+          useBubbleDetection
+              ? _detectBubbleRegions(imagePath, page)
+              : Future<DetectionResult?>.value();
+      final _RecognizeResult recognized = await _recognize(imagePath, page);
+      final DetectionResult? bubbleDetection = await pendingBubbles;
       List<RecognizedTextBlock> blocks = recognized.blocks;
       final bool mergeTextBlocks = imageTranslationSetting.autoMergeText.value;
       // Resolve the source dimensions before accepting detector rectangles so
@@ -528,6 +536,7 @@ class ImageTranslationService extends GetxController
         blocks,
         imageWidth,
         imageHeight,
+        page: page,
       );
       // Sound effects stay as drawn: drop them before containers, translation,
       // overlay and inpainting so they are neither translated nor erased.
@@ -557,9 +566,17 @@ class ImageTranslationService extends GetxController
               )
               : const <RecognizedTextContainer>[];
       if (useBubbleDetection && containers.isEmpty) {
-        containers = await _detectTextContainers(sourceBytes, blocks);
+        containers = await _detectTextContainers(
+          sourceBytes,
+          blocks,
+          page: page,
+        );
       }
-      containers = await _refineBubbleLayouts(sourceBytes, containers);
+      containers = await _refineBubbleLayouts(
+        sourceBytes,
+        containers,
+        page: page,
+      );
       if (_cancelRequested) {
         markCanceled(request.cacheKey);
         return null;
@@ -698,8 +715,12 @@ class ImageTranslationService extends GetxController
     _activeCacheKey = request.cacheKey;
     final TranslationEngine engine = engineRegistry.selectedTranslation;
     EngineTask<TranslationResult>? task;
+    final Stopwatch clock = Stopwatch()..start();
+    int readyMs = 0;
+    int engineMs = 0;
     try {
       await engine.ensureReady();
+      readyMs = clock.elapsedMilliseconds;
       final EngineCapabilityDecision capability =
           engineRegistry.evaluateSelected();
       if (!capability.supported) {
@@ -743,6 +764,7 @@ class ImageTranslationService extends GetxController
           throw const ImageTranslationException('TRANSLATION_TIMEOUT');
         },
       );
+      engineMs = clock.elapsedMilliseconds - readyMs;
       final String translatedText = translation.translatedText;
       if (_cancelRequested) {
         markCanceled(request.cacheKey);
@@ -779,6 +801,13 @@ class ImageTranslationService extends GetxController
         log.trace(stack);
       }
       _setStage(ImageTranslationStage.done);
+      log.info(
+        '[翻译计时] page ${request.cacheKey} engine=${engine.descriptor.id} '
+        '${recognized.blocks.length} blocks / ${recognized.sourceText.length}chars: '
+        'ensureReady ${readyMs}ms, engine ${engineMs}ms, '
+        'finish ${clock.elapsedMilliseconds - readyMs - engineMs}ms, '
+        'total ${clock.elapsedMilliseconds}ms',
+      );
     } on ImageTranslationException catch (e, stack) {
       if (_cancelRequested) {
         markCanceled(request.cacheKey);
@@ -1127,11 +1156,33 @@ class ImageTranslationService extends GetxController
   /// [compute] so hashing a multi-MB page never blocks frame production.
   static String _sha256Hex(List<int> bytes) => sha256.convert(bytes).toString();
 
-  Future<_RecognizeResult> _recognize(String imagePath) async {
+  static RgbaRaster? _decodeRaster(Uint8List bytes) => RgbaRaster.decode(bytes);
+
+  Future<RgbaRaster?> _decodePage(Uint8List sourceBytes) async {
+    try {
+      return await compute(_decodeRaster, sourceBytes);
+    } catch (error) {
+      log.warning('Shared page decode skipped: $error');
+      return null;
+    }
+  }
+
+  /// Isolate payload carrying the decoded [page], or the encoded [bytes] for
+  /// the worker to decode when no shared decode is available.
+  static Map<String, dynamic> _pagePayload(Uint8List bytes, RgbaRaster? page) =>
+      page == null
+          ? <String, dynamic>{'bytes': bytes}
+          : <String, dynamic>{'image': page};
+
+  Future<_RecognizeResult> _recognize(
+    String imagePath,
+    RgbaRaster? page,
+  ) async {
     final OcrEngine engine = engineRegistry.selectedOcr;
     final EngineTask<OcrResult> task = engine.recognize(
       OcrEngineRequest(
         imagePath: imagePath,
+        image: page,
         configuration: <String, dynamic>{
           'language': imageTranslationSetting.appleLiveTextLanguage.value,
         },
@@ -1173,8 +1224,9 @@ class ImageTranslationService extends GetxController
     Uint8List bytes,
     List<RecognizedTextBlock> blocks,
     int width,
-    int height,
-  ) async {
+    int height, {
+    RgbaRaster? page,
+  }) async {
     if (width <= 0 ||
         height <= 0 ||
         blocks.isEmpty ||
@@ -1188,7 +1240,7 @@ class ImageTranslationService extends GetxController
     }
     try {
       return await compute(detectTranslationColors, <String, dynamic>{
-        'bytes': bytes,
+        ..._pagePayload(bytes, page),
         'blocks': blocks,
         'width': width,
         'height': height,
@@ -1201,8 +1253,9 @@ class ImageTranslationService extends GetxController
 
   Future<List<RecognizedTextContainer>> _refineBubbleLayouts(
     Uint8List sourceBytes,
-    List<RecognizedTextContainer> containers,
-  ) async {
+    List<RecognizedTextContainer> containers, {
+    RgbaRaster? page,
+  }) async {
     if (containers.isEmpty ||
         containers.every((c) => c.hasAnalyzedLayout)) {
       return containers;
@@ -1210,7 +1263,7 @@ class ImageTranslationService extends GetxController
     try {
       final refined =
           await compute(refineBubbleLayoutsFromBytes, <String, dynamic>{
-            'bytes': sourceBytes,
+            ..._pagePayload(sourceBytes, page),
             'containers':
                 containers.map((container) => container.toJson()).toList(),
           });
@@ -1223,15 +1276,16 @@ class ImageTranslationService extends GetxController
 
   Future<List<RecognizedTextContainer>> _detectTextContainers(
     Uint8List sourceBytes,
-    List<RecognizedTextBlock> blocks,
-  ) async {
+    List<RecognizedTextBlock> blocks, {
+    RgbaRaster? page,
+  }) async {
     if (blocks.length < 2) {
       return const <RecognizedTextContainer>[];
     }
     try {
       final List<Map<String, dynamic>> raw =
           await compute(detectTextContainersFromBytes, <String, dynamic>{
-            'bytes': sourceBytes,
+            ..._pagePayload(sourceBytes, page),
             'blocks':
                 blocks
                     .map((RecognizedTextBlock block) => block.toJson())
@@ -1250,7 +1304,10 @@ class ImageTranslationService extends GetxController
     }
   }
 
-  Future<DetectionResult?> _detectBubbleRegions(String imagePath) async {
+  Future<DetectionResult?> _detectBubbleRegions(
+    String imagePath,
+    RgbaRaster? page,
+  ) async {
     final DetectionEngine? detector = engineRegistry.findDetection(
       'manga109-bubble-segmentation',
     );
@@ -1258,7 +1315,7 @@ class ImageTranslationService extends GetxController
       return null;
     }
     final EngineTask<DetectionResult> task = detector.detect(
-      EngineImageRequest(imagePath: imagePath),
+      EngineImageRequest(imagePath: imagePath, image: page),
     );
     try {
       return await task.future.timeout(const Duration(minutes: 2));

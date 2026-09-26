@@ -1,4 +1,5 @@
 import 'package:jhentai/src/model/image_translation.dart';
+import 'package:jhentai/src/utils/rgba_raster.dart';
 
 import 'inference_exception.dart';
 import 'inference_task.dart';
@@ -28,10 +29,12 @@ abstract class OcrInferenceEngine {
   /// 引擎展示名。
   String get displayName;
 
-  /// 识别 [imagePath] 指向的图片，返回文本块。
+  /// 识别 [imagePath] 指向的图片，返回文本块。[image] 为调用方已解码的
+  /// 同一张图片，提供时引擎不再重复解码。
   /// 未就绪时抛 [InferenceNotReadyException]。
   Future<OcrInferenceResult> recognize(
     String imagePath, {
+    RgbaRaster? image,
     int maxDimension = 2200,
     InferenceCancellationToken? cancellationToken,
     InferenceProgressCallback? onProgress,
@@ -51,6 +54,7 @@ class NotConfiguredOcrInferenceEngine implements OcrInferenceEngine {
   @override
   Future<OcrInferenceResult> recognize(
     String imagePath, {
+    RgbaRaster? image,
     int maxDimension = 2200,
     InferenceCancellationToken? cancellationToken,
     InferenceProgressCallback? onProgress,

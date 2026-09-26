@@ -281,6 +281,48 @@ void main() {
     });
   });
 
+  group('layoutRegionsForRecognizedTextGroup', () {
+    // Two vertical columns whose container is only their own bounding box.
+    final List<RecognizedTextBlock> blocks = <RecognizedTextBlock>[
+      _block(top: 292, left: 218, width: 38, height: 167, text: 'よろしくね'),
+      _block(top: 295, left: 259, width: 22, height: 288, text: 'また機会があったら'),
+    ];
+    RecognizedTextContainer container(List<TranslationLayoutRegion> regions) =>
+        RecognizedTextContainer(
+          blockIndices: const <int>[0, 1],
+          left: 218,
+          top: 292,
+          width: 64,
+          height: 291,
+          layoutRegions: regions,
+          layoutAnalysisVersion: 1,
+        );
+
+    test('drops an interior strip narrower than the source text', () {
+      final RecognizedTextGroup group = groupRecognizedTextBlocks(blocks).single;
+      expect(
+        layoutRegionsForRecognizedTextGroup(group, <RecognizedTextContainer>[
+          container(const <TranslationLayoutRegion>[
+            TranslationLayoutRegion(224, 296, 36, 284),
+          ]),
+        ]),
+        isEmpty,
+      );
+    });
+
+    test('keeps an interior that covers the source text', () {
+      final RecognizedTextGroup group = groupRecognizedTextBlocks(blocks).single;
+      expect(
+        layoutRegionsForRecognizedTextGroup(group, <RecognizedTextContainer>[
+          container(const <TranslationLayoutRegion>[
+            TranslationLayoutRegion(205, 280, 90, 310),
+          ]),
+        ]),
+        hasLength(1),
+      );
+    });
+  });
+
   group('splitGroupTranslationIntoLines', () {
     test('parses group-numbered output and expands it back to OCR lines', () {
       final List<RecognizedTextBlock> blocks = <RecognizedTextBlock>[
@@ -320,6 +362,16 @@ void main() {
           sourceLines: <String>['学校に行きました'],
         ),
         equals(<String>['我今天去学校了。']),
+      );
+    });
+
+    test('a one-character translation of a multi-line group does not throw', () {
+      expect(
+        splitGroupTranslationIntoLines(
+          translation: '嗯',
+          sourceLines: <String>['う', 'ん…'],
+        ),
+        equals(<String>['嗯', '']),
       );
     });
 

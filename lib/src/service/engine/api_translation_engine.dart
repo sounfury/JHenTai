@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:jhentai/src/model/image_translation.dart';
+import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/utils/image_text_grouping.dart';
 
@@ -83,6 +84,7 @@ class ApiTranslationEngine
         (_) => cancelToken.cancel('engine task cancelled'),
       );
       context.report(EngineTaskStage.processing, 0.1);
+      final Stopwatch clock = Stopwatch()..start();
       try {
         final String endpoint = _translationEndpoint(
           _setting.translatorEndpoint.value!,
@@ -126,6 +128,14 @@ class ApiTranslationEngine
           );
         }
         final String? content = _contentFromResponse(response.data);
+        _logTiming(
+          kind: 'single',
+          items: '${groups.length} groups / ${sourceLines.length} lines',
+          promptChars: instruction.length + prompt.length,
+          httpMs: clock.elapsedMilliseconds,
+          data: response.data,
+          content: content,
+        );
         if (content == null || content.trim().isEmpty) {
           throw const EngineException(
             code: 'invalid_response',
@@ -230,6 +240,7 @@ class ApiTranslationEngine
           .onCancel
           .listen((_) => cancelToken.cancel('engine task cancelled'));
       context.report(EngineTaskStage.processing, 0.1);
+      final Stopwatch clock = Stopwatch()..start();
       try {
         final String endpoint = _translationEndpoint(
           _setting.translatorEndpoint.value!,
@@ -274,6 +285,15 @@ class ApiTranslationEngine
           );
         }
         final String? content = _contentFromResponse(response.data);
+        _logTiming(
+          kind: 'context',
+          items:
+              '${request.pages.length} pages (${request.targetPageIds.length} targets) / $lineCount lines, max_tokens $maxTokens',
+          promptChars: instruction.length + prompt.length,
+          httpMs: clock.elapsedMilliseconds,
+          data: response.data,
+          content: content,
+        );
         if (content == null || content.trim().isEmpty) {
           throw const EngineException(
             code: 'invalid_response',
@@ -385,6 +405,33 @@ class ApiTranslationEngine
     return content is String ? content.trim() : null;
   }
 
+  /// One diagnostic line per API call: request size, HTTP latency and the
+  /// provider-reported token usage (including hidden reasoning tokens).
+  void _logTiming({
+    required String kind,
+    required String items,
+    required int promptChars,
+    required int httpMs,
+    required dynamic data,
+    required String? content,
+  }) {
+    final dynamic usage = data is Map ? data['usage'] : null;
+    final dynamic choices = data is Map ? data['choices'] : null;
+    final dynamic message =
+        choices is List && choices.isNotEmpty && choices.first is Map
+            ? choices.first['message']
+            : null;
+    final dynamic reasoning =
+        message is Map ? message['reasoning_content'] : null;
+    log.info(
+      '[翻译计时] $kind model=${_setting.translatorModel.value} $items, '
+      'prompt ${promptChars}chars, HTTP ${httpMs}ms, '
+      'content ${content?.length ?? 0}chars, '
+      'reasoning ${reasoning is String ? reasoning.length : 0}chars, '
+      'usage=${usage == null ? 'n/a' : jsonEncode(usage)}',
+    );
+  }
+
   String _stripReasoning(String text) =>
       text
           .replaceAllMapped(
@@ -421,14 +468,31 @@ class ApiTranslationEngine
     return withoutFence.substring(start, end + 1);
   }
 
+  /// Reasoning models think by default: on a comic page ~99% of the output
+  /// tokens (and of the latency) were hidden reasoning, so honour the setting.
   Map<String, dynamic>? _thinkingParam() {
     final String model = _setting.translatorModel.value.toLowerCase();
+    final bool enabled = _setting.enableThinking.value;
+    if (model.contains('deepseek')) {
+      return <String, dynamic>{
+        'thinking': <String, String>{
+          'type': enabled ? 'enabled' : 'disabled',
+        },
+      };
+    }
+    // Gemini 3 thinking cannot be switched off and ignores `thinking`; `low`
+    // is its lowest officially supported effort (none/minimal return 400 on
+    // Google's own endpoint). Measured on 3.8 Flash: ~650 -> 0 reasoning
+    // tokens. Aliases with a level suffix (`-high`) still honour it.
+    if (model.contains('gemini')) {
+      return enabled ? null : <String, dynamic>{'reasoning_effort': 'low'};
+    }
     if (!model.contains('minimax') && !model.contains('m3')) {
       return null;
     }
     return <String, dynamic>{
       'thinking': <String, String>{
-        'type': _setting.enableThinking.value ? 'adaptive' : 'disabled',
+        'type': enabled ? 'adaptive' : 'disabled',
       },
     };
   }

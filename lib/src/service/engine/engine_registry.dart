@@ -222,7 +222,7 @@ class EngineRegistry {
             runner:
                 bubbleRunner ??
                 (
-                  String imagePath,
+                  EngineImageRequest request,
                   EngineCancellationToken cancellation,
                   void Function(double progress) onProgress,
                 ) async {
@@ -233,7 +233,8 @@ class EngineRegistry {
                   );
                   try {
                     return await bubbleInference.detect(
-                      imagePath,
+                      request.imagePath,
+                      image: request.image,
                       cancellationToken: token,
                       onProgress: onProgress,
                     );

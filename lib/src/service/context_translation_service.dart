@@ -7,6 +7,7 @@ import '../model/image_translation.dart';
 import 'engine/context_translation_contract.dart';
 import 'engine/engine_contract.dart';
 import 'image_translation_service.dart';
+import 'log.dart';
 
 class ContextTranslationPageLine {
   const ContextTranslationPageLine({required this.lineId, required this.block});
@@ -345,6 +346,7 @@ class ContextTranslationService {
     int? batchGeneration,
   }) async {
     _validateBatch(batch);
+    final Stopwatch clock = Stopwatch()..start();
     final List<String> targets = _targetPageIds(batch, targetPageIds);
     _lastBatch = batch;
     final Map<String, ContextTranslationPage> pagesById = <
@@ -489,6 +491,11 @@ class ContextTranslationService {
       if (ownsBatchLifecycle) {
         imageTranslationService.endBatch(generation);
       }
+      log.info(
+        '[翻译计时] context batch ${batch.pages.length} pages, '
+        '${targets.length} targets, ${pending.length} uncached, '
+        'engineCalled=$engineCalled, total ${clock.elapsedMilliseconds}ms',
+      );
     }
 
     return ContextTranslationBatchOutcome(

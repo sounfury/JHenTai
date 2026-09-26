@@ -1173,7 +1173,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
           '켜면 보이는 갤러리 제목과 댓글이 자동으로 번역됩니다 (Apple 온디바이스 번역 필요).',
       'imageTranslationTranslationUnavailable':
           'Apple 온디바이스 번역은 iOS 26 / macOS 26 이상이 필요합니다. 이 시스템에서는 타사 API 엔진을 선택하세요.',
-      'imageTranslationTranslationFailed': 'Apple 온디바이스 번역에 실패했습니다.',
+      'imageTranslationTranslationFailed': '텍스트 번역에 실패했습니다. 다시 시도하세요.',
       'imageTranslationShow': '번역 표시',
       'imageTranslationHide': '번역 숨기기',
       'imageTranslationRetranslate': '다시 번역',

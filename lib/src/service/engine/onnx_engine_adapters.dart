@@ -45,6 +45,7 @@ class OnnxOcrEngineAdapter implements OcrEngine {
             context.report(EngineTaskStage.processing, 0);
             final OcrInferenceResult result = await _resolver().recognize(
               request.imagePath,
+              image: request.image,
               maxDimension: request.maxDimension,
               cancellationToken: token,
               onProgress: (double progress) =>

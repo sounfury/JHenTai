@@ -5,22 +5,21 @@ import 'package:image/image.dart' as image;
 
 import '../model/image_translation.dart';
 import 'image_text_grouping.dart';
+import 'rgba_raster.dart';
 
 /// Runs the container detector in a background isolate. The payload uses only
 /// sendable JSON-like values so it can be called through Flutter's `compute`.
 List<Map<String, dynamic>> detectTextContainersFromBytes(
   Map<String, dynamic> payload,
 ) {
-  final Object? rawBytes = payload['bytes'];
   final Object? rawBlocks = payload['blocks'];
-  if (rawBytes is! Uint8List || rawBlocks is! List) {
+  if (rawBlocks is! List) {
     return const <Map<String, dynamic>>[];
   }
-  final image.Image? decoded = image.decodeImage(rawBytes);
-  if (decoded == null) {
+  final image.Image? source = rasterFromPayload(payload)?.toImage();
+  if (source == null) {
     return const <Map<String, dynamic>>[];
   }
-  final image.Image source = image.bakeOrientation(decoded);
   final List<RecognizedTextBlock> blocks = rawBlocks
       .whereType<Map>()
       .map(

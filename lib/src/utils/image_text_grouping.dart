@@ -226,7 +226,19 @@ List<TranslationLayoutRegion> layoutRegionsForRecognizedTextGroup(
   for (final container in containers) {
     if (container.blockIndices.length == group.blockIndices.length &&
         container.blockIndices.toSet().containsAll(group.blockIndices)) {
-      return container.layoutRegions.where((region) => region.isValid).toList();
+      final regions =
+          container.layoutRegions.where((region) => region.isValid).toList();
+      // Interior regions recover the balloon around the text. When the
+      // container is only the text's own bounding box, the analysis can lock
+      // onto the white gap between two columns: a strip narrower than the
+      // source text, which would shrink the translation into one tiny column.
+      final double regionArea = regions.fold(
+        0.0,
+        (sum, region) => sum + region.width * region.height,
+      );
+      return regionArea < group.width * group.height * 0.6
+          ? const []
+          : regions;
     }
   }
   return const [];
@@ -412,7 +424,9 @@ List<String> splitGroupTranslationIntoLines({
   }
   final String text = translation.trim();
   final List<String> result = List<String>.filled(lineCount, '');
-  if (text.isEmpty) {
+  if (text.length < 2) {
+    // Nothing to split (e.g. "…" or a one-glyph reply for a two-line bubble).
+    result[0] = text;
     return result;
   }
   // Weight each target line by its source length, so a long source line
@@ -437,7 +451,8 @@ List<String> splitGroupTranslationIntoLines({
   }
   int start = 0;
   for (int i = 0; i < lineCount; i++) {
-    final int end = i < cuts.length ? cuts[i] : text.length;
+    // Punctuation snapping can move a cut before the previous one.
+    final int end = i < cuts.length ? math.max(start, cuts[i]) : text.length;
     result[i] = text.substring(start, end).trim();
     start = end;
   }

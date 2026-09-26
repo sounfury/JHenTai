@@ -1,18 +1,16 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
-
-import 'package:image/image.dart' as image;
 
 import '../model/image_translation.dart';
+import 'rgba_raster.dart';
 
 /// Samples each OCR region's fill and text-band thickness independently, so
 /// inverted captions and mixed font sizes can coexist. Runs in an isolate;
-/// color detection and glyph measurement share one decode of the source page.
+/// the page comes from [rasterFromPayload] (`'image'` or encoded `'bytes'`).
 List<RecognizedTextBlock> detectTranslationColors(Map<String, dynamic> payload) {
   final blocks = payload['blocks'] as List<RecognizedTextBlock>;
-  final decoded = image.decodeImage(payload['bytes'] as Uint8List);
-  if (decoded == null) return blocks;
-  final source = image.bakeOrientation(decoded);
+  final source = rasterFromPayload(payload);
+  if (source == null) return blocks;
+  final pixels = source.pixels;
   final double scaleX = source.width / (payload['width'] as int);
   final double scaleY = source.height / (payload['height'] as int);
   return blocks.map((block) {
@@ -34,10 +32,10 @@ List<RecognizedTextBlock> detectTranslationColors(Map<String, dynamic> payload) 
     final stepY = math.max(1, (bottom - top) ~/ 64);
     for (int y = top; y < bottom; y += stepY) {
       for (int x = left; x < right; x += stepX) {
-        final pixel = source.getPixel(x, y);
-        final r = pixel.r.toInt();
-        final g = pixel.g.toInt();
-        final b = pixel.b.toInt();
+        final index = (y * source.width + x) * 4;
+        final r = pixels[index];
+        final g = pixels[index + 1];
+        final b = pixels[index + 2];
         final key = ((r >> 5) << 6) | ((g >> 5) << 3) | (b >> 5);
         counts[key] = (counts[key] ?? 0) + 1;
         final sum = sums.putIfAbsent(key, () => [0, 0, 0]);
@@ -61,9 +59,11 @@ List<RecognizedTextBlock> detectTranslationColors(Map<String, dynamic> payload) 
     // gaps between text columns no longer contribute to the estimated glyph.
     for (int y = top; y < bottom; y++) {
       for (int x = left; x < right; x++) {
-        final pixel = source.getPixel(x, y);
-        final luma = 0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b;
-        if (pixel.a > 127 && (luma - backgroundLuma).abs() >= 64) {
+        final index = (y * source.width + x) * 4;
+        final luma = 0.299 * pixels[index] +
+            0.587 * pixels[index + 1] +
+            0.114 * pixels[index + 2];
+        if (pixels[index + 3] > 127 && (luma - backgroundLuma).abs() >= 64) {
           columns[x - left]++;
           rows[y - top]++;
         }

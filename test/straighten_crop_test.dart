@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:jhentai/src/service/inference/onnx_ocr_engine.dart';
 import 'package:jhentai/src/utils/oriented_rect.dart';
+import 'package:jhentai/src/utils/rgba_raster.dart';
 
 /// Draws a thick dark bar through (cx, cy) along `angleDeg` and returns its
 /// pixel coordinates.
@@ -73,7 +74,8 @@ void main() {
       angleDeg: 30,
     );
     final OrientedRect rect = unclipOrientedRect(minAreaRect(pts));
-    final image.Image? crop = straightenOcrCrop(img, rect);
+    final image.Image? crop =
+        straightenOcrCrop(RgbaRaster.fromImage(img), rect)?.toImage();
     expect(crop, isNotNull);
 
     // The crop is wide and short: a horizontal line, not a slanted or tall one.
@@ -110,7 +112,8 @@ void main() {
       angleDeg: 0,
     );
     final OrientedRect rect = unclipOrientedRect(minAreaRect(pts));
-    final image.Image? crop = straightenOcrCrop(img, rect);
+    final image.Image? crop =
+        straightenOcrCrop(RgbaRaster.fromImage(img), rect)?.toImage();
     expect(crop, isNotNull);
     expect(crop!.width, greaterThan(crop.height * 2));
     final List<double> valid = _meanRowPerColumn(crop)
@@ -131,6 +134,6 @@ void main() {
       height: 10,
       angle: 0,
     );
-    expect(straightenOcrCrop(img, rect), isNull);
+    expect(straightenOcrCrop(RgbaRaster.fromImage(img), rect), isNull);
   });
 }

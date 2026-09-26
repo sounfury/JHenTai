@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as image;
 
 import '../model/image_translation.dart';
+import 'rgba_raster.dart';
 
 /// Refine detector rectangles without changing group indices or translation
 /// context. Runs in an isolate, and persists geometry with the OCR result.
@@ -21,11 +22,10 @@ List<Map<String, dynamic>> refineBubbleLayoutsFromBytes(
   if (containers.every((container) => container.hasAnalyzedLayout)) {
     return containers.map((value) => value.toJson()).toList();
   }
-  final decoded = image.decodeImage(payload['bytes'] as Uint8List);
-  if (decoded == null) {
+  final source = rasterFromPayload(payload)?.toImage();
+  if (source == null) {
     return containers.map((value) => value.toJson()).toList();
   }
-  final source = image.bakeOrientation(decoded);
   return containers.map((container) {
     if (container.hasAnalyzedLayout) {
       return container.toJson();
