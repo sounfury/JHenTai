@@ -191,6 +191,9 @@ class ImageInpaintingService extends GetxController
   }
 
   void setDisplayMode(ImageProcessingDisplayMode mode) {
+    if (displayMode == mode) {
+      return;
+    }
     displayMode = mode;
     update();
   }
@@ -715,8 +718,10 @@ class ImageInpaintingService extends GetxController
     });
   }
 
-  Future<String> _sha256(File file) async =>
-      (await sha256.bind(file.openRead()).first).toString();
+  Future<String> _sha256(File file) => compute(_hashFile, file.path);
+
+  static Future<String> _hashFile(String path) async =>
+      (await sha256.bind(File(path).openRead()).first).toString();
 
   String _maskHash(List<PolygonMask> masks) =>
       sha256

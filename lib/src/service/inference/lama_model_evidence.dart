@@ -8,6 +8,11 @@ class LamaModelEvidence {
   static const int artifactSizeBytes = 207482655;
   static const String artifactSha256 =
       '107c8306ac1d27c83638d6535846986542dfe2707f1498b1ac9be25b4a963864';
+  // Deterministic rank-4 Fourier rewrite, checked with ONNX checker and
+  // CPU/DirectML numerical comparisons at 512x512 and 768x1024.
+  static const int directMlSizeBytes = 207551351;
+  static const String directMlSha256 =
+      '8ca510b642a50c9d59098aaebc8eb135ab2c22a739b9279d79e6ba5bccd4c6f0';
   static const String inputContract =
       'image:float32[1,3,H,W], mask:float32[1,1,H,W]; 1=repair';
   static const String outputContract = 'float32[1,3,H,W], RGB in [0,1]';

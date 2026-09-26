@@ -6,22 +6,128 @@ import '../model/image_translation.dart';
 import 'ocr_layout_protocol.dart';
 import 'vertical_translation_layout.dart';
 
+/// Distribute one utterance over all interior areas, using one font size.
+/// The translation remains intact and regions follow manga/paragraph order.
+List<(Rect, String, double)> layoutTranslationInRegions(
+  String text,
+  List<Rect> regions,
+  TextDirection direction, {
+  required double maxFontSize,
+  required bool vertical,
+}) {
+  final ordered =
+      regions.where((rect) => rect.width > 4 && rect.height > 4).toList();
+  // Stable band ordering avoids a non-transitive pairwise overlap comparator.
+  ordered.sort((a, b) => a.top.compareTo(b.top));
+  final bands = <List<Rect>>[];
+  for (final rect in ordered) {
+    if (bands.isEmpty ||
+        rect.top >= bands.last.map((r) => r.bottom).reduce(math.min)) {
+      bands.add([rect]);
+    } else {
+      bands.last.add(rect);
+    }
+  }
+  ordered.clear();
+  for (final band in bands) {
+    band.sort(
+      (a, b) =>
+          vertical || direction == TextDirection.rtl
+              ? b.center.dx.compareTo(a.center.dx)
+              : a.center.dx.compareTo(b.center.dx),
+    );
+    ordered.addAll(band);
+  }
+  final characters = text.characters.toList();
+  if (characters.isEmpty || ordered.isEmpty) {
+    return [];
+  }
+  final chunks = <String>[];
+  int start = 0;
+  double remainingArea = ordered.fold(
+    0.0,
+    (sum, r) => sum + (r.width - 4) * (r.height - 4),
+  );
+  for (int i = 0; i < ordered.length; i++) {
+    final rect = ordered[i];
+    final area = (rect.width - 4) * (rect.height - 4);
+    final remaining = characters.length - start;
+    int take =
+        i == ordered.length - 1
+            ? remaining
+            : (remaining * area / remainingArea).round();
+    if (remaining >= ordered.length - i) {
+      take = take.clamp(1, remaining - (ordered.length - i - 1));
+    } else {
+      take = math.min(1, remaining);
+    }
+    // Prefer nearby sentence/word boundaries without sacrificing balance.
+    if (take > 0 && take < remaining) {
+      for (int delta = 0; delta <= math.min(3, take ~/ 4); delta++) {
+        bool found = false;
+        for (final candidate in [take + delta, take - delta]) {
+          if (candidate <= 0 ||
+              candidate >= remaining ||
+              remaining - candidate <
+                  math.min(remaining - 1, ordered.length - i - 1)) {
+            continue;
+          }
+          if ('。！？!?；;，,、 \n'.contains(characters[start + candidate - 1])) {
+            take = candidate;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          break;
+        }
+      }
+    }
+    chunks.add(characters.sublist(start, start + take).join());
+    start += take;
+    remainingArea -= area;
+  }
+  double fontSize = maxFontSize;
+  for (int i = 0; i < ordered.length; i++) {
+    if (chunks[i].trim().isEmpty) {
+      continue;
+    }
+    fontSize = math.min(
+      fontSize,
+      fitTranslationFontSize(
+        chunks[i],
+        ordered[i].width - 4,
+        ordered[i].height - 4,
+        direction,
+        maxFontSize: maxFontSize,
+        vertical: vertical,
+      ),
+    );
+  }
+  return [
+    for (int i = 0; i < ordered.length; i++)
+      if (chunks[i].trim().isNotEmpty) (ordered[i], chunks[i], fontSize),
+  ];
+}
+
 /// Infer direction per text group, not per page: a manga page may contain
 /// vertical dialogue and horizontal captions at the same time.
 bool translationUsesVerticalLayout(
   List<RecognizedTextBlock> blocks,
   List<int> blockIndices,
-) => classifyOcrLayout([
-  for (final index in blockIndices)
-    if (index >= 0 && index < blocks.length)
-      OcrLayoutBox(
-        sourceIndex: index,
-        left: blocks[index].left,
-        top: blocks[index].top,
-        width: blocks[index].width,
-        height: blocks[index].height,
-      ),
-]) == OcrLayoutMode.verticalRtl;
+) =>
+    classifyOcrLayout([
+      for (final index in blockIndices)
+        if (index >= 0 && index < blocks.length)
+          OcrLayoutBox(
+            sourceIndex: index,
+            left: blocks[index].left,
+            top: blocks[index].top,
+            width: blocks[index].width,
+            height: blocks[index].height,
+          ),
+    ]) ==
+    OcrLayoutMode.verticalRtl;
 
 /// Paint using the same bounds and metrics as fitting; preserve the original
 /// writing direction and never truncate a translation to an ellipsis.

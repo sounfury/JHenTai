@@ -32,6 +32,7 @@ try {
   if ($Offline) { & $Flutter pub get --offline } else { & $Flutter pub get }
   if ($LASTEXITCODE -ne 0) { throw 'Translation test dependencies could not be resolved.' }
   & $Flutter test --no-pub --reporter expanded `
+    test/connected_bubble_layout_test.dart `
     test/translation_font_size_test.dart `
     test/vertical_translation_layout_test.dart `
     test/image_translation_glyph_metrics_test.dart `

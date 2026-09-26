@@ -107,6 +107,10 @@ class OnnxRuntime {
     return null;
   }
 
+  void reportProviderFallback(String modelPath, Object error) => _log.warning(
+    'ONNX accelerated inference failed for $modelPath; retrying on CPU: $error',
+  );
+
   Future<bool> initialize() => _initializing ??= _initialize();
 
   Future<bool> _initialize() async {

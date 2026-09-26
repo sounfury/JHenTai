@@ -49,8 +49,9 @@ private:
                           std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
                           std::shared_ptr<FlutterOnnxruntimePluginImpl> impl);
 
-  void HandleCloseSession(const flutter::MethodCall<flutter::EncodableValue> &method_call,
-                          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  static void HandleCloseSession(const flutter::MethodCall<flutter::EncodableValue> &method_call,
+                          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+                            std::shared_ptr<FlutterOnnxruntimePluginImpl> impl);
 
   void HandleGetMetadata(const flutter::MethodCall<flutter::EncodableValue> &method_call,
                          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
@@ -62,14 +63,16 @@ private:
                            std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   // OrtValue method handlers
-  void HandleCreateOrtValue(const flutter::MethodCall<flutter::EncodableValue> &method_call,
-                            std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  static void HandleCreateOrtValue(const flutter::MethodCall<flutter::EncodableValue> &method_call,
+                            std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+                            std::shared_ptr<FlutterOnnxruntimePluginImpl> impl);
 
   void HandleConvertOrtValue(const flutter::MethodCall<flutter::EncodableValue> &method_call,
                              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
-  void HandleGetOrtValueData(const flutter::MethodCall<flutter::EncodableValue> &method_call,
-                             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  static void HandleGetOrtValueData(const flutter::MethodCall<flutter::EncodableValue> &method_call,
+                             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+                            std::shared_ptr<FlutterOnnxruntimePluginImpl> impl);
 
   void HandleReleaseOrtValue(const flutter::MethodCall<flutter::EncodableValue> &method_call,
                              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);

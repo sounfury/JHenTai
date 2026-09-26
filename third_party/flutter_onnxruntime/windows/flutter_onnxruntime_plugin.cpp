@@ -65,11 +65,13 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   const auto &method_name = method_call.method_name();
 
-  // ONNX session creation and inference can take tens of seconds. A Windows
-  // method-channel handler runs on the platform/window thread, so doing either
-  // operation here makes the entire app appear frozen. The response handler is
+  // Session creation, inference, large tensor copies and teardown can block
+  // frames. Windows method-channel handlers run on the platform/window thread,
+  // so dispatch this work to a background thread. The response handler is
   // safe to invoke from another thread and retains the messenger lifetime.
-  if (method_name == "createSession" || method_name == "runInference") {
+  if (method_name == "createSession" || method_name == "runInference" ||
+      method_name == "createOrtValue" || method_name == "getOrtValueData" ||
+      method_name == "closeSession") {
     auto arguments = method_call.arguments()
         ? std::make_unique<flutter::EncodableValue>(*method_call.arguments())
         : nullptr;
@@ -79,8 +81,14 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
       flutter::MethodCall<flutter::EncodableValue> call(method_name, std::move(arguments));
       if (method_name == "createSession") {
         HandleCreateSession(call, std::move(result), impl);
-      } else {
+      } else if (method_name == "runInference") {
         HandleRunInference(call, std::move(result), impl);
+      } else if (method_name == "createOrtValue") {
+        HandleCreateOrtValue(call, std::move(result), impl);
+      } else if (method_name == "getOrtValueData") {
+        HandleGetOrtValueData(call, std::move(result), impl);
+      } else {
+        HandleCloseSession(call, std::move(result), impl);
       }
     }).detach();
     return;
@@ -101,13 +109,13 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
 
   // OrtValue-related methods
   if (method_name == "createOrtValue") {
-    HandleCreateOrtValue(method_call, std::move(result));
+    HandleCreateOrtValue(method_call, std::move(result), impl_);
     return;
   } else if (method_name == "convertOrtValue") {
     HandleConvertOrtValue(method_call, std::move(result));
     return;
   } else if (method_name == "getOrtValueData") {
-    HandleGetOrtValueData(method_call, std::move(result));
+    HandleGetOrtValueData(method_call, std::move(result), impl_);
     return;
   } else if (method_name == "releaseOrtValue") {
     HandleReleaseOrtValue(method_call, std::move(result));
@@ -122,7 +130,7 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
     HandleGetRuntimeInfo(method_call, std::move(result));
     return;
   } else if (method_name == "closeSession") {
-    HandleCloseSession(method_call, std::move(result));
+    HandleCloseSession(method_call, std::move(result), impl_);
     return;
   } else if (method_name == "getMetadata") {
     HandleGetMetadata(method_call, std::move(result));
@@ -140,7 +148,8 @@ void FlutterOnnxruntimePlugin::HandleMethodCall(
 
 void FlutterOnnxruntimePlugin::HandleCreateOrtValue(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
-    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+    std::shared_ptr<FlutterOnnxruntimePluginImpl> impl) {
 
   // Extract parameters
   const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
@@ -201,28 +210,28 @@ void FlutterOnnxruntimePlugin::HandleCreateOrtValue(
         return;
       }
       std::vector<float> float_data = std::get<std::vector<float>>(data_value);
-      tensor_id = impl_->tensorManager_->createFloat32Tensor(float_data, shape);
+      tensor_id = impl->tensorManager_->createFloat32Tensor(float_data, shape);
     } else if (source_type == "int32") {
       if (!std::holds_alternative<std::vector<int32_t>>(data_value)) {
         result->Error("INVALID_ARG", "Int32 data must be a list", nullptr);
         return;
       }
       std::vector<int32_t> int32_data = std::get<std::vector<int32_t>>(data_value);
-      tensor_id = impl_->tensorManager_->createInt32Tensor(int32_data, shape);
+      tensor_id = impl->tensorManager_->createInt32Tensor(int32_data, shape);
     } else if (source_type == "int64") {
       if (!std::holds_alternative<std::vector<int64_t>>(data_value)) {
         result->Error("INVALID_ARG", "Int64 data must be a list", nullptr);
         return;
       }
       std::vector<int64_t> int64_data = std::get<std::vector<int64_t>>(data_value);
-      tensor_id = impl_->tensorManager_->createInt64Tensor(int64_data, shape);
+      tensor_id = impl->tensorManager_->createInt64Tensor(int64_data, shape);
     } else if (source_type == "uint8") {
       if (!std::holds_alternative<std::vector<uint8_t>>(data_value)) {
         result->Error("INVALID_ARG", "Uint8 data must be a list", nullptr);
         return;
       }
       std::vector<uint8_t> uint8_data = std::get<std::vector<uint8_t>>(data_value);
-      tensor_id = impl_->tensorManager_->createUint8Tensor(uint8_data, shape);
+      tensor_id = impl->tensorManager_->createUint8Tensor(uint8_data, shape);
     } else if (source_type == "bool") {
       // Note: for bool values, Dart always pass a List<bool>, not a typed list
       if (!std::holds_alternative<flutter::EncodableList>(data_value)) {
@@ -240,7 +249,7 @@ void FlutterOnnxruntimePlugin::HandleCreateOrtValue(
           bool_data.push_back(std::get<int32_t>(item) != 0);
         }
       }
-      tensor_id = impl_->tensorManager_->createBoolTensor(bool_data, shape);
+      tensor_id = impl->tensorManager_->createBoolTensor(bool_data, shape);
     } else if (source_type == "string") {
       if (!std::holds_alternative<flutter::EncodableList>(data_value)) {
         result->Error("INVALID_ARG", "String data must be a list of strings", nullptr);
@@ -255,7 +264,7 @@ void FlutterOnnxruntimePlugin::HandleCreateOrtValue(
           string_data.push_back(std::get<std::string>(item));
         }
       }
-      tensor_id = impl_->tensorManager_->createStringTensor(string_data, shape);
+      tensor_id = impl->tensorManager_->createStringTensor(string_data, shape);
     } else {
       result->Error("INVALID_ARG", "Unsupported data type: " + source_type, nullptr);
       return;
@@ -348,7 +357,8 @@ void FlutterOnnxruntimePlugin::HandleConvertOrtValue(
 
 void FlutterOnnxruntimePlugin::HandleGetOrtValueData(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
-    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+    std::shared_ptr<FlutterOnnxruntimePluginImpl> impl) {
 
   // Extract parameters
   const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
@@ -368,14 +378,14 @@ void FlutterOnnxruntimePlugin::HandleGetOrtValueData(
     std::string value_id = std::get<std::string>(value_id_it->second);
 
     // check if the tensor exists
-    Ort::Value *tensor = impl_->tensorManager_->getTensor(value_id);
+    Ort::Value *tensor = impl->tensorManager_->getTensor(value_id);
     if (!tensor) {
       result->Error("INVALID_VALUE", "Tensor not found or already being disposed", nullptr);
       return;
     }
 
     // Get the tensor data
-    flutter::EncodableValue tensor_data = impl_->tensorManager_->getTensorData(value_id);
+    flutter::EncodableValue tensor_data = impl->tensorManager_->getTensorData(value_id);
 
     // Return success with the tensor data
     result->Success(tensor_data);
@@ -916,7 +926,8 @@ void FlutterOnnxruntimePlugin::HandleRunInference(
 
 void FlutterOnnxruntimePlugin::HandleCloseSession(
     const flutter::MethodCall<flutter::EncodableValue> &method_call,
-    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result,
+    std::shared_ptr<FlutterOnnxruntimePluginImpl> impl) {
 
   // Extract parameters
   const auto *args = std::get_if<flutter::EncodableMap>(method_call.arguments());
@@ -936,7 +947,7 @@ void FlutterOnnxruntimePlugin::HandleCloseSession(
     std::string session_id = std::get<std::string>(session_id_it->second);
 
     // Close the session
-    impl_->sessionManager_->closeSession(session_id);
+    impl->sessionManager_->closeSession(session_id);
 
     // Return null for success
     result->Success(nullptr);

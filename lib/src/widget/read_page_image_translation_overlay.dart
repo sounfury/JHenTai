@@ -293,8 +293,9 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
         GetBuilder<ImageInpaintingService>(
           id: request.cacheKey,
           builder: (_) {
-            final InpaintingResult repair =
-                imageInpaintingService.resultFor(request.cacheKey);
+            final InpaintingResult repair = imageInpaintingService.resultFor(
+              request.cacheKey,
+            );
             if (!repair.fallbackToOverlay ||
                 repair.errorCode == null ||
                 repair.errorCode == 'canceled' ||
@@ -528,10 +529,12 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
                     result.translatedGroups[groupIndex].trim().isNotEmpty
                 ? result.translatedGroups[groupIndex].trim()
                 : groupLines.join('\n');
-        if (translationPreservesSource(group.textOf(result.blocks), translation)) {
+        if (translationPreservesSource(
+          group.textOf(result.blocks),
+          translation,
+        )) {
           continue;
         }
-        mergedBackgrounds.add((safeRect, plateColor));
         final bool vertical = translationUsesVerticalLayout(
           result.blocks,
           group.blockIndices,
@@ -543,15 +546,48 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
           scaleY: scaleY,
           scaleX: scaleX,
         );
-        final double resolved = fitTranslationFontSize(
+        final regions = layoutRegionsForRecognizedTextGroup(
+          group,
+          result.containers,
+        );
+        // Interior text placement must not leave old OCR glyphs visible while
+        // the reader is still using backing plates instead of inpainting.
+        if (regions.isNotEmpty) {
+          for (final index in group.blockIndices) {
+            final block = result.blocks[index];
+            mergedBackgrounds.add((
+              Rect.fromLTWH(
+                visibleImage.left + block.left * scaleX,
+                visibleImage.top + block.top * scaleY,
+                block.width * scaleX,
+                block.height * scaleY,
+              ).intersect(visibleImage),
+              plateColor,
+            ));
+          }
+        }
+        final areas =
+            regions.isEmpty
+                ? <Rect>[safeRect]
+                : <Rect>[
+                  for (final region in regions)
+                    Rect.fromLTWH(
+                      visibleImage.left + region.left * scaleX,
+                      visibleImage.top + region.top * scaleY,
+                      region.width * scaleX,
+                      region.height * scaleY,
+                    ).intersect(visibleImage),
+                ];
+        for (final (rect, text, fontSize) in layoutTranslationInRegions(
           translation,
-          math.max(0, safeRect.width - 4),
-          math.max(0, safeRect.height - 4),
+          areas,
           textDirection,
           maxFontSize: sourceFont,
           vertical: vertical,
-        );
-        entries.add((safeRect, translation, resolved, textColor, vertical));
+        )) {
+          mergedBackgrounds.add((rect, plateColor));
+          entries.add((rect, text, fontSize, textColor, vertical));
+        }
       }
     }
     for (final (Rect rect, Color plateColor) in mergedBackgrounds) {

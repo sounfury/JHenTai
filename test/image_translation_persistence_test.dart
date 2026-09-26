@@ -68,32 +68,42 @@ void main() {
     },
   );
 
-  test('old translation cache acquires source colors without retranslation', () async {
-    final source = image.Image(width: 40, height: 20);
-    image.fill(source, color: image.ColorRgb8(0, 0, 0));
-    await sourceImage.writeAsBytes(image.encodePng(source));
-    final service = ImageTranslationService();
-    service.setTranslationCacheDirectoryForTesting(temporaryDirectory);
-    final request = ImageTranslationRequest(
-      cacheKey: 'old-inverted-page', imagePath: sourceImage.path,
-    );
-    await service.writePersistentResultForRequest(request,
-      const ImageTranslationResult(
-        status: ImageTranslationStatus.success,
-        translatedText: 'cached translation',
-        imageWidth: 40,
-        imageHeight: 20,
-        blocks: [RecognizedTextBlock(
-          text: 'source', confidence: 1, width: 40, height: 20,
-        )],
-      ),
-    );
-    expect(await service.hydrateResult(request), isTrue);
-    final result = service.resultFor(request.cacheKey);
-    expect(result.fromCache, isTrue);
-    expect(result.translatedText, 'cached translation');
-    expect(result.blocks.single.backgroundColor, 0xff000000);
-  });
+  test(
+    'old translation cache acquires source colors without retranslation',
+    () async {
+      final source = image.Image(width: 40, height: 20);
+      image.fill(source, color: image.ColorRgb8(0, 0, 0));
+      await sourceImage.writeAsBytes(image.encodePng(source));
+      final service = ImageTranslationService();
+      service.setTranslationCacheDirectoryForTesting(temporaryDirectory);
+      final request = ImageTranslationRequest(
+        cacheKey: 'old-inverted-page',
+        imagePath: sourceImage.path,
+      );
+      await service.writePersistentResultForRequest(
+        request,
+        const ImageTranslationResult(
+          status: ImageTranslationStatus.success,
+          translatedText: 'cached translation',
+          imageWidth: 40,
+          imageHeight: 20,
+          blocks: [
+            RecognizedTextBlock(
+              text: 'source',
+              confidence: 1,
+              width: 40,
+              height: 20,
+            ),
+          ],
+        ),
+      );
+      expect(await service.hydrateResult(request), isTrue);
+      final result = service.resultFor(request.cacheKey);
+      expect(result.fromCache, isTrue);
+      expect(result.translatedText, 'cached translation');
+      expect(result.blocks.single.backgroundColor, 0xff000000);
+    },
+  );
 
   test(
     'cached recognition does not throw while releasing source bytes',
@@ -117,6 +127,68 @@ void main() {
       final ImageTranslationResult result = service.resultFor(request.cacheKey);
       expect(result.status, ImageTranslationStatus.success);
       expect(result.fromCache, isTrue);
+    },
+  );
+
+  test(
+    'cached connected bubbles acquire areas without changing translation groups',
+    () async {
+      final source = image.Image(width: 104, height: 40);
+      image.fill(source, color: image.ColorRgb8(30, 30, 30));
+      for (int y = 0; y < 40; y++) {
+        for (int x = 0; x < 104; x++) {
+          final inLobe = [
+            20,
+            52,
+            84,
+          ].any((cx) => (x - cx) * (x - cx) + (y - 20) * (y - 20) <= 225);
+          if (inLobe || ((y - 20).abs() <= 2 && x >= 20 && x <= 84)) {
+            source.setPixelRgb(x, y, 250, 250, 250);
+          }
+        }
+      }
+      await sourceImage.writeAsBytes(image.encodePng(source));
+      final service = ImageTranslationService();
+      service.setTranslationCacheDirectoryForTesting(temporaryDirectory);
+      final request = ImageTranslationRequest(
+        cacheKey: 'connected-cache',
+        imagePath: sourceImage.path,
+      );
+      await service.writePersistentResultForRequest(
+        request,
+        const ImageTranslationResult(
+          status: ImageTranslationStatus.success,
+          imageWidth: 104,
+          imageHeight: 40,
+          translatedText: '完整译文不必重新翻译',
+          translatedGroups: ['完整译文不必重新翻译'],
+          blocks: [
+            RecognizedTextBlock(
+              text: 'source',
+              confidence: 1,
+              left: 12,
+              top: 12,
+              width: 80,
+              height: 16,
+            ),
+          ],
+          containers: [
+            RecognizedTextContainer(
+              blockIndices: [0],
+              left: 0,
+              top: 0,
+              width: 104,
+              height: 40,
+            ),
+          ],
+        ),
+      );
+      expect(await service.hydrateResult(request), isTrue);
+      final result = service.resultFor(request.cacheKey);
+      expect(result.containers.single.layoutRegions.length, 3);
+      expect(result.containers.single.blockIndices, [0]);
+      expect(result.translatedGroups, ['完整译文不必重新翻译']);
+      expect(result.translatedText, '完整译文不必重新翻译');
     },
   );
 }

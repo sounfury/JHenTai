@@ -3,11 +3,13 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' show Rect;
 
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
 import 'package:image/image.dart' as img;
 
 import '../engine/engine_contract.dart';
 import 'inference_exception.dart';
+import 'inference_timings.dart';
 import 'inference_safety.dart';
 import 'inference_task.dart';
 import 'onnx_ocr_engine.dart' show OnnxProviderResolver;
@@ -36,6 +38,7 @@ class BubbleSegmentationInferenceEngine {
     required this.runtime,
     required this.providerResolver,
     required this.modelResolver,
+    this.timings,
   });
 
   static const int inputSize = 1600;
@@ -45,6 +48,7 @@ class BubbleSegmentationInferenceEngine {
   static const double nmsThreshold = 0.55;
 
   final OnnxRuntime runtime;
+  final InferenceTimings? timings;
   final OnnxProviderResolver providerResolver;
   final BubbleSegmentationModelInfo Function() modelResolver;
 
@@ -74,18 +78,20 @@ class BubbleSegmentationInferenceEngine {
     }
     final File file = File(imagePath);
     if (!await file.exists() || await file.length() > 80 * 1024 * 1024) {
-      throw StateError('bubble segmentation input is missing or exceeds 80 MiB');
+      throw StateError(
+        'bubble segmentation input is missing or exceeds 80 MiB',
+      );
     }
-    final img.Image? decoded = img.decodeImage(await file.readAsBytes());
-    if (decoded == null) {
-      throw StateError('unsupported bubble segmentation input image');
-    }
-    final img.Image source = img.bakeOrientation(decoded);
-    final _Letterbox letterbox = _Letterbox.fromSource(source);
-    final Float32List input = _toNchw(letterbox.image);
+    final int? prepStart = timings?.now;
+    final _BubbleInput prepared = await compute(_prepareInput, imagePath);
+    timings?.record('bubble.preprocess', prepStart!);
+    timings?.events.addAll(prepared.preparationTimings);
+    cancellationToken.throwIfCancelled();
+    final Float32List input = prepared.input;
     onProgress?.call(0.16);
 
     final BubbleSegmentationModelInfo model = modelResolver();
+    final int? sessionStart = timings?.now;
     final ort.OrtSession? session = await runtime.sessionWithCpuFallback(
       model.modelPath!,
       modelFingerprint: model.fingerprint,
@@ -104,74 +110,50 @@ class BubbleSegmentationInferenceEngine {
       intraOpNumThreads: 2,
       interOpNumThreads: 1,
     );
+    timings?.record('bubble.session', sessionStart!);
     if (session == null) {
       throw const InferenceNotReadyException(
         'manga109-segmentation-bubble-onnx',
       );
     }
-    final ort.OrtValue tensor = await ort.OrtValue.fromList(
-      input,
-      <int>[1, 3, inputSize, inputSize],
-    );
+    final int? uploadStart = timings?.now;
+    final ort.OrtValue tensor = await ort.OrtValue.fromList(input, <int>[
+      1,
+      3,
+      inputSize,
+      inputSize,
+    ]);
+    timings?.record('bubble.tensor_upload', uploadStart!);
     Map<String, ort.OrtValue>? outputs;
     try {
       cancellationToken.throwIfCancelled();
+      final int? runStart = timings?.now;
       outputs = await runtime.run(session, <String, ort.OrtValue>{
         'images': tensor,
       });
+      timings?.record('bubble.native_run', runStart!);
       cancellationToken.throwIfCancelled();
-      final ort.OrtValue? raw = outputs['output0'] ??
+      final ort.OrtValue? raw =
+          outputs['output0'] ??
           (outputs.length == 2 ? outputs.values.first : null);
       if (raw == null || !_sameShape(raw.shape, <int>[1, 37, 52500])) {
         throw StateError('unexpected bubble detector output: ${raw?.shape}');
       }
+      final int? readStart = timings?.now;
       final List<dynamic> values = await raw.asFlattenedList();
+      timings?.record('bubble.tensor_download', readStart!);
       if (values.length != candidateChannels * candidateCount) {
         throw StateError('unexpected bubble detector output length');
       }
-      final List<_BubbleCandidate> candidates = <_BubbleCandidate>[];
-      for (int index = 0; index < candidateCount; index++) {
-        final double confidence =
-            (values[4 * candidateCount + index] as num).toDouble();
-        if (!confidence.isFinite || confidence < confidenceThreshold) {
-          continue;
-        }
-        final double cx = (values[index] as num).toDouble();
-        final double cy = (values[candidateCount + index] as num).toDouble();
-        final double width =
-            (values[2 * candidateCount + index] as num).toDouble();
-        final double height =
-            (values[3 * candidateCount + index] as num).toDouble();
-        final Rect rect = _mapRect(
-          cx - width / 2,
-          cy - height / 2,
-          cx + width / 2,
-          cy + height / 2,
-          letterbox,
-          source.width,
-          source.height,
-        );
-        if (rect.width < 12 || rect.height < 12) continue;
-        candidates.add(_BubbleCandidate(rect: rect, confidence: confidence));
-      }
-      final List<_BubbleCandidate> selected = nms(
-        candidates,
-        threshold: nmsThreshold,
-      );
+      final int? postStart = timings?.now;
+      final DetectionResult result = await compute(_extractDetections, (
+        prepared,
+        values,
+      ));
+      timings?.record('bubble.postprocess', postStart!);
+      cancellationToken.throwIfCancelled();
       onProgress?.call(0.92);
-      return DetectionResult(
-        regions: selected
-            .map(
-              (_BubbleCandidate candidate) => DetectedTextRegion(
-                left: candidate.rect.left,
-                top: candidate.rect.top,
-                width: candidate.rect.width,
-                height: candidate.rect.height,
-                confidence: candidate.confidence,
-              ),
-            )
-            .toList(growable: false),
-      );
+      return result;
     } finally {
       if (outputs != null) {
         for (final ort.OrtValue value in outputs.values) {
@@ -182,16 +164,85 @@ class BubbleSegmentationInferenceEngine {
     }
   }
 
+  static _BubbleInput _prepareInput(String imagePath) {
+    final clock = Stopwatch()..start();
+    final events = <Map<String, Object>>[];
+    final img.Image? decoded = img.decodeImage(
+      File(imagePath).readAsBytesSync(),
+    );
+    if (decoded == null) {
+      throw StateError('unsupported bubble segmentation input image');
+    }
+    final img.Image source = img.bakeOrientation(decoded);
+    events.add({'stage': 'bubble.decode', 'ms': clock.elapsedMicroseconds / 1000});
+    clock.reset();
+    final _Letterbox letterbox = _Letterbox.fromSource(source);
+    events.add({'stage': 'bubble.resize_pad', 'ms': clock.elapsedMicroseconds / 1000});
+    clock.reset();
+    final Float32List input = _toNchw(letterbox.image);
+    events.add({'stage': 'bubble.normalize', 'ms': clock.elapsedMicroseconds / 1000});
+    return _BubbleInput(input, letterbox, source.width, source.height, events);
+  }
+
+  static DetectionResult _extractDetections(
+    (_BubbleInput, List<dynamic>) request,
+  ) {
+    final (prepared, values) = request;
+    final List<_BubbleCandidate> candidates = <_BubbleCandidate>[];
+    for (int index = 0; index < candidateCount; index++) {
+      final double confidence =
+          (values[4 * candidateCount + index] as num).toDouble();
+      if (!confidence.isFinite || confidence < confidenceThreshold) {
+        continue;
+      }
+      final double cx = (values[index] as num).toDouble();
+      final double cy = (values[candidateCount + index] as num).toDouble();
+      final double width =
+          (values[2 * candidateCount + index] as num).toDouble();
+      final double height =
+          (values[3 * candidateCount + index] as num).toDouble();
+      final Rect rect = _mapRect(
+        cx - width / 2,
+        cy - height / 2,
+        cx + width / 2,
+        cy + height / 2,
+        prepared.letterbox,
+        prepared.sourceWidth,
+        prepared.sourceHeight,
+      );
+      if (rect.width < 12 || rect.height < 12) {
+        continue;
+      }
+      candidates.add(_BubbleCandidate(rect: rect, confidence: confidence));
+    }
+    final List<_BubbleCandidate> selected = nms(
+      candidates,
+      threshold: nmsThreshold,
+    );
+    return DetectionResult(
+      regions: selected
+          .map(
+            (_BubbleCandidate candidate) => DetectedTextRegion(
+              left: candidate.rect.left,
+              top: candidate.rect.top,
+              width: candidate.rect.width,
+              height: candidate.rect.height,
+              confidence: candidate.confidence,
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+
   static List<_BubbleCandidate> nms(
     List<_BubbleCandidate> candidates, {
     double threshold = nmsThreshold,
     int maxDetections = 128,
   }) {
-    final List<_BubbleCandidate> remaining = [...candidates]
-      ..sort(
-        (_BubbleCandidate a, _BubbleCandidate b) =>
-            b.confidence.compareTo(a.confidence),
-      );
+    final List<_BubbleCandidate> remaining = [...candidates]..sort(
+      (_BubbleCandidate a, _BubbleCandidate b) =>
+          b.confidence.compareTo(a.confidence),
+    );
     final List<_BubbleCandidate> selected = <_BubbleCandidate>[];
     while (remaining.isNotEmpty && selected.length < maxDetections) {
       final _BubbleCandidate best = remaining.removeAt(0);
@@ -227,19 +278,28 @@ class BubbleSegmentationInferenceEngine {
     int sourceWidth,
     int sourceHeight,
   ) {
-    final double x1 = ((left - letterbox.padX) / letterbox.scale)
-        .clamp(0, sourceWidth.toDouble())
-        .toDouble();
-    final double y1 = ((top - letterbox.padY) / letterbox.scale)
-        .clamp(0, sourceHeight.toDouble())
-        .toDouble();
-    final double x2 = ((right - letterbox.padX) / letterbox.scale)
-        .clamp(0, sourceWidth.toDouble())
-        .toDouble();
-    final double y2 = ((bottom - letterbox.padY) / letterbox.scale)
-        .clamp(0, sourceHeight.toDouble())
-        .toDouble();
-    return Rect.fromLTRB(math.min(x1, x2), math.min(y1, y2), math.max(x1, x2), math.max(y1, y2));
+    final double x1 =
+        ((left - letterbox.padX) / letterbox.scale)
+            .clamp(0, sourceWidth.toDouble())
+            .toDouble();
+    final double y1 =
+        ((top - letterbox.padY) / letterbox.scale)
+            .clamp(0, sourceHeight.toDouble())
+            .toDouble();
+    final double x2 =
+        ((right - letterbox.padX) / letterbox.scale)
+            .clamp(0, sourceWidth.toDouble())
+            .toDouble();
+    final double y2 =
+        ((bottom - letterbox.padY) / letterbox.scale)
+            .clamp(0, sourceHeight.toDouble())
+            .toDouble();
+    return Rect.fromLTRB(
+      math.min(x1, x2),
+      math.min(y1, y2),
+      math.max(x1, x2),
+      math.max(y1, y2),
+    );
   }
 
   static double _iou(Rect a, Rect b) {
@@ -247,15 +307,18 @@ class BubbleSegmentationInferenceEngine {
     final double top = math.max(a.top, b.top);
     final double right = math.min(a.right, b.right);
     final double bottom = math.min(a.bottom, b.bottom);
-    final double intersection = math.max(0, right - left) * math.max(0, bottom - top);
+    final double intersection =
+        math.max(0, right - left) * math.max(0, bottom - top);
     final double union = a.width * a.height + b.width * b.height - intersection;
     return union <= 0 ? 0 : intersection / union;
   }
 
   static bool _sameShape(List<int> actual, List<int> expected) =>
       actual.length == expected.length &&
-      List<int>.generate(actual.length, (int i) => actual[i] == expected[i] ? 1 : 0)
-          .every((int value) => value == 1);
+      List<int>.generate(
+        actual.length,
+        (int i) => actual[i] == expected[i] ? 1 : 0,
+      ).every((int value) => value == 1);
 }
 
 class _BubbleCandidate {
@@ -298,7 +361,8 @@ class _Letterbox {
     );
     img.fill(canvas, color: img.ColorRgb8(114, 114, 114));
     final int padX = (BubbleSegmentationInferenceEngine.inputSize - width) ~/ 2;
-    final int padY = (BubbleSegmentationInferenceEngine.inputSize - height) ~/ 2;
+    final int padY =
+        (BubbleSegmentationInferenceEngine.inputSize - height) ~/ 2;
     img.compositeImage(canvas, resized, dstX: padX, dstY: padY);
     return _Letterbox(
       image: canvas,
@@ -307,4 +371,18 @@ class _Letterbox {
       padY: padY.toDouble(),
     );
   }
+}
+
+class _BubbleInput {
+  const _BubbleInput(
+    this.input,
+    this.letterbox,
+    this.sourceWidth,
+    this.sourceHeight,
+    this.preparationTimings,
+  );
+  final List<Map<String, Object>> preparationTimings;
+  final Float32List input;
+  final _Letterbox letterbox;
+  final int sourceWidth, sourceHeight;
 }

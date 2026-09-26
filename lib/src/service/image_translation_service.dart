@@ -27,6 +27,7 @@ import '../utils/image_translation_colors.dart';
 import '../utils/image_translation_typography.dart';
 export '../utils/image_translation_typography.dart';
 import '../utils/image_text_container_detection.dart';
+import '../utils/connected_bubble_layout.dart';
 import 'engine/engine.dart';
 
 ImageTranslationService imageTranslationService = ImageTranslationService();
@@ -489,16 +490,9 @@ class ImageTranslationService extends GetxController
         imageHash,
       );
       if (!force && cached != null) {
-        _set(
-          request.cacheKey,
-          cached.copyWith(
-            fromCache: true,
-            blocks: await _detectColors(
-              sourceBytes, cached.blocks,
-              cached.imageWidth ?? 0, cached.imageHeight ?? 0,
-            ),
-          ),
-        );
+        _set(request.cacheKey, await _restoreCachedResult(
+          persistentKey, sourceBytes, cached,
+        ));
         return null;
       }
 
@@ -529,20 +523,30 @@ class ImageTranslationService extends GetxController
         imageWidth = width;
         imageHeight = height;
       }
-      blocks = await _detectColors(sourceBytes, blocks, imageWidth, imageHeight);
+      blocks = await _detectColors(
+        sourceBytes,
+        blocks,
+        imageWidth,
+        imageHeight,
+      );
       // Sound effects stay as drawn: drop them before containers, translation,
       // overlay and inpainting so they are neither translated nor erased.
-      blocks = blocks
-          .where(
-            (RecognizedTextBlock block) => !isOnomatopoeia(
-              block.text,
-              insideBubble:
-                  bubbleDetection == null
-                      ? null
-                      : isBlockInsideAnyRegion(block, bubbleDetection.regions),
-            ),
-          )
-          .toList();
+      blocks =
+          blocks
+              .where(
+                (RecognizedTextBlock block) =>
+                    !isOnomatopoeia(
+                      block.text,
+                      insideBubble:
+                          bubbleDetection == null
+                              ? null
+                              : isBlockInsideAnyRegion(
+                                block,
+                                bubbleDetection.regions,
+                              ),
+                    ),
+              )
+              .toList();
       List<RecognizedTextContainer> containers =
           useBubbleDetection
               ? _containersFromBubbleDetection(
@@ -555,6 +559,7 @@ class ImageTranslationService extends GetxController
       if (useBubbleDetection && containers.isEmpty) {
         containers = await _detectTextContainers(sourceBytes, blocks);
       }
+      containers = await _refineBubbleLayouts(sourceBytes, containers);
       if (_cancelRequested) {
         markCanceled(request.cacheKey);
         return null;
@@ -1000,17 +1005,33 @@ class ImageTranslationService extends GetxController
     if (cached == null) {
       return false;
     }
-    _set(
-      request.cacheKey,
-      cached.copyWith(
-        fromCache: true,
-        blocks: await _detectColors(
-          sourceBytes, cached.blocks,
-          cached.imageWidth ?? 0, cached.imageHeight ?? 0,
-        ),
-      ),
-    );
+    _set(request.cacheKey, await _restoreCachedResult(
+      _persistentCacheKey(request, imageHash), sourceBytes, cached,
+    ));
     return true;
+  }
+
+  /// Upgrade old geometry/colors once and persist even an empty layout result.
+  /// Viewport eviction must not turn every return to a page into image analysis.
+  Future<ImageTranslationResult> _restoreCachedResult(
+    String persistentKey,
+    Uint8List sourceBytes,
+    ImageTranslationResult cached,
+  ) async {
+    final containers = await _refineBubbleLayouts(sourceBytes, cached.containers);
+    final blocks = await _detectColors(sourceBytes, cached.blocks,
+        cached.imageWidth ?? 0, cached.imageHeight ?? 0);
+    final restored = cached.copyWith(
+      fromCache: true, containers: containers, blocks: blocks,
+    );
+    if (!identical(containers, cached.containers) || !identical(blocks, cached.blocks)) {
+      try {
+        await _writePersistentResult(persistentKey, restored);
+      } catch (error) {
+        log.warning('Failed to persist upgraded translation layout: $error');
+      }
+    }
+    return restored;
   }
 
   /// Probes the encoded image dimensions from its header. Only used as a
@@ -1157,10 +1178,12 @@ class ImageTranslationService extends GetxController
     if (width <= 0 ||
         height <= 0 ||
         blocks.isEmpty ||
-        blocks.every((block) =>
-            block.backgroundColor != null &&
-            block.sourceGlyphWidth != null &&
-            block.sourceGlyphHeight != null)) {
+        blocks.every(
+          (block) =>
+              block.backgroundColor != null &&
+              block.sourceGlyphWidth != null &&
+              block.sourceGlyphHeight != null,
+        )) {
       return blocks;
     }
     try {
@@ -1173,6 +1196,28 @@ class ImageTranslationService extends GetxController
     } catch (error) {
       log.warning('Translation color detection skipped: $error');
       return blocks;
+    }
+  }
+
+  Future<List<RecognizedTextContainer>> _refineBubbleLayouts(
+    Uint8List sourceBytes,
+    List<RecognizedTextContainer> containers,
+  ) async {
+    if (containers.isEmpty ||
+        containers.every((c) => c.hasAnalyzedLayout)) {
+      return containers;
+    }
+    try {
+      final refined =
+          await compute(refineBubbleLayoutsFromBytes, <String, dynamic>{
+            'bytes': sourceBytes,
+            'containers':
+                containers.map((container) => container.toJson()).toList(),
+          });
+      return refined.map(RecognizedTextContainer.fromJson).toList();
+    } catch (error) {
+      log.warning('Bubble interior layout skipped: $error');
+      return containers;
     }
   }
 
@@ -1325,7 +1370,6 @@ class ImageTranslationService extends GetxController
         if (translationPreservesSource(group.textOf(blocks), translation)) {
           continue;
         }
-        mergedBackgrounds.add((safeRect, plateColor));
         final bool vertical = translationUsesVerticalLayout(
           blocks,
           group.blockIndices,
@@ -1335,15 +1379,50 @@ class ImageTranslationService extends GetxController
           group.blockIndices,
           vertical: vertical,
         );
-        final double resolved = fitTranslationFontSize(
+        final regions = layoutRegionsForRecognizedTextGroup(group, containers);
+        if (regions.isNotEmpty) {
+          for (final index in group.blockIndices) {
+            final block = blocks[index];
+            mergedBackgrounds.add((
+              Rect.fromLTWH(
+                block.left,
+                block.top,
+                block.width,
+                block.height,
+              ).intersect(safeRect),
+              plateColor,
+            ));
+          }
+        }
+        final areas =
+            regions.isEmpty
+                ? <Rect>[safeRect]
+                : <Rect>[
+                  for (final region in regions)
+                    Rect.fromLTWH(
+                      region.left,
+                      region.top,
+                      region.width,
+                      region.height,
+                    ).intersect(
+                      Rect.fromLTWH(
+                        0,
+                        0,
+                        frame.image.width.toDouble(),
+                        frame.image.height.toDouble(),
+                      ),
+                    ),
+                ];
+        for (final (rect, text, fontSize) in layoutTranslationInRegions(
           translation,
-          math.max(0, safeRect.width - 4),
-          math.max(0, safeRect.height - 4),
+          areas,
           TextDirection.ltr,
           maxFontSize: sourceFont,
           vertical: vertical,
-        );
-        entries.add((safeRect, translation, resolved, textColor, vertical));
+        )) {
+          mergedBackgrounds.add((rect, plateColor));
+          entries.add((rect, text, fontSize, textColor, vertical));
+        }
       }
     }
     for (final (Rect rect, Color plateColor) in mergedBackgrounds) {
@@ -1884,13 +1963,12 @@ void paintTranslationBubbleBackground(
           255)
       .round()
       .clamp(0, 255);
+  if (alpha == 0) {
+    return;
+  }
+  // Backing plates only cover source glyphs; an outline exposes OCR/layout
+  // rectangles and must not remain visible when the plate is transparent.
   canvas.drawRRect(rrect, Paint()..color = configured.withAlpha(alpha));
-  canvas.drawRRect(
-    rrect,
-    Paint()
-      ..color = const Color(0x33000000)
-      ..style = PaintingStyle.stroke,
-  );
 }
 
 /// Maps Manga109 speech-bubble regions onto OCR lines. Oversized page-like

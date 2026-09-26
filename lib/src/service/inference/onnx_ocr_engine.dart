@@ -8,6 +8,7 @@ import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/utils/oriented_rect.dart';
 
 import 'inference_exception.dart';
+import 'inference_timings.dart';
 import 'inference_task.dart';
 import 'inference_safety.dart';
 import 'ocr_inference_engine.dart';
@@ -49,12 +50,15 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     required this.providerResolver,
     required this.model,
     this.safetyConfig,
+    this.timings,
   });
 
   final OnnxRuntime runtime;
   final OnnxProviderResolver providerResolver;
   final OnnxOcrModelInfo model;
   final InferenceSessionSafetyConfig? safetyConfig;
+  final InferenceTimings? timings;
+  final Map<String, String> _sessionRoles = {};
 
   static const double _detThreshold = OcrScoringProtocol.detectorPixelThreshold;
   static const double _boxThreshold = OcrScoringProtocol.detectorBoxThreshold;
@@ -96,6 +100,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       throw StateError('OCR input is missing or exceeds 80 MiB');
     }
 
+    final int? sessionStart = timings?.now;
     final List<ort.OrtProvider> providers = providerResolver();
     final List<ort.OrtSession?> sessions =
         await Future.wait(<Future<ort.OrtSession?>>[
@@ -125,6 +130,11 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       throw const InferenceNotReadyException('onnx-ocr');
     }
 
+    timings?.record('ocr.sessions', sessionStart!, {'providers': providers.map((p) => p.name).join(',')});
+    _sessionRoles[detSession.id] = 'det';
+    _sessionRoles[clsSession.id] = 'cls';
+    _sessionRoles[recSession.id] = 'rec';
+    final int? decodeStart = timings?.now;
     final image.Image? decoded = image.decodeImage(
       await inputFile.readAsBytes(),
     );
@@ -134,10 +144,15 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     final image.Image original = image.bakeOrientation(decoded);
     final int originalWidth = original.width;
     final int originalHeight = original.height;
+    timings?.record('ocr.decode', decodeStart!);
+    final int? resizeStart = timings?.now;
     final image.Image working = _resizeForDetection(original, maxDimension);
+    timings?.record('ocr.resize', resizeStart!);
+    timings?.record('ocr.decode_resize', decodeStart!, {'width': originalWidth, 'height': originalHeight, 'detWidth': working.width, 'detHeight': working.height});
     onProgress?.call(0.08);
 
     token.throwIfCancelled();
+    final int? detStart = timings?.now;
     final List<_DetectedBox> boxes = await _detect(
       detSession,
       working,
@@ -145,6 +160,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       originalHeight,
       token,
     );
+    timings?.record('ocr.primary_detection', detStart!, {'boxes': boxes.length});
     onProgress?.call(0.42);
     if (boxes.isEmpty) {
       return OcrInferenceResult(
@@ -156,6 +172,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
 
     // Pass 1: straighten each detected box (min-area rect + unclip) into an
     // axis-aligned crop and run the 180-degree orientation classifier.
+    final int? linesStart = timings?.now;
     final List<String> characters = await _loadCharacters(model.dictPath);
     final List<_RecognizedCandidate> candidates = await _recognizeBoxes(
       source: original,
@@ -165,6 +182,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       characters: characters,
       token: token,
     );
+    timings?.record('ocr.primary_lines', linesStart!, {'candidates': candidates.length});
     onProgress?.call(0.70);
 
     // DB detectors commonly fuse adjacent tategaki columns into horizontal
@@ -174,6 +192,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     // margins after a 90° image rotation. This turns each vertical column into
     // the horizontal contract expected by PP-OCR, without rotating glyphs in
     // the crop one by one. The mapped boxes remain in the original image space.
+    final int? rotatedStart = timings?.now;
     final List<_RecognizedCandidate> rotatedCandidates =
         await _recognizeRotatedMarginsIfNeeded(
           original: original,
@@ -185,6 +204,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           token: token,
           maxDimension: maxDimension,
         );
+    timings?.record('ocr.rotated_margins', rotatedStart!, {'candidates': rotatedCandidates.length});
     if (candidates.isEmpty && rotatedCandidates.isEmpty) {
       return OcrInferenceResult(
         blocks: const <RecognizedTextBlock>[],
@@ -269,6 +289,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     final List<image.Image> crops = <image.Image>[];
     for (final _DetectedBox box in boxes) {
       token.throwIfCancelled();
+      final int? cropStart = timings?.now;
       final image.Image? crop = straightenOcrCrop(source, box.rect);
       if (crop == null) continue;
       // PP-OCR's mobile angle classifier only distinguishes 0°/180°. A
@@ -282,6 +303,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           boxHeight > boxWidth * OcrScoringProtocol.verticalAspectRatio;
       final image.Image recognitionCrop =
           vertical ? image.copyRotate(crop, angle: -90) : crop;
+      timings?.record('ocr.crop', cropStart!);
       crops.add(await _classifyAndRotate(clsSession, recognitionCrop, token));
       validBoxes.add(box);
     }
@@ -516,11 +538,13 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     int originalHeight,
     InferenceCancellationToken token,
   ) async {
+    final int? prepStart = timings?.now;
     final Float32List input = _normalizedNchw(
       working,
       working.width,
       working.height,
     );
+    timings?.record('det.normalize', prepStart!);
     final List<dynamic> output = await _runSingleOutput(
       session,
       input,
@@ -529,6 +553,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       expectedRank: 4,
       expectedChannels: 1,
     );
+    final int? postStart = timings?.now;
     final int mapWidth = working.width;
     final int mapHeight = working.height;
     if (output.length != mapWidth * mapHeight) {
@@ -617,6 +642,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           height: result[i].rect.bbox.$4,
         ),
     ];
+    timings?.record('det.postprocess', postStart!, {'boxes': result.length});
     return sortOcrReadingOrder(layout)
         .take(_maxDetectedLines)
         .map((_layout) => result[_layout.sourceIndex])
@@ -628,6 +654,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     image.Image crop,
     InferenceCancellationToken token,
   ) async {
+    final int? prepStart = timings?.now;
     const int targetHeight = 48;
     const int targetWidth = 192;
     final Float32List input = _normalizedPaddedNchw(
@@ -635,6 +662,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       targetWidth,
       targetHeight,
     );
+    timings?.record('cls.normalize', prepStart!);
     final List<dynamic> output = await _runSingleOutput(
       session,
       input,
@@ -680,9 +708,11 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
           _recTargetWidth(crops[index]),
         );
       }
+      final int? prepStart = timings?.now;
       final Float32List input = _normalizedBatchNchw(<image.Image>[
         for (final int index in batch) crops[index],
       ], maxTargetWidth);
+      timings?.record('rec.normalize', prepStart!);
       try {
         final _TensorOutput output = await _runOutput(
           session,
@@ -708,7 +738,8 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
             characters,
           );
         }
-      } catch (_) {
+      } catch (error) {
+        timings?.record('rec.batch_fallback', timings!.now, {'error': error.toString(), 'batch': batch.length});
         // The exported model may not accept a dynamic batch dimension; fall
         // back to one inference call per line for this group.
         for (final int index in batch) {
@@ -770,6 +801,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     int classes,
     List<String> characters,
   ) {
+    final int? decodeStart = timings?.now;
     final StringBuffer text = StringBuffer();
     int previous = -1;
     double confidence = 0;
@@ -793,6 +825,7 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       }
       previous = bestIndex;
     }
+    timings?.record('rec.ctc_decode', decodeStart!, {'timeSteps': timeSteps, 'classes': classes});
     return _RecognizedLine(
       text.toString(),
       selected == 0 ? 0 : confidence / selected,
@@ -905,13 +938,18 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     int? expectedChannels,
   }) async {
     token.throwIfCancelled();
+    final String role = _sessionRoles[session.id] ?? 'unknown';
+    final int? tensorStart = timings?.now;
     final ort.OrtValue tensor = await ort.OrtValue.fromList(input, shape);
+    timings?.record('$role.tensor_upload', tensorStart!, {'shape': shape.join('x')});
     Map<String, ort.OrtValue>? outputs;
     try {
       final String inputName = session.inputNames.first;
+      final int? runStart = timings?.now;
       outputs = await runtime.run(session, <String, ort.OrtValue>{
         inputName: tensor,
       });
+      timings?.record('$role.native_run', runStart!);
       token.throwIfCancelled();
       final ort.OrtValue output = outputs[session.outputNames.first]!;
       if (output.shape.length != expectedRank ||
@@ -926,7 +964,9 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       if (elements > 64 * 1024 * 1024) {
         throw StateError('OCR output exceeds tensor budget');
       }
+      final int? readStart = timings?.now;
       final List<dynamic> values = await output.asFlattenedList();
+      timings?.record('$role.tensor_download', readStart!, {'elements': elements, 'shape': output.shape.join('x')});
       if (values.length != elements) {
         throw StateError('ONNX output data/shape mismatch');
       }

@@ -246,14 +246,7 @@ class EngineRegistry {
     final LamaOnnxInpaintingInferenceEngine lamaInference =
         LamaOnnxInpaintingInferenceEngine(
           runtime: OnnxRuntime.instance,
-          // LaMa's FFC convolutions open on DirectML but fail at Run
-          // (DmlFusedConv E_INVALIDARG), so it stays on CPU.
-          providerResolver: () =>
-              OnnxRuntime.instance.availableProviders.contains(
-                ort.OrtProvider.CPU,
-              )
-              ? const <ort.OrtProvider>[ort.OrtProvider.CPU]
-              : const <ort.OrtProvider>[],
+          providerResolver: _visionModelProviders,
           modelResolver: () {
             final Map<String, String>? files = OnnxModelStore.instance
                 .manifestFilePaths(OnnxModelStore.lamaInpaintManifestId);

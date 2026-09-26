@@ -219,6 +219,19 @@ RecognizedTextGroupRenderBounds? explicitRenderBoundsForRecognizedTextGroup(
   return null;
 }
 
+List<TranslationLayoutRegion> layoutRegionsForRecognizedTextGroup(
+  RecognizedTextGroup group,
+  List<RecognizedTextContainer> containers,
+) {
+  for (final container in containers) {
+    if (container.blockIndices.length == group.blockIndices.length &&
+        container.blockIndices.toSet().containsAll(group.blockIndices)) {
+      return container.layoutRegions.where((region) => region.isValid).toList();
+    }
+  }
+  return const [];
+}
+
 /// Returns one conservative render rectangle for [group].
 ///
 /// Use a detected container when available, otherwise retain the OCR union.

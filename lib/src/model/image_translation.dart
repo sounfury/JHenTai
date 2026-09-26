@@ -93,6 +93,8 @@ class RecognizedTextContainer {
     required this.width,
     required this.height,
     this.confidence = 0,
+    this.layoutRegions = const [],
+    this.layoutAnalysisVersion = 0,
   });
 
   final List<int> blockIndices;
@@ -102,6 +104,14 @@ class RecognizedTextContainer {
   final double height;
   final double confidence;
 
+  /// Interior rectangles in source pixels, independent of translation groups.
+  /// A connected balloon can have any number of separate text areas.
+  final List<TranslationLayoutRegion> layoutRegions;
+
+  /// Records successful analysis even when no safe interior was found.
+  final int layoutAnalysisVersion;
+  bool get hasAnalyzedLayout => layoutAnalysisVersion >= 1 || layoutRegions.isNotEmpty;
+
   Map<String, dynamic> toJson() => <String, dynamic>{
     'blockIndices': blockIndices,
     'left': left,
@@ -109,6 +119,9 @@ class RecognizedTextContainer {
     'width': width,
     'height': height,
     'confidence': confidence,
+    if (layoutAnalysisVersion > 0) 'layoutAnalysisVersion': layoutAnalysisVersion,
+    if (layoutRegions.isNotEmpty)
+      'layoutRegions': layoutRegions.map((region) => region.toJson()).toList(),
   };
 
   factory RecognizedTextContainer.fromJson(Map<String, dynamic> json) =>
@@ -122,7 +135,44 @@ class RecognizedTextContainer {
         width: (json['width'] as num?)?.toDouble() ?? 0,
         height: (json['height'] as num?)?.toDouble() ?? 0,
         confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
+        layoutAnalysisVersion: (json['layoutAnalysisVersion'] as num?)?.toInt() ?? 0,
+        layoutRegions:
+            (json['layoutRegions'] as List? ?? const [])
+                .whereType<Map>()
+                .map(TranslationLayoutRegion.fromJson)
+                .where((region) => region.isValid)
+                .toList(),
       );
+}
+
+class TranslationLayoutRegion {
+  const TranslationLayoutRegion(this.left, this.top, this.width, this.height);
+
+  final double left;
+  final double top;
+  final double width;
+  final double height;
+  bool get isValid =>
+      left.isFinite &&
+      top.isFinite &&
+      width.isFinite &&
+      height.isFinite &&
+      width > 0 &&
+      height > 0;
+
+  Map<String, double> toJson() => {
+    'left': left,
+    'top': top,
+    'width': width,
+    'height': height,
+  };
+
+  factory TranslationLayoutRegion.fromJson(Map json) => TranslationLayoutRegion(
+    (json['left'] as num?)?.toDouble() ?? 0,
+    (json['top'] as num?)?.toDouble() ?? 0,
+    (json['width'] as num?)?.toDouble() ?? 0,
+    (json['height'] as num?)?.toDouble() ?? 0,
+  );
 }
 
 class ImageTranslationResult {
