@@ -355,6 +355,30 @@ void main() {
       );
     });
 
+    test('keeps unnumbered continuation lines with their numbered bubble', () {
+      expect(
+        parseNumberedTranslations(
+          '1: 别客气。\n而且你之前不是也很想去游乐园吗？\n'
+          '2: 诶，和我吗？\n是要买什么大东西吗？',
+          2,
+        ),
+        equals(<String>[
+          '别客气。\n而且你之前不是也很想去游乐园吗？',
+          '诶，和我吗？\n是要买什么大东西吗？',
+        ]),
+      );
+    });
+
+    test('keeps content after a numbered group heading', () {
+      expect(
+        parseNumberedTranslations(
+          'Group 1:\n第一句。\n第二句。\nGroup 2:\n另一句。',
+          2,
+        ),
+        equals(<String>['第一句。\n第二句。', '另一句。']),
+      );
+    });
+
     test('keeps a single-line group as-is', () {
       expect(
         splitGroupTranslationIntoLines(

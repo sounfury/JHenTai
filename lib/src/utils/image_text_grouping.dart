@@ -323,23 +323,31 @@ List<String> parseNumberedTranslations(
 List<String> _parseNumberedTranslations(String text, int count) {
   final List<String?> result = List<String?>.filled(count, null);
   int fallbackIndex = 0;
+  int? currentGroupIndex;
   for (final String rawLine in text.split('\n')) {
     final String line = rawLine.replaceFirst(RegExp(r'^\s*[-*]\s+'), '').trim();
-    if (line.isEmpty ||
-        RegExp(
-          r'^\s*(?:group\s*)?\d+\s*:?\s*$',
-          caseSensitive: false,
-        ).hasMatch(line)) {
-      continue;
-    }
+    if (line.isEmpty) continue;
     final RegExpMatch? match = RegExp(
       r'^\s*(?:group\s*)?(\d+)\s*[:：.)-]?\s*(.*)$',
       caseSensitive: false,
     ).firstMatch(line);
     final int? index = match == null ? null : int.tryParse(match.group(1)!);
     if (index != null && index >= 1 && index <= count) {
-      result[index - 1] = match!.group(2)!.trim();
+      currentGroupIndex = index - 1;
+      final String content = match!.group(2)!.trim();
+      if (content.isNotEmpty) {
+        result[currentGroupIndex] = content;
+      }
       fallbackIndex = math.max(fallbackIndex, index);
+      continue;
+    }
+    // Models sometimes wrap a numbered bubble's translation across several
+    // lines. Keep those lines with the current bubble; otherwise they occupy
+    // the next slot and are overwritten by its actual numbered translation.
+    if (currentGroupIndex != null) {
+      final String? previous = result[currentGroupIndex];
+      result[currentGroupIndex] =
+          previous == null || previous.isEmpty ? line : '$previous\n$line';
       continue;
     }
     while (fallbackIndex < count && result[fallbackIndex] != null) {
