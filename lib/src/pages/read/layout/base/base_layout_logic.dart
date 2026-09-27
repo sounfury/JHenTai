@@ -456,6 +456,9 @@ abstract class BaseLayoutLogic extends GetxController
           sourcePath: sourcePath,
           force: force,
           eraseOnlyBlocks: eraseBlocks,
+          protectedBlocks: translation.blocks
+              .where((block) => !eraseBlocks.contains(block))
+              .toList(growable: false),
         );
     if (repairResult.fallbackToOverlay &&
         repairResult.errorCode != null &&

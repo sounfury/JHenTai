@@ -25,6 +25,7 @@ import 'path_service.dart';
 import '../utils/image_text_grouping.dart';
 import '../utils/image_translation_colors.dart';
 import '../utils/image_translation_typography.dart';
+import '../utils/ocr_artifact_filter.dart';
 export '../utils/image_translation_typography.dart';
 import '../utils/image_text_container_detection.dart';
 import '../utils/connected_bubble_layout.dart';
@@ -538,13 +539,14 @@ class ImageTranslationService extends GetxController
         imageHeight,
         page: page,
       );
-      // Sound effects stay as drawn: drop them before containers, translation,
-      // overlay and inpainting so they are neither translated nor erased.
+      blocks = mergeOverlappingOcrArtifacts(blocks);
+      // Preserve only sound effects outside detected bubbles. Exclamations and
+      // sound words inside bubbles must reach the translator and renderer.
       blocks =
           blocks
               .where(
                 (RecognizedTextBlock block) =>
-                    !isOnomatopoeia(
+                    !shouldPreserveSoundEffect(
                       block.text,
                       insideBubble:
                           bubbleDetection == null
@@ -750,8 +752,7 @@ class ImageTranslationService extends GetxController
                     : imageTranslationSetting.translatorModel.value,
             'thinking': imageTranslationSetting.enableThinking.value,
           },
-          // Preserve sound effects; never reuse results from the old prompt.
-          promptVersion: 5,
+          promptVersion: 7,
         ),
       );
       task = activeTask;
@@ -898,7 +899,7 @@ class ImageTranslationService extends GetxController
   String _persistentCacheKey(
     ImageTranslationRequest request,
     String imageHash, {
-    int promptVersion = 5,
+    int promptVersion = 7,
     bool legacy = false,
   }) {
     final String configFingerprint = _translationConfigFingerprint(
@@ -925,7 +926,8 @@ class ImageTranslationService extends GetxController
         'bubbleDetection': configuration['bubbleDetection'],
         'bubbleModel': configuration['bubbleModel'],
         // Bump when onomatopoeia filtering changes which blocks translate.
-        'sfxFilter': 2,
+        'sfxFilter': 3,
+        'ocrArtifactFilter': 1,
       },
       translationModel: configuration['model'] as String?,
       translationConfiguration: <String, dynamic>{
@@ -945,7 +947,7 @@ class ImageTranslationService extends GetxController
   }
 
   String _translationConfigFingerprint({
-    int promptVersion = 5,
+    int promptVersion = 7,
     bool legacy = false,
   }) {
     if (legacy) {
@@ -1011,7 +1013,7 @@ class ImageTranslationService extends GetxController
     ImageTranslationRequest request,
     String imageHash,
   ) async {
-    // Older prompts translated sound effects, so their results cannot migrate.
+    // The cache key includes the current inside/outside sound-effect policy.
     return _readPersistentResult(_persistentCacheKey(request, imageHash));
   }
 
@@ -2083,8 +2085,8 @@ List<RecognizedTextContainer> containersFromBubbleDetection(
     final List<RecognizedTextBlock> members = <RecognizedTextBlock>[
       for (final int index in indices) blocks[index],
     ];
-    final List<RecognizedTextGroup> clusters = groupRecognizedTextBlocks(
-      members,
+    final List<RecognizedTextGroup> clusters = mergeTouchingRecognizedTextGroups(
+      groupRecognizedTextBlocks(members),
     );
     if (clusters.length <= 1) {
       containers.add(

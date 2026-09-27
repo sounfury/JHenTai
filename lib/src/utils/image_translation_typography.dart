@@ -115,19 +115,42 @@ List<(Rect, String, double)> layoutTranslationInRegions(
 bool translationUsesVerticalLayout(
   List<RecognizedTextBlock> blocks,
   List<int> blockIndices,
-) =>
-    classifyOcrLayout([
-      for (final index in blockIndices)
-        if (index >= 0 && index < blocks.length)
-          OcrLayoutBox(
-            sourceIndex: index,
-            left: blocks[index].left,
-            top: blocks[index].top,
-            width: blocks[index].width,
-            height: blocks[index].height,
-          ),
-    ]) ==
-    OcrLayoutMode.verticalRtl;
+) {
+  final boxes = <OcrLayoutBox>[
+    for (final index in blockIndices)
+      if (index >= 0 && index < blocks.length)
+        OcrLayoutBox(
+          sourceIndex: index,
+          left: blocks[index].left,
+          top: blocks[index].top,
+          width: blocks[index].width,
+          height: blocks[index].height,
+        ),
+  ];
+  if (classifyOcrLayout(boxes) == OcrLayoutMode.verticalRtl) {
+    return true;
+  }
+  if (boxes.length < 2) {
+    return false;
+  }
+  final double left = boxes.map((box) => box.left).reduce(math.min);
+  final double right = boxes.map((box) => box.right).reduce(math.max);
+  final double top = boxes.map((box) => box.top).reduce(math.min);
+  final double bottom = boxes.map((box) => box.bottom).reduce(math.max);
+  final double groupWidth = right - left;
+  final double groupHeight = bottom - top;
+  // A few short OCR fragments can outvote the one full vertical column that
+  // establishes this balloon's writing direction.
+  return groupWidth > 0 &&
+      groupHeight > groupWidth * 2 &&
+      boxes.any(
+        (box) =>
+            box.width > 0 &&
+            box.height >= groupHeight * 0.65 &&
+            box.height > box.width * 3 &&
+            box.width <= groupWidth * 0.65,
+      );
+}
 
 /// Paint using the same bounds and metrics as fitting; preserve the original
 /// writing direction and never truncate a translation to an ellipsis.
@@ -144,13 +167,15 @@ void paintTranslationBubbleText(
   if (content.isEmpty) {
     return;
   }
-  final resolved = fontSize ?? fitTranslationFontSize(
-    translation,
-    content.width,
-    content.height,
-    textDirection,
-    vertical: vertical,
-  );
+  final resolved =
+      fontSize ??
+      fitTranslationFontSize(
+        translation,
+        content.width,
+        content.height,
+        textDirection,
+        vertical: vertical,
+      );
   if (resolved <= 0) {
     return;
   }
@@ -233,6 +258,7 @@ double fitTranslationFontSize(
     }
     return measured.width <= maxWidth && measured.height <= maxHeight;
   }
+
   if (fits(high)) {
     return high;
   }
@@ -262,17 +288,21 @@ double estimateSourceTranslationFontSize(
       vertical ?? translationUsesVerticalLayout(blocks, blockIndices);
   final sizes = <double>[
     for (final index in blockIndices)
-      if (index >= 0 && index < blocks.length &&
-          blocks[index].width > 0 && blocks[index].height > 0)
+      if (index >= 0 &&
+          index < blocks.length &&
+          blocks[index].width > 0 &&
+          blocks[index].height > 0)
         isVertical
             ? math.min(
-                blocks[index].width,
-                blocks[index].sourceGlyphWidth ?? blocks[index].width,
-              ) * (scaleX ?? scaleY)
+                  blocks[index].width,
+                  blocks[index].sourceGlyphWidth ?? blocks[index].width,
+                ) *
+                (scaleX ?? scaleY)
             : math.min(
-                blocks[index].height,
-                blocks[index].sourceGlyphHeight ?? blocks[index].height,
-              ) * scaleY,
+                  blocks[index].height,
+                  blocks[index].sourceGlyphHeight ?? blocks[index].height,
+                ) *
+                scaleY,
   ]..removeWhere((size) => !size.isFinite || size <= 0);
   if (sizes.isEmpty) {
     return 30;
@@ -283,5 +313,3 @@ double estimateSourceTranslationFontSize(
       ? sizes[middle]
       : (sizes[middle - 1] + sizes[middle]) / 2;
 }
-
-

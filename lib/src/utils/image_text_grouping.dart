@@ -236,7 +236,12 @@ List<TranslationLayoutRegion> layoutRegionsForRecognizedTextGroup(
         0.0,
         (sum, region) => sum + region.width * region.height,
       );
-      return regionArea < group.width * group.height * 0.6
+      // Multiple regions are the detector's concave-balloon partition. Their
+      // inset rectangles naturally cover much less of the bounding box (which
+      // includes the exterior between lobes). Rejecting them by total coverage
+      // collapses all text back into the bounding box's central neck.
+      // Keep the strip safeguard for a single recovered region only.
+      return regions.length <= 1 && regionArea < group.width * group.height * 0.6
           ? const []
           : regions;
     }
@@ -619,6 +624,66 @@ List<RecognizedTextGroup> groupRecognizedTextBlocks(
       bottom: groupBottom[group],
     ),
   );
+}
+
+/// Rejoins OCR fragments that touch inside one detected balloon. Short glyph
+/// fragments can make a vertical page look horizontal to the grouping
+/// heuristic, splitting a phrase such as "週末、楽しみに待ってます" into several
+/// translation units. Distant clusters in an oversized detector region stay
+/// separate.
+List<RecognizedTextGroup> mergeTouchingRecognizedTextGroups(
+  List<RecognizedTextGroup> groups,
+) {
+  if (groups.length < 2) {
+    return groups;
+  }
+  final List<int> parents = List<int>.generate(groups.length, (i) => i);
+
+  int root(int index) {
+    while (parents[index] != index) {
+      parents[index] = parents[parents[index]];
+      index = parents[index];
+    }
+    return index;
+  }
+
+  for (int i = 0; i < groups.length; i++) {
+    for (int j = i + 1; j < groups.length; j++) {
+      final RecognizedTextGroup a = groups[i];
+      final RecognizedTextGroup b = groups[j];
+      if (a.width <= 0 || a.height <= 0 || b.width <= 0 || b.height <= 0) {
+        continue;
+      }
+      final double horizontalGap = math.max(
+        math.max(a.left - b.right, b.left - a.right),
+        0,
+      );
+      final double verticalOverlap =
+          math.min(a.bottom, b.bottom) - math.max(a.top, b.top);
+      if (horizontalGap <= 0.1 * math.min(a.width, b.width) &&
+          verticalOverlap >= 0.25 * math.min(a.height, b.height)) {
+        parents[root(j)] = root(i);
+      }
+    }
+  }
+
+  final Map<int, List<RecognizedTextGroup>> components = {};
+  for (int i = 0; i < groups.length; i++) {
+    components.putIfAbsent(root(i), () => []).add(groups[i]);
+  }
+  return <RecognizedTextGroup>[
+    for (final List<RecognizedTextGroup> component in components.values)
+      RecognizedTextGroup(
+        blockIndices: <int>[
+          for (final RecognizedTextGroup group in component)
+            ...group.blockIndices,
+        ]..sort(),
+        left: component.map((g) => g.left).reduce(math.min),
+        top: component.map((g) => g.top).reduce(math.min),
+        right: component.map((g) => g.right).reduce(math.max),
+        bottom: component.map((g) => g.bottom).reduce(math.max),
+      ),
+  ];
 }
 
 /// Whether the page is dominated by tall, narrow blocks — the signature of

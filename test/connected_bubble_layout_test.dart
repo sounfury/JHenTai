@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -5,11 +6,74 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/utils/connected_bubble_layout.dart';
+import 'package:jhentai/src/utils/image_text_grouping.dart';
 import 'package:jhentai/src/utils/image_translation_typography.dart';
 import 'package:jhentai/src/utils/vertical_translation_layout.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('staggered connected balloon keeps both lobes through rendering', () {
+    final source =
+        image.decodePng(
+          File(
+            'test/fixtures/connected_bubble_staggered.png',
+          ).readAsBytesSync(),
+        )!;
+    const container = RecognizedTextContainer(
+      blockIndices: [0],
+      left: 30,
+      top: 20,
+      width: 300,
+      height: 695,
+    );
+    final detected = detectBubbleLayoutRegions(source, container);
+    expect(detected, hasLength(2));
+    expect(
+      detected.fold(0.0, (double sum, r) => sum + r.width * r.height),
+      lessThan(container.width * container.height * .6),
+    );
+    final regions = layoutRegionsForRecognizedTextGroup(
+      const RecognizedTextGroup(
+        blockIndices: [0],
+        left: 30,
+        top: 20,
+        right: 330,
+        bottom: 715,
+      ),
+      [
+        RecognizedTextContainer.fromJson({
+          ...container.toJson(),
+          'layoutRegions': detected.map((r) => r.toJson()).toList(),
+        }),
+      ],
+    );
+    expect(regions, hasLength(2));
+    const text = '关于主人的事就算隐瞒也是没用的哦？对现在的我来说什么都知道呢♡主人现在在想什么要不要我来猜猜看？';
+    final entries = layoutTranslationInRegions(
+      text,
+      regions
+          .map((r) => Rect.fromLTWH(r.left, r.top, r.width, r.height))
+          .toList(),
+      TextDirection.ltr,
+      maxFontSize: 27,
+      vertical: true,
+    );
+    expect(entries, hasLength(2));
+    expect(entries.map((e) => e.$2).join(), text);
+    expect(entries.first.$1.center.dx, greaterThan(entries.last.$1.center.dx));
+    expect(entries.first.$1.top, lessThan(entries.last.$1.top));
+    for (final (rect, chunk, font) in entries) {
+      final layout = VerticalTranslationLayout(
+        chunk,
+        fontSize: font,
+        maxHeight: rect.height - 4,
+      );
+      expect(layout.size.width, lessThanOrEqualTo(rect.width - 4));
+      expect(layout.size.height, lessThanOrEqualTo(rect.height - 4));
+      layout.dispose();
+    }
+  });
 
   for (final count in [1, 2, 3, 4]) {
     for (final stacked in [false, true]) {

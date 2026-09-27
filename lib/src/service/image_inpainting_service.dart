@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -63,31 +64,52 @@ class InpaintingResult {
 List<PolygonMask> filterPolygonMasksToTranslatedBlocks({
   required List<PolygonMask> masks,
   required List<RecognizedTextBlock> translatedBlocks,
-  double padding = 12,
+  List<RecognizedTextBlock> protectedBlocks = const <RecognizedTextBlock>[],
 }) {
   if (masks.isEmpty || translatedBlocks.isEmpty) {
     return const <PolygonMask>[];
   }
+  double coveredFraction(PolygonMask mask, RecognizedTextBlock block) {
+    final double maskArea =
+        (mask.right - mask.left) * (mask.bottom - mask.top);
+    if (maskArea <= 0 || block.width <= 0 || block.height <= 0) {
+      return 0;
+    }
+    final double overlapWidth = math.max(
+      0,
+      math.min(mask.right, block.left + block.width) -
+          math.max(mask.left, block.left),
+    );
+    final double overlapHeight = math.max(
+      0,
+      math.min(mask.bottom, block.top + block.height) -
+          math.max(mask.top, block.top),
+    );
+    return overlapWidth * overlapHeight / maskArea;
+  }
+
   return masks
       .where((PolygonMask mask) {
-        final double left = mask.left - padding;
-        final double top = mask.top - padding;
-        final double right = mask.right + padding;
-        final double bottom = mask.bottom + padding;
+        double translatedCoverage = 0;
         for (final RecognizedTextBlock block in translatedBlocks) {
-          if (block.width <= 0 || block.height <= 0) {
-            continue;
-          }
-          final double blockRight = block.left + block.width;
-          final double blockBottom = block.top + block.height;
-          if (left < blockRight &&
-              right > block.left &&
-              top < blockBottom &&
-              bottom > block.top) {
-            return true;
-          }
+          translatedCoverage = math.max(
+            translatedCoverage,
+            coveredFraction(mask, block),
+          );
         }
-        return false;
+        // A neighboring translated column must not authorize erasing an
+        // unchanged column just because their inflated OCR boxes touch.
+        if (translatedCoverage < 0.15) {
+          return false;
+        }
+        double protectedCoverage = 0;
+        for (final RecognizedTextBlock block in protectedBlocks) {
+          protectedCoverage = math.max(
+            protectedCoverage,
+            coveredFraction(mask, block),
+          );
+        }
+        return translatedCoverage > protectedCoverage;
       })
       .toList(growable: false);
 }
@@ -151,6 +173,10 @@ List<RecognizedTextBlock> translatedBlocksEligibleForErase(
 class ImageInpaintingService extends GetxController
     with JHLifeCircleBeanErrorCatch
     implements JHLifeCircleBean {
+  // Old request indexes may point to a background erased under a previous
+  // OCR, sound-effect, or mask-matching policy.
+  static const int _requestIndexPolicyVersion = 3;
+
   ImageInpaintingService({EngineRegistry? registry})
     : engineRegistry = registry ?? EngineRegistry();
 
@@ -230,6 +256,7 @@ class ImageInpaintingService extends GetxController
       final dynamic decoded = jsonDecode(await indexFile.readAsString());
       if (decoded is! Map ||
           decoded['schemaVersion'] != 4 ||
+          decoded['policyVersion'] != _requestIndexPolicyVersion ||
           decoded['sourceHash'] != sourceHash ||
           decoded['artifactKey'] is! String) {
         return null;
@@ -359,6 +386,7 @@ class ImageInpaintingService extends GetxController
     required String sourcePath,
     bool force = false,
     List<RecognizedTextBlock> eraseOnlyBlocks = const <RecognizedTextBlock>[],
+    List<RecognizedTextBlock> protectedBlocks = const <RecognizedTextBlock>[],
   }) async {
     _set(requestKey, const InpaintingResult(status: InpaintingStatus.queued));
     final File source = File(sourcePath);
@@ -390,11 +418,12 @@ class ImageInpaintingService extends GetxController
       final List<PolygonMask> masks = filterPolygonMasksToTranslatedBlocks(
         masks: detection.polygonMasks,
         translatedBlocks: eraseOnlyBlocks,
+        protectedBlocks: protectedBlocks,
       );
       if (masks.isEmpty) {
         return _fail(requestKey, 'no_translated_masks');
       }
-      return repair(
+      return await repair(
         requestKey: requestKey,
         sourcePath: sourcePath,
         polygonMasks: masks,
@@ -711,6 +740,7 @@ class ImageInpaintingService extends GetxController
     final String? translated = _translatedImagePaths[requestKey];
     await _writeMetadata(indexFile, <String, dynamic>{
       'schemaVersion': 4,
+      'policyVersion': _requestIndexPolicyVersion,
       'requestKey': requestKey,
       'artifactKey': artifactKey,
       'sourceHash': sourceHash,

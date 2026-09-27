@@ -1,5 +1,4 @@
-/// Heuristic detector for manga sound effects (擬音/擬態語) so they can be
-/// left untouched instead of being sent to the translator.
+/// Heuristic detector for manga sound effects (擬音/擬態語).
 ///
 /// A block is treated as onomatopoeia when, after stripping decoration
 /// (long-vowel marks, small tsu, punctuation, hearts), it is pure kana with
@@ -43,6 +42,12 @@ bool isOnomatopoeia(String text, {bool? insideBubble}) {
   final bool decoratedTail = _decoratedTail.hasMatch(trimmed);
   return decoratedTail && length <= 4;
 }
+
+/// Only sound effects positively located outside a speech bubble stay in the
+/// artwork. When bubble detection is unavailable, keep the text in the
+/// translation pipeline rather than dropping possible dialogue.
+bool shouldPreserveSoundEffect(String text, {required bool? insideBubble}) =>
+    insideBubble == false && isOnomatopoeia(text, insideBubble: false);
 
 final RegExp _decoration = RegExp(
   r'[ーｰ〜～~っッ・…‥、。，．,.!！?？♡♥❤☆★♪「」『』（）()]',

@@ -2262,9 +2262,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
           pages: pages,
           batchSize: contextSize,
           modelVersion: modelVersion,
-          // Context prompt v3 preserves sound effects; do not hydrate
-          // pages translated with the previous prompt.
-          promptVersion: 3,
+          // OCR artifact cleanup changes the text sent for context translation.
+          promptVersion: 5,
           targetLanguage: imageTranslationSetting.targetLanguage.value,
           ocrConfiguration: <String, dynamic>{
             'engine': imageTranslationSetting.ocrEngine.value.name,

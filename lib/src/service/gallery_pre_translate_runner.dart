@@ -502,6 +502,9 @@ class GalleryPreTranslateRunner extends GetxController
       requestKey: request.cacheKey,
       sourcePath: sourcePath,
       eraseOnlyBlocks: eraseBlocks,
+      protectedBlocks: translation.blocks
+          .where((block) => !eraseBlocks.contains(block))
+          .toList(growable: false),
     );
   }
 }

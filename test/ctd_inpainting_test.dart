@@ -566,6 +566,47 @@ void main() {
     expect(kept.single.left, 1);
   });
 
+  test('neighboring translated column cannot erase a preserved word', () {
+    PolygonMask box(double left, double top, double right, double bottom) =>
+        PolygonMask(
+          points: <EnginePoint>[
+            EnginePoint(x: left, y: top),
+            EnginePoint(x: right, y: top),
+            EnginePoint(x: right, y: bottom),
+            EnginePoint(x: left, y: bottom),
+          ],
+          confidence: 0.9,
+        );
+    final List<PolygonMask> masks = <PolygonMask>[
+      box(1020, 125, 1075, 235), // 週末, next to the translated column.
+      box(965, 165, 1020, 685), // 楽しみに待ってます.
+    ];
+    final List<PolygonMask> kept = filterPolygonMasksToTranslatedBlocks(
+      masks: masks,
+      translatedBlocks: <RecognizedTextBlock>[
+        const RecognizedTextBlock(
+          text: '楽しみに待ってます',
+          confidence: 1,
+          left: 964,
+          top: 163,
+          width: 58,
+          height: 526,
+        ),
+      ],
+      protectedBlocks: <RecognizedTextBlock>[
+        const RecognizedTextBlock(
+          text: '週末',
+          confidence: 1,
+          left: 1019,
+          top: 123,
+          width: 58,
+          height: 113,
+        ),
+      ],
+    );
+    expect(kept, <PolygonMask>[masks.last]);
+  });
+
   test(
     'overlay mode never forces opaque plates while awaiting repair',
     () {
