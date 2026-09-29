@@ -30,6 +30,7 @@ import 'package:jhentai/src/widget/eh_translated_text.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
 import 'package:jhentai/src/widget/icon_text_button.dart';
 import 'package:jhentai/src/widget/image_translation_batch_progress_banner.dart';
+import 'package:jhentai/src/service/gallery_pre_translate_runner.dart';
 import 'package:jhentai/src/widget/keep_alive.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -47,6 +48,7 @@ import '../../utils/string_uril.dart';
 import '../../widget/eh_gallery_category_tag.dart';
 import 'details_page_logic.dart';
 import 'details_page_state.dart';
+import 'pre_translate_monitor_dialog.dart';
 
 class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
   final String tag = newUUID();
@@ -1193,7 +1195,34 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
                   height: 1,
                 ),
               ),
-              onPressed: logic.togglePreTranslate,
+              onPressed: () async {
+                if (!alreadyTarget) {
+                  galleryPreTranslateRunner.inspectForGallery(
+                    galleryUrl: state.galleryUrl,
+                    pageCount: state.galleryDetails?.pageCount ??
+                        state.gallery?.pageCount ??
+                        state.galleryMetadata?.pageCount ??
+                        0,
+                    seedThumbnails: state.galleryDetails?.thumbnails,
+                  );
+                }
+                final bool nowEnabled = await logic.isPreTranslateEnabled();
+                if (!context.mounted) {
+                  return;
+                }
+                await showDialog<void>(
+                  context: context,
+                  builder: (_) => PreTranslateMonitorDialog(
+                    logic: logic,
+                    gid: state.galleryUrl.gid,
+                    initialEnabled: nowEnabled,
+                    pageCount: state.galleryDetails?.pageCount ??
+                        state.gallery?.pageCount ??
+                        state.galleryMetadata?.pageCount ??
+                        0,
+                  ),
+                );
+              },
             );
           },
         );

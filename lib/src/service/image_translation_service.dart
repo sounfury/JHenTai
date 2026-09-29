@@ -455,6 +455,27 @@ class ImageTranslationService extends GetxController
     });
   }
 
+  /// Checks the current translation cache without decoding or publishing a
+  /// result. The monitor can count cached pages before a batch starts.
+  Future<bool> hasCachedTranslation(ImageTranslationRequest request) async {
+    if (resultFor(request.cacheKey).status == ImageTranslationStatus.success) {
+      return true;
+    }
+    final String? imagePath = request.imagePath;
+    if (imagePath == null) {
+      return false;
+    }
+    try {
+      final Uint8List bytes = await File(imagePath).readAsBytes();
+      final String hash = await compute(_sha256Hex, bytes);
+      final ImageTranslationResult? cached =
+          await _readPersistentResultForHash(request, hash);
+      return cached?.status == ImageTranslationStatus.success;
+    } on FileSystemException {
+      return false;
+    }
+  }
+
   /// OCR stage of a translation: reads the image, runs recognition and returns
   /// the recognized source for the translation stage. Returns null when the
   /// page should be skipped (already translated / image unavailable / no text).

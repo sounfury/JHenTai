@@ -48,7 +48,8 @@ void main() {
 
       int readerUpdates = 0;
       final removeListener = service.addListenerId(
-        ImageTranslationService.readerStateId, () => readerUpdates++,
+        ImageTranslationService.readerStateId,
+        () => readerUpdates++,
       );
       addTearDown(removeListener);
       expect(await service.hydrateResult(request), isTrue);
@@ -65,6 +66,33 @@ void main() {
       expect(hydrated.translatedGroups, equals(<String>['完整的一句译文。']));
       expect(hydrated.mergeTextBlocks, isFalse);
       expect(hydrated.fromCache, isTrue);
+    },
+  );
+
+  test(
+    'cache inspection counts only the current image without hydration',
+    () async {
+      final service = ImageTranslationService();
+      service.setTranslationCacheDirectoryForTesting(temporaryDirectory);
+      final request = ImageTranslationRequest(
+        cacheKey: 'inspection-page',
+        imagePath: sourceImage.path,
+      );
+      expect(await service.hasCachedTranslation(request), isFalse);
+      await service.writePersistentResultForRequest(
+        request,
+        const ImageTranslationResult(
+          status: ImageTranslationStatus.success,
+          translatedText: 'translated',
+        ),
+      );
+      expect(await service.hasCachedTranslation(request), isTrue);
+      expect(
+        service.resultFor(request.cacheKey).status,
+        ImageTranslationStatus.idle,
+      );
+      await sourceImage.writeAsBytes(<int>[8, 7, 6, 5]);
+      expect(await service.hasCachedTranslation(request), isFalse);
     },
   );
 
