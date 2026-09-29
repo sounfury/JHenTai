@@ -220,20 +220,21 @@ void main() {
       expect(setting.saveCount, 1);
     },
   );
-}
 
-
-  test('auto-translate and pre-translate page count survive a config round-trip', () {
+  test('pre-translate settings survive a config round-trip', () {
     final ImageTranslationSetting setting = ImageTranslationSetting();
     expect(setting.enableAutoTranslate.value, isFalse);
     expect(setting.preTranslatePageCount.value, 30);
+    expect(setting.preTranslateConcurrency.value, 5);
 
     setting.enableAutoTranslate.value = true;
     setting.preTranslatePageCount.value = 50;
+    setting.preTranslateConcurrency.value = 8;
     final ImageTranslationSetting restored = ImageTranslationSetting();
     restored.applyBeanConfig(setting.toConfigString());
     expect(restored.enableAutoTranslate.value, isTrue);
     expect(restored.preTranslatePageCount.value, 50);
+    expect(restored.preTranslateConcurrency.value, 8);
   });
 
   test('pre-translate page count is clamped when saving', () async {
@@ -244,3 +245,13 @@ void main() {
     await setting.savePreTranslatePageCount(999);
     expect(setting.preTranslatePageCount.value, 500);
   });
+
+  test('pre-translate concurrency is clamped when saving', () async {
+    final _MemoryImageTranslationSetting setting =
+        _MemoryImageTranslationSetting();
+    await setting.savePreTranslateConcurrency(0);
+    expect(setting.preTranslateConcurrency.value, 1);
+    await setting.savePreTranslateConcurrency(99);
+    expect(setting.preTranslateConcurrency.value, 20);
+  });
+}

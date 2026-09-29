@@ -105,11 +105,12 @@ List<OcrLayoutBox> _sortVertical(List<OcrLayoutBox> input) {
       final double overlapRatio =
           overlap / math.max(1, math.min(box.width, column.width));
       final double distance = (box.centerX - column.centerX).abs();
-      final double tolerance = math.max(
-        8,
-        1.5 * math.max(box.width, column.width),
-      );
-      if (overlapRatio >= 0.2 || distance <= tolerance) {
+      // Side-by-side full columns must not collapse into one column merely
+      // because their centres are within 1.5 glyph widths. Only substantially
+      // aligned fragments share a column; top-edge jitter then cannot reorder
+      // neighbouring dialogue from left to right.
+      final double tolerance = 0.35 * math.min(box.width, column.width);
+      if (overlapRatio >= 0.55 || distance <= tolerance) {
         if (distance < bestDistance) {
           best = column;
           bestDistance = distance;

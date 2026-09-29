@@ -124,4 +124,41 @@ void main() {
     expect(output.getPixel(0, 0).a, 100);
     expect(source.getPixel(1, 0).r, 10);
   });
+
+  test('sparse compositing matches full-page cubic interpolation', () {
+    final source = img.Image(width: 24, height: 32, numChannels: 4);
+    img.fill(source, color: img.ColorRgba8(10, 20, 30, 128));
+    final prediction = img.Image(width: 8, height: 10, numChannels: 4);
+    for (int y = 0; y < prediction.height; y++) {
+      for (int x = 0; x < prediction.width; x++) {
+        prediction.setPixelRgb(x, y, x * 25, y * 21, (x + y) * 12);
+      }
+    }
+    final mask = Uint8List(source.width * source.height)
+      ..fillRange(0, source.width * source.height, 255);
+    for (final (int, int) point in <(int, int)>[(1, 2), (7, 12), (22, 29)]) {
+      mask[point.$2 * source.width + point.$1] = 0;
+    }
+    final expected = img.copyResize(
+      prediction,
+      width: source.width,
+      height: source.height,
+      interpolation: img.Interpolation.cubic,
+    );
+    final output = compositeLamaOutput(source, mask, prediction);
+    for (int y = 0; y < source.height; y++) {
+      for (int x = 0; x < source.width; x++) {
+        final pixel = output.getPixel(x, y);
+        if (mask[y * source.width + x] == 0) {
+          final reference = expected.getPixel(x, y);
+          expect(
+            [pixel.r, pixel.g, pixel.b],
+            [reference.r, reference.g, reference.b],
+          );
+        } else {
+          expect([pixel.r, pixel.g, pixel.b, pixel.a], [10, 20, 30, 128]);
+        }
+      }
+    }
+  });
 }

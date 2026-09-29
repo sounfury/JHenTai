@@ -64,6 +64,7 @@ import '../../setting/performance_setting.dart';
 import '../../setting/read_setting.dart';
 import '../../utils/eh_spider_parser.dart';
 import '../../utils/gallery_image_translation_language.dart';
+import '../../utils/bounded_page_jobs.dart';
 import '../../utils/route_util.dart';
 import '../../utils/toast_util.dart';
 import '../../widget/auto_mode_interval_dialog.dart';
@@ -75,7 +76,8 @@ import '../setting/advanced/image_translation/setting_image_translation_page.dar
 import '../setting/read/setting_read_page.dart';
 import '../setting/keyboard_shortcuts/setting_keyboard_shortcuts_page.dart';
 
-class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryImagesRetainer {
+class ReadPageLogic extends GetxController
+    with WidgetsBindingObserver, GalleryImagesRetainer {
   final String pageId = 'pageId';
   final String layoutId = 'layoutId';
   final String onlineImageId = 'onlineImageId';
@@ -365,7 +367,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     /// keeps it resident even if the download completes mid-read (eviction
     /// is deferred to our onClose). Online / archive / local modes have no
     /// service-side list to retain — skip.
-    if (state.readPageInfo.mode == ReadMode.downloaded && state.readPageInfo.gid != null) {
+    if (state.readPageInfo.mode == ReadMode.downloaded &&
+        state.readPageInfo.gid != null) {
       retainGalleryImages(state.readPageInfo.gid!);
     }
 
@@ -839,7 +842,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
 
     /// some gallery's [thumbnailsCountPerPage] is not equal to default setting, we need to compute and update it.
     /// For example, default setting is 40, but some galleries' thumbnails has only high quality thumbnails, which results in 20.
-    bool thumbnailsCountPerPageChanged = state.thumbnailsCountPerPage != detailPageInfo.thumbnailsCountPerPage;
+    bool thumbnailsCountPerPageChanged =
+        state.thumbnailsCountPerPage != detailPageInfo.thumbnailsCountPerPage;
     state.thumbnailsCountPerPage = detailPageInfo.thumbnailsCountPerPage;
 
     for (
@@ -1364,7 +1368,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (readSetting.deviceDirection.value == DeviceDirection.landscape) {
       return false;
     }
-    final Size size = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize;
+    final Size size =
+        WidgetsBinding.instance.platformDispatcher.views.first.physicalSize;
     return size.height >= size.width;
   }
 
@@ -1672,7 +1677,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
   }
 
   ImageTranslationResult get currentPageTranslationResult {
-    final request = state.imageTranslationRequests[state.readPageInfo.currentImageIndex];
+    final request =
+        state.imageTranslationRequests[state.readPageInfo.currentImageIndex];
     return request == null
         ? const ImageTranslationResult.idle()
         : imageTranslationService.resultFor(request.cacheKey);
@@ -1689,7 +1695,10 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
       return;
     }
     _translationOverlayManuallyHidden = false;
-    await layoutLogic.translateImage(state.readPageInfo.currentImageIndex, context);
+    await layoutLogic.translateImage(
+      state.readPageInfo.currentImageIndex,
+      context,
+    );
   }
 
   bool _translationOverlayManuallyHidden = false;
@@ -1963,7 +1972,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     String? language = state.readPageInfo.galleryLanguage;
     String? tagsCsv = state.readPageInfo.galleryTags;
     final int? gid = state.readPageInfo.gid;
-    if ((language == null || language.isEmpty) || (tagsCsv == null || tagsCsv.isEmpty)) {
+    if ((language == null || language.isEmpty) ||
+        (tagsCsv == null || tagsCsv.isEmpty)) {
       if (gid != null) {
         final GalleryDownloadInfo? info =
             galleryDownloadService.galleryDownloadInfos[gid];
@@ -1998,7 +2008,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
     if (index + 1 < state.readPageInfo.pageCount) {
       pages.add(index + 1);
     }
-    if (!state.showImageTranslationOverlay && !_translationOverlayManuallyHidden) {
+    if (!state.showImageTranslationOverlay &&
+        !_translationOverlayManuallyHidden) {
       state.showImageTranslationOverlay = true;
       updateSafely([translationMenuId, readerFloatingBallId]);
       layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
@@ -2026,7 +2037,8 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
         imageTranslationService.isBatchTranslating ||
         isClosed) {
       // Keep overlay on so hydrated/cached results are visible.
-      if (!state.showImageTranslationOverlay && !_translationOverlayManuallyHidden) {
+      if (!state.showImageTranslationOverlay &&
+          !_translationOverlayManuallyHidden) {
         state.showImageTranslationOverlay = true;
         updateSafely([translationMenuId, readerFloatingBallId]);
         layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
@@ -2051,27 +2063,66 @@ class ReadPageLogic extends GetxController with WidgetsBindingObserver, GalleryI
       return;
     }
     // Keep the overlay visible so cached/pre-translated results show up.
-    if (!state.showImageTranslationOverlay && !_translationOverlayManuallyHidden) {
+    if (!state.showImageTranslationOverlay &&
+        !_translationOverlayManuallyHidden) {
       state.showImageTranslationOverlay = true;
       updateSafely([translationMenuId, readerFloatingBallId]);
       layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
     }
-    await _translatePagesOpportunistically(order.toList(growable: false), context);
+    await _translatePagesOpportunistically(
+      order.toList(growable: false),
+      context,
+      concurrency: imageTranslationSetting.preTranslateConcurrency.value,
+    );
   }
 
   Future<void> _translatePagesOpportunistically(
     List<int> order,
-    BuildContext context,
-  ) async {
+    BuildContext context, {
+    int? concurrency,
+  }) async {
     if (order.isEmpty || isClosed) {
       return;
     }
-    if (_opportunisticTranslateRunning || imageTranslationService.isBatchTranslating) {
+    if (_opportunisticTranslateRunning ||
+        imageTranslationService.isBatchTranslating) {
       return;
     }
     _opportunisticTranslateRunning = true;
     final int generation = imageTranslationService.beginBatch(order.length);
     try {
+      if (concurrency != null) {
+        final int claimed = await runBoundedPageJobs(
+          total: order.length,
+          concurrency: concurrency,
+          shouldStop:
+              () => isClosed || imageTranslationService.isCancelRequested,
+          runPage: (int position) async {
+            final int index = order[position];
+            try {
+              await _translatePageIndividually(index, context, generation);
+            } catch (e, stack) {
+              log.warning('Pre-translate page $index failed: $e');
+              log.trace(stack);
+              final String cacheKey =
+                  state.imageTranslationRequests[index]?.cacheKey ??
+                  _batchPageKey(index);
+              imageTranslationService.markOcrError(
+                cacheKey,
+                'TRANSLATION_TASK_FAILED',
+              );
+              imageTranslationService.recordBatchResult(
+                cacheKey,
+                generation: generation,
+              );
+            }
+          },
+        );
+        if (imageTranslationService.isCancelRequested) {
+          _cancelRemainingBatchPages(order, claimed, generation);
+        }
+        return;
+      }
       final ContextBatchSize contextSize =
           imageTranslationSetting.contextBatchSize.value;
       final bool useContext =

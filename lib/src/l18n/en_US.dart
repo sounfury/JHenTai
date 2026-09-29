@@ -1236,6 +1236,8 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslatePageCount': 'Pre-translate page count',
       'preTranslatePageCountHint':
           'After enabling pre-translate on a gallery detail page, translate the first N pages in the background.',
+      'preTranslateConcurrency': 'Pre-translate concurrency',
+      'preTranslateConcurrencyHint': 'Pages translated at the same time. Default: 5.',
       'preTranslate': 'Pre-translate',
       'preTranslateEnabled': 'Pre-translate on',
       'preTranslateHint':

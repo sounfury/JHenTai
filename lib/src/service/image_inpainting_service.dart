@@ -70,8 +70,7 @@ List<PolygonMask> filterPolygonMasksToTranslatedBlocks({
     return const <PolygonMask>[];
   }
   double coveredFraction(PolygonMask mask, RecognizedTextBlock block) {
-    final double maskArea =
-        (mask.right - mask.left) * (mask.bottom - mask.top);
+    final double maskArea = (mask.right - mask.left) * (mask.bottom - mask.top);
     if (maskArea <= 0 || block.width <= 0 || block.height <= 0) {
       return 0;
     }
@@ -119,11 +118,13 @@ List<PolygonMask> filterPolygonMasksToTranslatedBlocks({
 List<RecognizedTextBlock> translatedBlocksEligibleForErase(
   ImageTranslationResult result,
 ) {
-  if (result.status != ImageTranslationStatus.success || result.blocks.isEmpty) {
+  if (result.status != ImageTranslationStatus.success ||
+      result.blocks.isEmpty) {
     return const <RecognizedTextBlock>[];
   }
-  final List<String> lines =
-      const LineSplitter().convert(result.translatedText);
+  final List<String> lines = const LineSplitter().convert(
+    result.translatedText,
+  );
   final Set<int> indices = <int>{};
   for (int index = 0; index < result.blocks.length; index++) {
     if (index < lines.length && lines[index].trim().isNotEmpty) {
@@ -153,11 +154,11 @@ List<RecognizedTextBlock> translatedBlocksEligibleForErase(
     final RecognizedTextGroup group = renderGroups[i];
     final String translation =
         i < result.translatedGroups.length &&
-            result.translatedGroups[i].trim().isNotEmpty
-        ? result.translatedGroups[i]
-        : group.blockIndices
-              .map((index) => index < lines.length ? lines[index] : '')
-              .join('\n');
+                result.translatedGroups[i].trim().isNotEmpty
+            ? result.translatedGroups[i]
+            : group.blockIndices
+                .map((index) => index < lines.length ? lines[index] : '')
+                .join('\n');
     if (translationPreservesSource(group.textOf(result.blocks), translation)) {
       indices.removeAll(group.blockIndices);
     }
@@ -175,7 +176,7 @@ class ImageInpaintingService extends GetxController
     implements JHLifeCircleBean {
   // Old request indexes may point to a background erased under a previous
   // OCR, sound-effect, or mask-matching policy.
-  static const int _requestIndexPolicyVersion = 3;
+  static const int _requestIndexPolicyVersion = 4;
 
   ImageInpaintingService({EngineRegistry? registry})
     : engineRegistry = registry ?? EngineRegistry();
@@ -189,6 +190,10 @@ class ImageInpaintingService extends GetxController
       <String, EngineTask<DetectionResult>>{};
   final Map<String, String> _translatedImagePaths = <String, String>{};
   Directory? _cacheDirectoryOverride;
+
+  void _logTiming(String message) {
+    unawaited(log.info(message).catchError((Object _) {}));
+  }
 
   ImageProcessingDisplayMode displayMode = ImageProcessingDisplayMode.overlay;
 
@@ -227,7 +232,8 @@ class ImageInpaintingService extends GetxController
   /// Whether the current display mode expects a repaired/translated derivative
   /// instead of painting onto the original page glyphs.
   bool get requiresRepairedBackground =>
-      displayMode == ImageProcessingDisplayMode.repairedBackgroundEmbeddedText ||
+      displayMode ==
+          ImageProcessingDisplayMode.repairedBackgroundEmbeddedText ||
       displayMode == ImageProcessingDisplayMode.translatedImage;
 
   /// Cold-start / viewport hydrate: restore a previously written repair
@@ -263,7 +269,9 @@ class ImageInpaintingService extends GetxController
       }
       final String artifactKey = decoded['artifactKey'] as String;
       final File output = File(join(_cacheDirectory.path, '$artifactKey.png'));
-      final File metadata = File(join(_cacheDirectory.path, '$artifactKey.json'));
+      final File metadata = File(
+        join(_cacheDirectory.path, '$artifactKey.json'),
+      );
       if (!await output.exists() || !await metadata.exists()) {
         return null;
       }
@@ -388,6 +396,7 @@ class ImageInpaintingService extends GetxController
     List<RecognizedTextBlock> eraseOnlyBlocks = const <RecognizedTextBlock>[],
     List<RecognizedTextBlock> protectedBlocks = const <RecognizedTextBlock>[],
   }) async {
+    final Stopwatch clock = Stopwatch()..start();
     _set(requestKey, const InpaintingResult(status: InpaintingStatus.queued));
     final File source = File(sourcePath);
     if (!await source.exists()) {
@@ -405,6 +414,7 @@ class ImageInpaintingService extends GetxController
     if (detector == null || !detector.isReady) {
       return _fail(requestKey, 'ctd_not_ready');
     }
+    final Stopwatch ctdClock = Stopwatch()..start();
     final EngineTask<DetectionResult> task = detector.detect(
       EngineImageRequest(imagePath: sourcePath),
     );
@@ -412,13 +422,23 @@ class ImageInpaintingService extends GetxController
     _set(requestKey, const InpaintingResult(status: InpaintingStatus.running));
     try {
       final DetectionResult detection = await task.future;
+      _logTiming(
+        '[背景融合] page=$requestKey ctd_detect=${ctdClock.elapsedMilliseconds}ms '
+        'polygons=${detection.polygonMasks.length}',
+      );
       if (detection.polygonMasks.isEmpty) {
         return _fail(requestKey, 'ctd_no_text');
       }
+      final Stopwatch maskClock = Stopwatch()..start();
       final List<PolygonMask> masks = filterPolygonMasksToTranslatedBlocks(
         masks: detection.polygonMasks,
         translatedBlocks: eraseOnlyBlocks,
         protectedBlocks: protectedBlocks,
+      );
+      _logTiming(
+        '[背景融合] page=$requestKey mask_filter=${maskClock.elapsedMilliseconds}ms '
+        'selected=${masks.length}/${detection.polygonMasks.length} '
+        'translated_blocks=${eraseOnlyBlocks.length} protected_blocks=${protectedBlocks.length}',
       );
       if (masks.isEmpty) {
         return _fail(requestKey, 'no_translated_masks');
@@ -442,6 +462,10 @@ class ImageInpaintingService extends GetxController
     } catch (_) {
       return _fail(requestKey, 'ctd_failed');
     } finally {
+      _logTiming(
+        '[背景融合] page=$requestKey pipeline_total=${clock.elapsedMilliseconds}ms '
+        'status=${resultFor(requestKey).status.name}',
+      );
       if (identical(_activeDetectionTasks[requestKey], task)) {
         _activeDetectionTasks.remove(requestKey);
       }
@@ -454,6 +478,7 @@ class ImageInpaintingService extends GetxController
     required List<PolygonMask> polygonMasks,
     bool force = false,
   }) async {
+    final Stopwatch clock = Stopwatch()..start();
     _set(requestKey, const InpaintingResult(status: InpaintingStatus.queued));
     final File source = File(sourcePath);
     if (!await source.exists()) {
@@ -466,6 +491,10 @@ class ImageInpaintingService extends GetxController
 
     final String sourceHash = await _sha256(source);
     final String maskHash = _maskHash(polygonMasks);
+    _logTiming(
+      '[背景融合] page=$requestKey hash=${clock.elapsedMilliseconds}ms '
+      'masks=${polygonMasks.length}',
+    );
     final ModelDescriptor? descriptor = engineRegistry.modelCatalog.find(
       'lama-large-512px',
     );
@@ -488,6 +517,9 @@ class ImageInpaintingService extends GetxController
         modelFingerprint: modelFingerprint,
       );
       if (cached != null) {
+        _logTiming(
+          '[背景融合] page=$requestKey cache_hit=${clock.elapsedMilliseconds}ms',
+        );
         _artifactKeys[requestKey] = artifactKey;
         await _writeRequestIndex(
           requestKey: requestKey,
@@ -525,10 +557,15 @@ class ImageInpaintingService extends GetxController
       ),
     );
     try {
+      final int inferenceStart = clock.elapsedMilliseconds;
       final String outputPath = await task.future;
+      _logTiming(
+        '[背景融合] page=$requestKey lama_task=${clock.elapsedMilliseconds - inferenceStart}ms',
+      );
       if (!await File(outputPath).exists()) {
         return _fail(requestKey, 'output_missing', sourceHash: sourceHash);
       }
+      final int persistStart = clock.elapsedMilliseconds;
       final String outputHash = await _sha256(File(outputPath));
       await _writeMetadata(metadata, <String, dynamic>{
         'schemaVersion': 4,
@@ -547,6 +584,9 @@ class ImageInpaintingService extends GetxController
         requestKey: requestKey,
         artifactKey: artifactKey,
         sourceHash: sourceHash,
+      );
+      _logTiming(
+        '[背景融合] page=$requestKey cache_persist=${clock.elapsedMilliseconds - persistStart}ms',
       );
       _set(requestKey, result);
       return result;
@@ -569,6 +609,10 @@ class ImageInpaintingService extends GetxController
     } catch (_) {
       return _fail(requestKey, 'inpaint_failed', sourceHash: sourceHash);
     } finally {
+      _logTiming(
+        '[背景融合] page=$requestKey repair_total=${clock.elapsedMilliseconds}ms '
+        'status=${resultFor(requestKey).status.name}',
+      );
       if (identical(_activeTasks[requestKey], task)) {
         _activeTasks.remove(requestKey);
       }

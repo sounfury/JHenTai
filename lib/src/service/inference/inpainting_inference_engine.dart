@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -7,6 +8,7 @@ import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
 import 'package:image/image.dart' as image;
 
 import '../engine/engine_contract.dart';
+import '../log.dart';
 import '../../utils/inpainting_pixels.dart';
 import 'inference_exception.dart';
 import 'inference_safety.dart';
@@ -14,6 +16,10 @@ import 'inference_task.dart';
 import 'onnx_ocr_engine.dart' show OnnxProviderResolver;
 import 'onnx_runtime.dart';
 import 'lama_directml_model.dart';
+
+void _logLamaTiming(String message) {
+  unawaited(log.info(message).catchError((Object _) {}));
+}
 
 abstract class InpaintingInferenceEngine {
   String get displayName;
@@ -84,15 +90,22 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     required List<PolygonMask> polygonMasks,
     InferenceCancellationToken? cancellationToken,
     void Function(double progress)? onProgress,
-  }) => _queue.run(
-    () => _inpaint(
-      inputPath: inputPath,
-      outputPath: outputPath,
-      polygonMasks: polygonMasks,
-      cancellationToken: cancellationToken,
-      onProgress: onProgress,
-    ),
-  );
+  }) {
+    final Stopwatch queueClock = Stopwatch()..start();
+    return _queue.run(() {
+      _logLamaTiming(
+        '[背景融合/LaMa] queue_wait=${_ms(queueClock.elapsedMicroseconds)}ms '
+        'masks=${polygonMasks.length}',
+      );
+      return _inpaint(
+        inputPath: inputPath,
+        outputPath: outputPath,
+        polygonMasks: polygonMasks,
+        cancellationToken: cancellationToken,
+        onProgress: onProgress,
+      );
+    });
+  }
 
   Future<void> _inpaint({
     required String inputPath,
@@ -101,88 +114,147 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     InferenceCancellationToken? cancellationToken,
     void Function(double progress)? onProgress,
   }) async {
-    final InferenceCancellationToken token =
-        cancellationToken ?? InferenceCancellationToken();
-    token.throwIfCancelled();
-    if (polygonMasks.isEmpty ||
-        polygonMasks.any((PolygonMask mask) => !mask.isValid)) {
-      throw StateError('inpainting requires valid polygon masks');
-    }
-    if (!isReady) {
-      throw const InferenceNotReadyException(modelId);
-    }
-
-    final LamaOnnxModelInfo model = _model;
-    final File inputFile = File(inputPath);
-    if (!await inputFile.exists() ||
-        await inputFile.length() > _maxInputBytes) {
-      throw StateError('inpainting input is missing or exceeds 80 MiB');
-    }
-
-    // Pure pixel work must not occupy the Flutter UI isolate.
-    final _PreparedRepair repair = await compute(
-      _prepareRepair,
-      _RepairRequest(inputPath, polygonMasks),
-    );
-    final LamaInput prepared = repair.input;
-    token.throwIfCancelled();
-    onProgress?.call(0.12);
-
-    final int pixels = prepared.width * prepared.height;
-    final ort.OrtValue imageTensor = await ort.OrtValue.fromList(
-      prepared.rgb,
-      <int>[1, 3, prepared.height, prepared.width],
-    );
-    ort.OrtValue? maskTensor;
-    Map<String, ort.OrtValue>? outputs;
+    final Stopwatch clock = Stopwatch()..start();
+    int stageStart = clock.elapsedMicroseconds;
+    bool completed = false;
     try {
-      maskTensor = await ort.OrtValue.fromList(prepared.mask, <int>[
-        1,
-        1,
-        prepared.height,
-        prepared.width,
-      ]);
+      final InferenceCancellationToken token =
+          cancellationToken ?? InferenceCancellationToken();
       token.throwIfCancelled();
-      onProgress?.call(0.25);
-      outputs = await _runModel(model, <String, ort.OrtValue>{
-        'image': imageTensor,
-        'mask': maskTensor,
-      }, token);
-      token.throwIfCancelled();
-      onProgress?.call(0.82);
-      final ort.OrtValue? result =
-          outputs['result'] ??
-          (outputs.length == 1 ? outputs.values.first : null);
-      if (result == null ||
-          result.shape.length != 4 ||
-          result.shape[0] != 1 ||
-          result.shape[1] != 3 ||
-          result.shape[2] != prepared.height ||
-          result.shape[3] != prepared.width) {
-        throw StateError(
-          'unexpected LaMa Large output shape: ${result?.shape}',
+      if (polygonMasks.isEmpty ||
+          polygonMasks.any((PolygonMask mask) => !mask.isValid)) {
+        throw StateError('inpainting requires valid polygon masks');
+      }
+      if (!isReady) {
+        throw const InferenceNotReadyException(modelId);
+      }
+
+      final LamaOnnxModelInfo model = _model;
+      final File inputFile = File(inputPath);
+      if (!await inputFile.exists() ||
+          await inputFile.length() > _maxInputBytes) {
+        throw StateError('inpainting input is missing or exceeds 80 MiB');
+      }
+      _logStage('validate', clock, stageStart);
+
+      // Pure pixel work must not occupy the Flutter UI isolate.
+      stageStart = clock.elapsedMicroseconds;
+      final _PreparedRepair repair = await compute(
+        _prepareRepair,
+        _RepairRequest(inputPath, polygonMasks),
+      );
+      _logStage(
+        'preprocess',
+        clock,
+        stageStart,
+        'image=${repair.source.width}x${repair.source.height} '
+            'tensor=${repair.input.width}x${repair.input.height}',
+      );
+      for (final MapEntry<String, double> entry in repair.timingsMs.entries) {
+        _logLamaTiming(
+          '[背景融合/LaMa] preprocess.${entry.key}=${entry.value.toStringAsFixed(1)}ms',
         );
       }
-      final List<dynamic> values = await result.asFlattenedList();
-      if (values.length != pixels * 3) {
-        throw StateError('LaMa Large output data/shape mismatch');
-      }
-      final Uint8List png = await compute(
-        _finishRepair,
-        _RepairOutput(repair, values),
-      );
+      final LamaInput prepared = repair.input;
       token.throwIfCancelled();
-      await _writeAtomically(outputPath, png, token);
-      onProgress?.call(1);
-    } finally {
-      if (outputs != null) {
-        for (final ort.OrtValue output in outputs.values) {
-          await output.dispose();
+      onProgress?.call(0.12);
+
+      final int pixels = prepared.width * prepared.height;
+      stageStart = clock.elapsedMicroseconds;
+      final ort.OrtValue imageTensor = await ort.OrtValue.fromList(
+        prepared.rgb,
+        <int>[1, 3, prepared.height, prepared.width],
+      );
+      ort.OrtValue? maskTensor;
+      Map<String, ort.OrtValue>? outputs;
+      try {
+        maskTensor = await ort.OrtValue.fromList(prepared.mask, <int>[
+          1,
+          1,
+          prepared.height,
+          prepared.width,
+        ]);
+        _logStage('tensor_upload', clock, stageStart);
+        token.throwIfCancelled();
+        onProgress?.call(0.25);
+        outputs = await _runModel(model, <String, ort.OrtValue>{
+          'image': imageTensor,
+          'mask': maskTensor,
+        }, token);
+        token.throwIfCancelled();
+        onProgress?.call(0.82);
+        final ort.OrtValue? result =
+            outputs['result'] ??
+            (outputs.length == 1 ? outputs.values.first : null);
+        if (result == null ||
+            result.shape.length != 4 ||
+            result.shape[0] != 1 ||
+            result.shape[1] != 3 ||
+            result.shape[2] != prepared.height ||
+            result.shape[3] != prepared.width) {
+          throw StateError(
+            'unexpected LaMa Large output shape: ${result?.shape}',
+          );
         }
+        stageStart = clock.elapsedMicroseconds;
+        final List<dynamic> values = await result.asFlattenedList();
+        _logStage('tensor_download', clock, stageStart);
+        if (values.length != pixels * 3) {
+          throw StateError('LaMa Large output data/shape mismatch');
+        }
+        stageStart = clock.elapsedMicroseconds;
+        final _FinishedRepair finished = await compute(
+          _finishRepair,
+          _RepairOutput(repair, values),
+        );
+        _logStage(
+          'postprocess',
+          clock,
+          stageStart,
+          'png_bytes=${finished.png.length}',
+        );
+        for (final MapEntry<String, double> entry
+            in finished.timingsMs.entries) {
+          _logLamaTiming(
+            '[背景融合/LaMa] postprocess.${entry.key}=${entry.value.toStringAsFixed(1)}ms',
+          );
+        }
+        token.throwIfCancelled();
+        stageStart = clock.elapsedMicroseconds;
+        await _writeAtomically(outputPath, finished.png, token);
+        _logStage('write', clock, stageStart);
+        onProgress?.call(1);
+        completed = true;
+      } finally {
+        if (outputs != null) {
+          for (final ort.OrtValue output in outputs.values) {
+            await output.dispose();
+          }
+        }
+        await imageTensor.dispose();
+        await maskTensor?.dispose();
       }
-      await imageTensor.dispose();
-      await maskTensor?.dispose();
+    } finally {
+      _logLamaTiming(
+        '[背景融合/LaMa] total=${_ms(clock.elapsedMicroseconds)}ms '
+        'status=${completed ? 'success' : 'interrupted_or_failed'}',
+      );
     }
+  }
+
+  static String _ms(int microseconds) =>
+      (microseconds / 1000).toStringAsFixed(1);
+
+  static void _logStage(
+    String stage,
+    Stopwatch clock,
+    int since, [
+    String details = '',
+  ]) {
+    _logLamaTiming(
+      '[背景融合/LaMa] $stage=${_ms(clock.elapsedMicroseconds - since)}ms'
+      '${details.isEmpty ? '' : ' $details'}',
+    );
   }
 
   Future<Map<String, ort.OrtValue>> _runModel(
@@ -200,6 +272,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     if (accelerated) {
       String? acceleratedPath;
       try {
+        final Stopwatch modelClock = Stopwatch()..start();
         acceleratedPath =
             providers.contains(ort.OrtProvider.DIRECT_ML)
                 ? await (_directMlModels[key] ??= compute(
@@ -207,7 +280,12 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
                   model.modelPath!,
                 ))
                 : model.modelPath!;
+        _logLamaTiming(
+          '[背景融合/LaMa] accelerated_model_prepare='
+          '${_ms(modelClock.elapsedMicroseconds)}ms provider=${providers.first.name}',
+        );
         token.throwIfCancelled();
+        final Stopwatch sessionClock = Stopwatch()..start();
         final session = await runtime.session(
           acceleratedPath,
           modelFingerprint: '${model.fingerprint}|dml-rank4-v1',
@@ -216,11 +294,23 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
           intraOpNumThreads: 2,
           interOpNumThreads: 1,
         );
+        _logLamaTiming(
+          '[背景融合/LaMa] session=${_ms(sessionClock.elapsedMicroseconds)}ms '
+          'provider=${providers.first.name}',
+        );
         if (session == null) {
           throw const InferenceNotReadyException(modelId);
         }
         token.throwIfCancelled();
-        return await runtime.run(session, inputs);
+        final Stopwatch runClock = Stopwatch()..start();
+        try {
+          return await runtime.run(session, inputs);
+        } finally {
+          _logLamaTiming(
+            '[背景融合/LaMa] native_run=${_ms(runClock.elapsedMicroseconds)}ms '
+            'provider=${providers.first.name}',
+          );
+        }
       } on InferenceCancelledException {
         rethrow;
       } catch (error) {
@@ -235,6 +325,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       }
     }
     token.throwIfCancelled();
+    final Stopwatch sessionClock = Stopwatch()..start();
     final session = await runtime.session(
       model.modelPath!,
       modelFingerprint: model.fingerprint,
@@ -243,20 +334,34 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       intraOpNumThreads: 2,
       interOpNumThreads: 1,
     );
+    _logLamaTiming(
+      '[背景融合/LaMa] session=${_ms(sessionClock.elapsedMicroseconds)}ms provider=CPU',
+    );
     if (session == null) {
       throw const InferenceNotReadyException(modelId);
     }
     token.throwIfCancelled();
-    return runtime.run(session, inputs);
+    final Stopwatch runClock = Stopwatch()..start();
+    try {
+      return await runtime.run(session, inputs);
+    } finally {
+      _logLamaTiming(
+        '[背景融合/LaMa] native_run=${_ms(runClock.elapsedMicroseconds)}ms provider=CPU',
+      );
+    }
   }
 
   static _PreparedRepair _prepareRepair(_RepairRequest request) {
+    final Stopwatch clock = Stopwatch()..start();
+    final Map<String, double> timingsMs = {};
+    int stageStart = clock.elapsedMicroseconds;
     final Uint8List encoded = File(request.inputPath).readAsBytesSync();
     final image.Image? decoded = image.decodeImage(encoded);
     if (decoded == null) {
       throw StateError('unsupported inpainting image');
     }
     final image.Image source = image.bakeOrientation(decoded);
+    timingsMs['decode'] = (clock.elapsedMicroseconds - stageStart) / 1000;
     final int maxPixels =
         Platform.isAndroid || Platform.isIOS
             ? 12 * 1024 * 1024
@@ -267,16 +372,21 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         '$maxPixels pixel budget',
       );
     }
+    stageStart = clock.elapsedMicroseconds;
     final Uint8List coarseMask = _rasterizePolygonMask(
       source.width,
       source.height,
       request.polygons,
     );
+    timingsMs['polygon_mask'] = (clock.elapsedMicroseconds - stageStart) / 1000;
+    stageStart = clock.elapsedMicroseconds;
     final Uint8List mask = refineInpaintingMask(source, coarseMask);
+    timingsMs['mask_refine'] = (clock.elapsedMicroseconds - stageStart) / 1000;
     if (!mask.contains(0)) {
       throw StateError('no text pixels remain after mask refinement');
     }
     // Bound feature-map memory independently of the execution provider.
+    stageStart = clock.elapsedMicroseconds;
     final LamaInput prepared = prepareLamaInput(
       source,
       mask,
@@ -285,10 +395,13 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
               ? 1024
               : 2048,
     );
-    return _PreparedRepair(source, mask, prepared);
+    timingsMs['resize_tensor'] =
+        (clock.elapsedMicroseconds - stageStart) / 1000;
+    return _PreparedRepair(source, mask, prepared, timingsMs);
   }
 
-  static Uint8List _finishRepair(_RepairOutput request) {
+  static _FinishedRepair _finishRepair(_RepairOutput request) {
+    final Stopwatch clock = Stopwatch()..start();
     final LamaInput prepared = request.repair.input;
     final image.Image predicted = _fromNchw(
       request.values,
@@ -307,7 +420,14 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       request.repair.mask,
       cropped,
     );
-    return Uint8List.fromList(image.encodePng(repaired, level: 3));
+    final double compositeMs = clock.elapsedMicroseconds / 1000;
+    final Uint8List png = Uint8List.fromList(
+      image.encodePng(repaired, level: 3),
+    );
+    return _FinishedRepair(png, {
+      'composite': compositeMs,
+      'png_encode': clock.elapsedMicroseconds / 1000 - compositeMs,
+    });
   }
 
   static image.Image _fromNchw(List<dynamic> values, int width, int height) {
@@ -415,14 +535,21 @@ class _RepairRequest {
 }
 
 class _PreparedRepair {
-  const _PreparedRepair(this.source, this.mask, this.input);
+  const _PreparedRepair(this.source, this.mask, this.input, this.timingsMs);
   final image.Image source;
   final Uint8List mask;
   final LamaInput input;
+  final Map<String, double> timingsMs;
 }
 
 class _RepairOutput {
   const _RepairOutput(this.repair, this.values);
   final _PreparedRepair repair;
   final List<dynamic> values;
+}
+
+class _FinishedRepair {
+  const _FinishedRepair(this.png, this.timingsMs);
+  final Uint8List png;
+  final Map<String, double> timingsMs;
 }

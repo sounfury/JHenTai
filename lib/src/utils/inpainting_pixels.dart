@@ -142,17 +142,19 @@ img.Image compositeLamaOutput(
 ) {
   if (knownMask.length != source.width * source.height)
     throw ArgumentError('mask dimensions');
-  final scaled = img.copyResize(
-    prediction,
-    width: source.width,
-    height: source.height,
-    interpolation: img.Interpolation.cubic,
-  );
   final output = img.Image.from(source);
+  // copyResize interpolates the entire page even though only refined glyph
+  // pixels are used. Sample those pixels at the same source coordinates.
+  final double scaleX = prediction.width / source.width;
+  final double scaleY = prediction.height / source.height;
   for (int y = 0; y < source.height; y++) {
     for (int x = 0; x < source.width; x++) {
       if (knownMask[y * source.width + x] != 0) continue;
-      final p = scaled.getPixel(x, y);
+      final p = prediction.getPixelInterpolate(
+        x * scaleX,
+        y * scaleY,
+        interpolation: img.Interpolation.cubic,
+      );
       output.setPixelRgb(x, y, p.r, p.g, p.b);
     }
   }

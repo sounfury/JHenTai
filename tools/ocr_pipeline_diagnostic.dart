@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:image/image.dart' as img;
 import 'package:flutter_onnxruntime/flutter_onnxruntime.dart' as ort;
 import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/service/engine/engine_contract.dart';
@@ -24,6 +25,10 @@ import 'package:jhentai/src/utils/connected_bubble_layout.dart';
 import 'package:jhentai/src/utils/image_text_container_detection.dart';
 import 'package:jhentai/src/utils/image_translation_colors.dart';
 import 'package:jhentai/src/utils/rgba_raster.dart';
+import 'package:jhentai/src/utils/bubble_detection_refinement.dart';
+import 'package:jhentai/src/utils/ocr_artifact_filter.dart';
+import 'package:jhentai/src/utils/sound_effect_style.dart';
+import 'package:jhentai/src/utils/image_text_grouping.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +47,8 @@ Future<void> main(List<String> args) async {
     ];
     final root = args[1];
     final ocrRoot = '$root/rapidocr-ppocrv6-small-multilingual';
-    for (int run = 0; run < 3; run++) {
+    final iterations = args.length > 4 ? int.parse(args[4]) : 3;
+    for (int run = 0; run < iterations; run++) {
       final timings = InferenceTimings();
       final start = timings.now;
       final bytes = await File(args[0]).readAsBytes();
@@ -97,7 +103,7 @@ Future<void> main(List<String> args) async {
       timings.record('pipeline.ocr_total', ocrStart, {
         'blocks': recognized.blocks.length,
       });
-      final DetectionResult detection = await pendingDetection;
+      DetectionResult detection = await pendingDetection;
       final pagePayload = <String, dynamic>{'image': page};
       final colorStart = timings.now;
       var blocks = await compute(detectTranslationColors, <String, dynamic>{
@@ -108,16 +114,48 @@ Future<void> main(List<String> args) async {
       });
       timings.record('pipeline.colors', colorStart);
       final layoutStart = timings.now;
+      blocks = mergeOverlappingOcrArtifacts(blocks);
+      final originalDetection = detection;
+      if (page != null) {
+        detection = await refineBubbleDetection(
+          source: page,
+          initial: detection,
+          blocks: blocks,
+          detect:
+              (crop) => bubble.detect(
+                args[0],
+                image: crop,
+                cancellationToken: InferenceCancellationToken(),
+              ),
+          isCanceled: () => false,
+        );
+      }
+      final unfilteredBlocks = blocks;
+      final styledEffects =
+          page == null
+              ? <RecognizedTextBlock>{}
+              : {
+                for (final i in styleMatchedSoundEffects(
+                  page,
+                  blocks,
+                  detection.regions,
+                ))
+                  blocks[i],
+              };
       blocks =
           blocks
               .where(
                 (block) =>
-                    !isOnomatopoeia(
+                    !shouldPreserveSoundEffect(
                       block.text,
                       insideBubble: isBlockInsideAnyRegion(
                         block,
                         detection.regions,
                       ),
+                      confidence: block.confidence,
+                      width: block.width,
+                      height: block.height,
+                      matchesSoundEffectStyle: styledEffects.contains(block),
                     ),
               )
               .toList();
@@ -148,6 +186,79 @@ Future<void> main(List<String> args) async {
         'containers': refined.length,
       });
       timings.record('pipeline.total', start);
+      if (page != null) {
+        final preview = page.toImage();
+        for (final region in detection.regions) {
+          final mask = region.bubbleInterior;
+          if (mask == null) continue;
+          for (
+            int y = mask.bounds.top.floor();
+            y < mask.bounds.bottom.ceil();
+            y++
+          ) {
+            for (
+              int x = mask.bounds.left.floor();
+              x < mask.bounds.right.ceil();
+              x++
+            ) {
+              if (x < 0 || y < 0 || x >= page.width || y >= page.height)
+                continue;
+              final mx = ((x - mask.bounds.left) *
+                      mask.width /
+                      mask.bounds.width)
+                  .floor()
+                  .clamp(0, mask.width - 1);
+              final my = ((y - mask.bounds.top) *
+                      mask.height /
+                      mask.bounds.height)
+                  .floor()
+                  .clamp(0, mask.height - 1);
+              if (mask.pixels[my * mask.width + mx] == 0) continue;
+              final p = preview.getPixel(x, y);
+              preview.setPixelRgb(
+                x,
+                y,
+                (p.r * .7).round(),
+                (p.g * .7 + 76).round(),
+                (p.b * .7).round(),
+              );
+            }
+          }
+        }
+        final resolved = refined.map(RecognizedTextContainer.fromJson).toList();
+        for (final group in translationTextGroups(
+          blocks,
+          containers: resolved,
+        )) {
+          var areas = layoutRegionsForRecognizedTextGroup(
+            group,
+            resolved,
+            blocks: blocks,
+          );
+          if (areas.isEmpty) {
+            areas = [
+              TranslationLayoutRegion(
+                group.left,
+                group.top,
+                group.width,
+                group.height,
+              ),
+            ];
+          }
+          for (final area in areas) {
+            img.drawRect(
+              preview,
+              x1: area.left.round(),
+              y1: area.top.round(),
+              x2: (area.left + area.width).round(),
+              y2: (area.top + area.height).round(),
+              color: img.ColorRgb8(255, 0, 0),
+              thickness: 2,
+            );
+          }
+        }
+        await File('${report.path}.png').writeAsBytes(img.encodePng(preview));
+      }
       runs.add({
         'run': run,
         'backend': backend,
@@ -155,9 +266,20 @@ Future<void> main(List<String> args) async {
         ...timings.toJson(),
         // Output fingerprint for before/after parity checks of pixel code.
         'result': {
+          'initialRegions': originalDetection.regions.length,
+          'allOcrBlocks': unfilteredBlocks.map((b) => b.toJson()).toList(),
           'regions':
               detection.regions
-                  .map((r) => [r.left, r.top, r.width, r.height])
+                  .map(
+                    (r) => {
+                      'box': [r.left, r.top, r.width, r.height],
+                      'confidence': r.confidence,
+                      'maskWidth': r.bubbleInterior?.width,
+                      'maskHeight': r.bubbleInterior?.height,
+                      if (r.bubbleInterior != null)
+                        'maskPixels': base64Encode(r.bubbleInterior!.pixels),
+                    },
+                  )
                   .toList(),
           'blocks': blocks.map((b) => b.toJson()).toList(),
           'containers': refined,

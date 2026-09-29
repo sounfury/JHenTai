@@ -221,13 +221,16 @@ RecognizedTextGroupRenderBounds? explicitRenderBoundsForRecognizedTextGroup(
 
 List<TranslationLayoutRegion> layoutRegionsForRecognizedTextGroup(
   RecognizedTextGroup group,
-  List<RecognizedTextContainer> containers,
-) {
+  List<RecognizedTextContainer> containers, {
+  List<RecognizedTextBlock> blocks = const [],
+}) {
   for (final container in containers) {
     if (container.blockIndices.length == group.blockIndices.length &&
         container.blockIndices.toSet().containsAll(group.blockIndices)) {
       final regions =
           container.layoutRegions.where((region) => region.isValid).toList();
+      // Model-mask rectangles already lie inside the actual balloon. A
+      // concave/transparent balloon need not fill 60% of its enclosing box.
       // Interior regions recover the balloon around the text. When the
       // container is only the text's own bounding box, the analysis can lock
       // onto the white gap between two columns: a strip narrower than the
@@ -236,17 +239,95 @@ List<TranslationLayoutRegion> layoutRegionsForRecognizedTextGroup(
         0.0,
         (sum, region) => sum + region.width * region.height,
       );
+      // Shaded/transparent lobes may disappear from the dominant colour mask.
+      // Keep their dialogue where the source columns were instead of moving
+      // everything into the one white lobe that survived segmentation.
+      final sourceRegions = _sourceColumnRegions(group, blocks);
+      final missesSource = sourceRegions.any((source) {
+        final covered = regions.fold(0.0, (double sum, region) {
+          final width = math.max(
+            0.0,
+            math.min(source.left + source.width, region.left + region.width) -
+                math.max(source.left, region.left),
+          );
+          final height = math.max(
+            0.0,
+            math.min(source.top + source.height, region.top + region.height) -
+                math.max(source.top, region.top),
+          );
+          return sum + width * height;
+        });
+        return covered < source.width * source.height * .8;
+      });
+      if (sourceRegions.length > 1 && missesSource) {
+        return sourceRegions;
+      }
+      if (container.layoutAnalysisVersion >= 2 && regions.isNotEmpty) {
+        return regions;
+      }
       // Multiple regions are the detector's concave-balloon partition. Their
       // inset rectangles naturally cover much less of the bounding box (which
       // includes the exterior between lobes). Rejecting them by total coverage
       // collapses all text back into the bounding box's central neck.
       // Keep the strip safeguard for a single recovered region only.
-      return regions.length <= 1 && regionArea < group.width * group.height * 0.6
+      return regions.length <= 1 &&
+              regionArea < group.width * group.height * 0.6
           ? const []
           : regions;
     }
   }
-  return const [];
+  final sourceRegions = _sourceColumnRegions(group, blocks);
+  return sourceRegions.length > 1 ? sourceRegions : const [];
+}
+
+/// Conservative fallback for staggered vertical columns. Aligned columns
+/// remain one paragraph; a substantial change of starting height starts a lobe.
+List<TranslationLayoutRegion> _sourceColumnRegions(
+  RecognizedTextGroup group,
+  List<RecognizedTextBlock> blocks,
+) {
+  if (group.blockIndices.any((i) => i < 0 || i >= blocks.length)) {
+    return [];
+  }
+  final members = group.blocksOf(blocks);
+  if (members.length < 2 || !_isMostlyVertical(members)) {
+    return [];
+  }
+  members.sort((a, b) => b.left.compareTo(a.left));
+  final columnWidth = _median(members.map((b) => b.width).toList());
+  final runs = <List<RecognizedTextBlock>>[];
+  for (final block in members) {
+    if (runs.isEmpty ||
+        (block.top - runs.last.first.top).abs() > columnWidth * 1.5) {
+      runs.add([block]);
+    } else {
+      runs.last.add(block);
+    }
+  }
+  final regions =
+      runs.map((run) {
+        final left = run.map((b) => b.left).reduce(math.min);
+        final top = run.map((b) => b.top).reduce(math.min);
+        return TranslationLayoutRegion(
+          left,
+          top,
+          run.map((b) => b.left + b.width).reduce(math.max) - left,
+          run.map((b) => b.top + b.height).reduce(math.max) - top,
+        );
+      }).toList();
+  // Bad OCR geometry must not create overlapping rendered paragraphs.
+  for (int i = 0; i < regions.length; i++) {
+    for (int j = i + 1; j < regions.length; j++) {
+      final a = regions[i], b = regions[j];
+      if (a.left < b.left + b.width &&
+          b.left < a.left + a.width &&
+          a.top < b.top + b.height &&
+          b.top < a.top + a.height) {
+        return [];
+      }
+    }
+  }
+  return regions;
 }
 
 /// Returns one conservative render rectangle for [group].

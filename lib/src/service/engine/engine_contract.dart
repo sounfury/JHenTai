@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 import 'package:jhentai/src/model/image_translation.dart';
+import 'package:jhentai/src/model/bubble_interior_mask.dart';
 import 'package:jhentai/src/utils/rgba_raster.dart';
 
 /// Stable names for the independent stages of the image pipeline.
@@ -385,6 +386,7 @@ class DetectedTextRegion {
     required this.width,
     required this.height,
     this.confidence = 0,
+    this.bubbleInterior,
   });
 
   final double left;
@@ -392,6 +394,9 @@ class DetectedTextRegion {
   final double width;
   final double height;
   final double confidence;
+
+  /// Balloon geometry for grouping/layout only; not a removal mask.
+  final BubbleInteriorMask? bubbleInterior;
 }
 
 abstract class DetectionEngine {

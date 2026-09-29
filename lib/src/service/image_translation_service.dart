@@ -29,6 +29,10 @@ import '../utils/ocr_artifact_filter.dart';
 export '../utils/image_translation_typography.dart';
 import '../utils/image_text_container_detection.dart';
 import '../utils/connected_bubble_layout.dart';
+import '../utils/bubble_mask_layout.dart';
+import '../utils/bubble_detection_refinement.dart';
+import '../utils/sound_effect_style.dart';
+import '../utils/ocr_layout_protocol.dart';
 import '../utils/rgba_raster.dart';
 import 'engine/engine.dart';
 
@@ -101,11 +105,16 @@ class ImageTranslationService extends GetxController
   /// newer batch's banner/progress.
   int _batchGeneration = 0;
   final Set<String> _batchRecordedKeys = <String>{};
-  EngineTask<dynamic>? _activeEngineTask;
-  String? _activeCacheKey;
+  final Map<EngineTask<dynamic>, String?> _activeEngineTasks = {};
+  final Set<EngineTask<DetectionResult>> _activeBubbleTasks = {};
+  final Set<String> _activeCacheKeys = {};
   final Map<String, Future<bool>> _hydrateTasks = <String, Future<bool>>{};
   Directory? _translationCacheDirectoryOverride;
   final EngineRegistry engineRegistry = EngineRegistry();
+
+  void _logSoundEffectDecision(String message) {
+    unawaited(log.info(message).catchError((Object _) {}));
+  }
 
   int beginBatch(int total) {
     _batchGeneration++;
@@ -138,8 +147,11 @@ class ImageTranslationService extends GetxController
 
   void cancelBatch() {
     _cancelRequested = true;
-    final String? activeCacheKey = _activeCacheKey;
-    if (activeCacheKey != null) {
+    for (final EngineTask<DetectionResult> task
+        in _activeBubbleTasks.toList()) {
+      task.cancel('image translation cancelled');
+    }
+    for (final String activeCacheKey in _activeCacheKeys.toList()) {
       _set(
         activeCacheKey,
         resultFor(activeCacheKey).copyWith(
@@ -148,8 +160,9 @@ class ImageTranslationService extends GetxController
         ),
       );
     }
-    _activeEngineTask?.cancel('image translation cancelled');
-    _activeEngineTask = null;
+    for (final EngineTask<dynamic> task in _activeEngineTasks.keys.toList()) {
+      task.cancel('image translation cancelled');
+    }
     update([batchProgressId, readerStateId]);
   }
 
@@ -407,14 +420,16 @@ class ImageTranslationService extends GetxController
     EngineTask<dynamic> task, {
     String? activeCacheKey,
   }) {
-    _activeEngineTask = task;
-    _activeCacheKey = activeCacheKey;
+    _activeEngineTasks[task] = activeCacheKey;
+    if (activeCacheKey != null) {
+      _activeCacheKeys.add(activeCacheKey);
+    }
   }
 
   void detachExternalBatchTask(EngineTask<dynamic> task) {
-    if (identical(_activeEngineTask, task)) {
-      _activeEngineTask = null;
-      _activeCacheKey = null;
+    final String? cacheKey = _activeEngineTasks.remove(task);
+    if (cacheKey != null) {
+      _activeCacheKeys.remove(cacheKey);
     }
   }
 
@@ -470,7 +485,7 @@ class ImageTranslationService extends GetxController
       const ImageTranslationResult(status: ImageTranslationStatus.recognizing),
     );
     _setStage(ImageTranslationStage.recognizing);
-    _activeCacheKey = request.cacheKey;
+    _activeCacheKeys.add(request.cacheKey);
 
     late final Uint8List sourceBytes;
     try {
@@ -492,9 +507,14 @@ class ImageTranslationService extends GetxController
         imageHash,
       );
       if (!force && cached != null) {
-        _set(request.cacheKey, await _restoreCachedResult(
-          persistentKey, sourceBytes, cached,
-        ));
+        _logSoundEffectDecision(
+          '[拟声词过滤] page=${request.cacheKey} translation_cache_hit=true; '
+          'OCR and sound-effect classification skipped',
+        );
+        _set(
+          request.cacheKey,
+          await _restoreCachedResult(persistentKey, sourceBytes, cached),
+        );
         return null;
       }
 
@@ -515,7 +535,7 @@ class ImageTranslationService extends GetxController
               ? _detectBubbleRegions(imagePath, page)
               : Future<DetectionResult?>.value();
       final _RecognizeResult recognized = await _recognize(imagePath, page);
-      final DetectionResult? bubbleDetection = await pendingBubbles;
+      DetectionResult? bubbleDetection = await pendingBubbles;
       List<RecognizedTextBlock> blocks = recognized.blocks;
       final bool mergeTextBlocks = imageTranslationSetting.autoMergeText.value;
       // Resolve the source dimensions before accepting detector rectangles so
@@ -539,28 +559,65 @@ class ImageTranslationService extends GetxController
         imageHeight,
         page: page,
       );
-      blocks = mergeOverlappingOcrArtifacts(blocks);
+      blocks = sortRecognizedTextBlocks(mergeOverlappingOcrArtifacts(blocks));
+      if (bubbleDetection != null && page != null && !_cancelRequested) {
+        bubbleDetection = await refineBubbleDetection(
+          source: page,
+          initial: bubbleDetection,
+          blocks: blocks,
+          detect: (crop) => _detectBubbleRegions(imagePath, crop),
+          isCanceled: () => _cancelRequested,
+        );
+      }
       // Preserve only sound effects outside detected bubbles. Exclamations and
       // sound words inside bubbles must reach the translator and renderer.
-      blocks =
-          blocks
-              .where(
-                (RecognizedTextBlock block) =>
-                    !shouldPreserveSoundEffect(
-                      block.text,
-                      insideBubble:
-                          bubbleDetection == null
-                              ? null
-                              : isBlockInsideAnyRegion(
-                                block,
-                                bubbleDetection.regions,
-                              ),
-                    ),
-              )
-              .toList();
+      final List<RecognizedTextBlock> retainedBlocks = [];
+      final List<String> soundEffectDecisions = [];
+      final styledEffects =
+          page == null || bubbleDetection == null
+              ? <int>{}
+              : styleMatchedSoundEffects(page, blocks, bubbleDetection.regions);
+      for (int index = 0; index < blocks.length; index++) {
+        final RecognizedTextBlock block = blocks[index];
+        final bool? insideBubble =
+            bubbleDetection == null
+                ? null
+                : isBlockInsideAnyRegion(block, bubbleDetection.regions);
+        final bool preserve = shouldPreserveSoundEffect(
+          block.text,
+          insideBubble: insideBubble,
+          confidence: block.confidence,
+          width: block.width,
+          height: block.height,
+          matchesSoundEffectStyle: styledEffects.contains(index),
+        );
+        if (!preserve) {
+          retainedBlocks.add(block);
+        }
+        soundEffectDecisions.add(
+          '[$index] ${preserve ? 'preserve' : 'translate'} '
+          'bubble=${insideBubble == null
+              ? 'unknown'
+              : insideBubble
+              ? 'inside'
+              : 'outside'} '
+          'sfx=${isOnomatopoeia(block.text, insideBubble: insideBubble)} '
+          'confidence=${block.confidence.toStringAsFixed(2)} '
+          'box=(${block.left.toStringAsFixed(0)},${block.top.toStringAsFixed(0)},'
+          '${block.width.toStringAsFixed(0)},${block.height.toStringAsFixed(0)}) '
+          'text=${jsonEncode(block.text)}',
+        );
+      }
+      _logSoundEffectDecision(
+        '[拟声词过滤] page=${request.cacheKey} '
+        'bubbleDetection=${bubbleDetection == null ? 'unavailable' : '${bubbleDetection.regions.length} regions'} '
+        'blocks=${blocks.length} preserved=${blocks.length - retainedBlocks.length}\n'
+        '${soundEffectDecisions.join('\n')}',
+      );
+      blocks = retainedBlocks;
       List<RecognizedTextContainer> containers =
           useBubbleDetection
-              ? _containersFromBubbleDetection(
+              ? await _containersFromBubbleDetection(
                 blocks,
                 bubbleDetection,
                 imageWidth: imageWidth,
@@ -700,9 +757,7 @@ class ImageTranslationService extends GetxController
     } finally {
       // The source buffer is method-scoped and is never stored in the result or
       // read-page state, so it becomes collectible when this attempt unwinds.
-      if (_activeCacheKey == request.cacheKey) {
-        _activeCacheKey = null;
-      }
+      _activeCacheKeys.remove(request.cacheKey);
     }
     return null;
   }
@@ -714,7 +769,7 @@ class ImageTranslationService extends GetxController
     ImageTranslationRequest request,
     RecognizedImage recognized,
   ) async {
-    _activeCacheKey = request.cacheKey;
+    _activeCacheKeys.add(request.cacheKey);
     final TranslationEngine engine = engineRegistry.selectedTranslation;
     EngineTask<TranslationResult>? task;
     final Stopwatch clock = Stopwatch()..start();
@@ -756,7 +811,7 @@ class ImageTranslationService extends GetxController
         ),
       );
       task = activeTask;
-      _activeEngineTask = activeTask;
+      _activeEngineTasks[activeTask] = request.cacheKey;
       _setStage(ImageTranslationStage.translating);
       final TranslationResult translation = await activeTask.future.timeout(
         const Duration(minutes: 2),
@@ -861,18 +916,15 @@ class ImageTranslationService extends GetxController
         ),
       );
     } finally {
-      if (task != null && identical(_activeEngineTask, task)) {
-        _activeEngineTask = null;
+      if (task != null) {
+        _activeEngineTasks.remove(task);
       }
-      if (_activeCacheKey == request.cacheKey) {
-        _activeCacheKey = null;
-      }
+      _activeCacheKeys.remove(request.cacheKey);
     }
   }
 
-  /// Translates a single image end-to-end (OCR then translation). Batch
-  /// translation uses [recognizeImage] + [translateRecognizedText] directly so
-  /// the pipeline can overlap the next page's OCR with the current translation.
+  /// Shared single-page OCR and translation path for direct and pre-translation.
+  /// Context batches use the two stages separately to assemble their prompt.
   Future<void> translate(
     ImageTranslationRequest request, {
     bool force = false,
@@ -880,7 +932,9 @@ class ImageTranslationService extends GetxController
     // Single-page retry/translate: clear any stale cancel latch so a previous
     // cancelled translate (which never went through the batch lifecycle) does
     // not silently disable this one.
-    _cancelRequested = false;
+    if (!isBatchTranslating) {
+      _cancelRequested = false;
+    }
     final RecognizedImage? recognized = await recognizeImage(
       request,
       force: force,
@@ -926,7 +980,8 @@ class ImageTranslationService extends GetxController
         'bubbleDetection': configuration['bubbleDetection'],
         'bubbleModel': configuration['bubbleModel'],
         // Bump when onomatopoeia filtering changes which blocks translate.
-        'sfxFilter': 3,
+        'sfxFilter': 5,
+        'bubbleMaskLayout': 1,
         'ocrArtifactFilter': 1,
       },
       translationModel: configuration['model'] as String?,
@@ -982,11 +1037,12 @@ class ImageTranslationService extends GetxController
           imageTranslationSetting.appleLiveTextUseThirdPartyApi.value,
       'mangaOcrAutoSuggest': imageTranslationSetting.mangaOcrAutoSuggest.value,
       'bubbleDetection': imageTranslationSetting.enableBubbleDetection.value,
-      'bubbleModel': imageTranslationSetting.enableBubbleDetection.value
-          ? OnnxModelStore.instance.fingerprintOf(
-              OnnxModelStore.bubbleSegmentationManifestId,
-            )
-          : null,
+      'bubbleModel':
+          imageTranslationSetting.enableBubbleDetection.value
+              ? OnnxModelStore.instance.fingerprintOf(
+                OnnxModelStore.bubbleSegmentationManifestId,
+              )
+              : null,
       if (imageTranslationSetting.ocrEngine.value == ImageOcrEngine.onnx) ...{
         'onnxModel': OnnxModelStore.instance.fingerprintOf(
           imageTranslationSetting.onnxModelId.value,
@@ -1036,9 +1092,14 @@ class ImageTranslationService extends GetxController
     if (cached == null) {
       return false;
     }
-    _set(request.cacheKey, await _restoreCachedResult(
-      _persistentCacheKey(request, imageHash), sourceBytes, cached,
-    ));
+    _set(
+      request.cacheKey,
+      await _restoreCachedResult(
+        _persistentCacheKey(request, imageHash),
+        sourceBytes,
+        cached,
+      ),
+    );
     return true;
   }
 
@@ -1049,13 +1110,23 @@ class ImageTranslationService extends GetxController
     Uint8List sourceBytes,
     ImageTranslationResult cached,
   ) async {
-    final containers = await _refineBubbleLayouts(sourceBytes, cached.containers);
-    final blocks = await _detectColors(sourceBytes, cached.blocks,
-        cached.imageWidth ?? 0, cached.imageHeight ?? 0);
-    final restored = cached.copyWith(
-      fromCache: true, containers: containers, blocks: blocks,
+    final containers = await _refineBubbleLayouts(
+      sourceBytes,
+      cached.containers,
     );
-    if (!identical(containers, cached.containers) || !identical(blocks, cached.blocks)) {
+    final blocks = await _detectColors(
+      sourceBytes,
+      cached.blocks,
+      cached.imageWidth ?? 0,
+      cached.imageHeight ?? 0,
+    );
+    final restored = cached.copyWith(
+      fromCache: true,
+      containers: containers,
+      blocks: blocks,
+    );
+    if (!identical(containers, cached.containers) ||
+        !identical(blocks, cached.blocks)) {
       try {
         await _writePersistentResult(persistentKey, restored);
       } catch (error) {
@@ -1190,7 +1261,7 @@ class ImageTranslationService extends GetxController
         },
       ),
     );
-    _activeEngineTask = task;
+    _activeEngineTasks[task] = null;
     try {
       _setStage(ImageTranslationStage.recognizing);
       final OcrResult result = await task.future.timeout(
@@ -1218,7 +1289,7 @@ class ImageTranslationService extends GetxController
       task.cancel('image translation OCR timeout');
       throw const ImageTranslationException('OCR_TIMEOUT');
     } finally {
-      if (identical(_activeEngineTask, task)) _activeEngineTask = null;
+      _activeEngineTasks.remove(task);
     }
   }
 
@@ -1258,8 +1329,7 @@ class ImageTranslationService extends GetxController
     List<RecognizedTextContainer> containers, {
     RgbaRaster? page,
   }) async {
-    if (containers.isEmpty ||
-        containers.every((c) => c.hasAnalyzedLayout)) {
+    if (containers.isEmpty || containers.every((c) => c.hasAnalyzedLayout)) {
       return containers;
     }
     try {
@@ -1310,6 +1380,9 @@ class ImageTranslationService extends GetxController
     String imagePath,
     RgbaRaster? page,
   ) async {
+    if (_cancelRequested) {
+      return null;
+    }
     final DetectionEngine? detector = engineRegistry.findDetection(
       'manga109-bubble-segmentation',
     );
@@ -1319,26 +1392,30 @@ class ImageTranslationService extends GetxController
     final EngineTask<DetectionResult> task = detector.detect(
       EngineImageRequest(imagePath: imagePath, image: page),
     );
+    _activeBubbleTasks.add(task);
     try {
       return await task.future.timeout(const Duration(minutes: 2));
     } catch (error, stack) {
+      task.cancel('bubble detection failed or timed out');
       log.warning('Manga109 bubble detection skipped: $error');
       log.trace(stack);
       return null;
+    } finally {
+      _activeBubbleTasks.remove(task);
     }
   }
 
-  List<RecognizedTextContainer> _containersFromBubbleDetection(
+  Future<List<RecognizedTextContainer>> _containersFromBubbleDetection(
     List<RecognizedTextBlock> blocks,
     DetectionResult? detection, {
     required int imageWidth,
     required int imageHeight,
-  }) => containersFromBubbleDetection(
+  }) => compute(_buildBubbleContainers, (
     blocks,
     detection,
-    imageWidth: imageWidth,
-    imageHeight: imageHeight,
-  );
+    imageWidth,
+    imageHeight,
+  ));
 
   Future<File> exportOverlay(ImageTranslationRequest request) async {
     final String? imagePath = request.imagePath;
@@ -1438,7 +1515,11 @@ class ImageTranslationService extends GetxController
           group.blockIndices,
           vertical: vertical,
         );
-        final regions = layoutRegionsForRecognizedTextGroup(group, containers);
+        final regions = layoutRegionsForRecognizedTextGroup(
+          group,
+          containers,
+          blocks: blocks,
+        );
         if (regions.isNotEmpty) {
           for (final index in group.blockIndices) {
             final block = blocks[index];
@@ -1998,13 +2079,14 @@ Rect? safeTranslationBackgroundRect(Rect rect, Size canvasSize) {
     }
   }
   final source = Color(detected ?? 0xffffffff);
-  final background = configuredBackground == Colors.white
-      ? source : configuredBackground;
+  final background =
+      configuredBackground == Colors.white ? source : configuredBackground;
   final visible = Color.alphaBlend(
-    background.withValues(alpha: opacity.clamp(0.0, 1.0)), source,
+    background.withValues(alpha: opacity.clamp(0.0, 1.0)),
+    source,
   );
-  final foreground = visible.computeLuminance() > 0.179
-      ? Colors.black : Colors.white;
+  final foreground =
+      visible.computeLuminance() > 0.179 ? Colors.black : Colors.white;
   return (background, foreground);
 }
 
@@ -2038,16 +2120,24 @@ bool isBlockInsideAnyRegion(
   RecognizedTextBlock block,
   List<DetectedTextRegion> regions,
 ) {
-  final double centerX = block.left + block.width / 2;
-  final double centerY = block.top + block.height / 2;
-  return regions.any(
-    (DetectedTextRegion region) =>
-        centerX >= region.left &&
-        centerX <= region.left + region.width &&
-        centerY >= region.top &&
-        centerY <= region.top + region.height,
-  );
+  return regions.any((region) => bubbleBlockCoverage(block, region) >= .55);
 }
+
+double bubbleBlockCoverage(
+  RecognizedTextBlock block,
+  DetectedTextRegion region,
+) {
+  return bubbleRegionCoverage(block, region);
+}
+
+List<RecognizedTextContainer> _buildBubbleContainers(
+  (List<RecognizedTextBlock>, DetectionResult?, int, int) args,
+) => containersFromBubbleDetection(
+  args.$1,
+  args.$2,
+  imageWidth: args.$3,
+  imageHeight: args.$4,
+);
 
 List<RecognizedTextContainer> containersFromBubbleDetection(
   List<RecognizedTextBlock> blocks,
@@ -2059,35 +2149,70 @@ List<RecognizedTextContainer> containersFromBubbleDetection(
     return const <RecognizedTextContainer>[];
   }
   final List<RecognizedTextContainer> containers = <RecognizedTextContainer>[];
-  for (final DetectedTextRegion region in detection.regions) {
-    if (imageWidth <= 0 ||
-        imageHeight <= 0 ||
-        region.width >= imageWidth * 0.95 ||
-        region.height >= imageHeight * 0.95 ||
-        region.width * region.height >= imageWidth * imageHeight * 0.8) {
-      continue;
-    }
-    final List<int> indices = <int>[];
-    for (int blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
-      final RecognizedTextBlock block = blocks[blockIndex];
-      final double centerX = block.left + block.width / 2;
-      final double centerY = block.top + block.height / 2;
-      if (centerX >= region.left &&
-          centerX <= region.left + region.width &&
-          centerY >= region.top &&
-          centerY <= region.top + region.height) {
-        indices.add(blockIndex);
+  final regions =
+      detection.regions
+          .where(
+            (region) =>
+                imageWidth > 0 &&
+                imageHeight > 0 &&
+                region.width < imageWidth * 0.95 &&
+                region.height < imageHeight * 0.95 &&
+                region.width * region.height < imageWidth * imageHeight * 0.8,
+          )
+          .toList();
+  // Assign once to the best supporting instance. Overlapping detector boxes
+  // used to discard a whole later container, including its unique dialogue.
+  final assignments = <DetectedTextRegion, List<int>>{};
+  for (int i = 0; i < blocks.length; i++) {
+    DetectedTextRegion? best;
+    double bestScore = 0;
+    for (final region in regions) {
+      final coverage = bubbleBlockCoverage(blocks[i], region);
+      if (coverage < .55) {
+        continue;
+      }
+      final score =
+          coverage +
+          (region.bubbleInterior == null ? 0 : 1) +
+          region.confidence * .01;
+      if (score > bestScore) {
+        best = region;
+        bestScore = score;
       }
     }
+    if (best != null) {
+      (assignments[best] ??= []).add(i);
+    }
+  }
+  for (final region in regions) {
+    final List<int> indices = <int>[];
+    indices.addAll(assignments[region] ?? []);
     if (indices.isEmpty) {
       continue;
+    }
+    if (region.bubbleInterior != null) {
+      final layout = layoutBubbleInterior(region.bubbleInterior!);
+      if (layout.isNotEmpty) {
+        containers.add(
+          RecognizedTextContainer(
+            blockIndices: indices,
+            left: region.left,
+            top: region.top,
+            width: region.width,
+            height: region.height,
+            confidence: region.confidence,
+            layoutRegions: layout,
+            layoutAnalysisVersion: 2,
+          ),
+        );
+        continue;
+      }
     }
     final List<RecognizedTextBlock> members = <RecognizedTextBlock>[
       for (final int index in indices) blocks[index],
     ];
-    final List<RecognizedTextGroup> clusters = mergeTouchingRecognizedTextGroups(
-      groupRecognizedTextBlocks(members),
-    );
+    final List<RecognizedTextGroup> clusters =
+        mergeTouchingRecognizedTextGroups(groupRecognizedTextBlocks(members));
     if (clusters.length <= 1) {
       containers.add(
         RecognizedTextContainer(

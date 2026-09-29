@@ -83,12 +83,15 @@ class ImageTranslationSetting
   /// Merge OCR lines from the same bubble/text box into one translation unit.
   /// Enabled by default to preserve the bubble-aware translation behavior.
   final RxBool autoMergeText = true.obs;
+
   /// Detect complete speech bubbles before OCR so lines can share one layout
   /// container. If the detector is unavailable, OCR falls back to full-image
   /// recognition.
   final RxBool enableBubbleDetection = true.obs;
+
   /// Color of the backing plate drawn behind translated text.
   final Rx<Color> translationBackgroundColor = Colors.white.obs;
+
   /// Opacity of the backing plate, independent from the selected color.
   final RxDouble translationBackgroundOpacity = 0.9.obs;
   final RxBool translateSubsequentPages = false.obs;
@@ -101,6 +104,9 @@ class ImageTranslationSetting
   /// when a gallery opts in on the detail page. Global default; per-gallery
   /// on/off lives in local config.
   final RxInt preTranslatePageCount = 30.obs;
+
+  /// Maximum number of pages translated simultaneously by pre-translation.
+  final RxInt preTranslateConcurrency = 5.obs;
 
   final Rx<ContextBatchSize> contextBatchSize = ContextBatchSize.one.obs;
   final Rx<ImageProcessingDisplayMode> imageProcessingDisplayMode =
@@ -182,8 +188,9 @@ class ImageTranslationSetting
     final Object? configuredBackgroundColor =
         config['translationBackgroundColor'];
     if (configuredBackgroundColor is num) {
-      translationBackgroundColor.value =
-          Color(configuredBackgroundColor.toInt()).withAlpha(255);
+      translationBackgroundColor.value = Color(
+        configuredBackgroundColor.toInt(),
+      ).withAlpha(255);
     }
     final Object? configuredOpacity = config['translationBackgroundOpacity'];
     if (configuredOpacity is num) {
@@ -196,8 +203,17 @@ class ImageTranslationSetting
         config['enableAutoTranslate'] ?? enableAutoTranslate.value;
     final Object? configuredPreTranslateCount = config['preTranslatePageCount'];
     if (configuredPreTranslateCount is num) {
-      preTranslatePageCount.value =
-          configuredPreTranslateCount.toInt().clamp(1, 500);
+      preTranslatePageCount.value = configuredPreTranslateCount.toInt().clamp(
+        1,
+        500,
+      );
+    }
+    final Object? configuredPreTranslateConcurrency =
+        config['preTranslateConcurrency'];
+    if (configuredPreTranslateConcurrency is num) {
+      preTranslateConcurrency.value = configuredPreTranslateConcurrency
+          .toInt()
+          .clamp(1, 20);
     }
     contextBatchSize.value = ContextBatchSize.values.firstWhere(
       (ContextBatchSize size) => size.name == config['contextBatchSize'],
@@ -243,6 +259,7 @@ class ImageTranslationSetting
     'translateSubsequentPages': translateSubsequentPages.value,
     'enableAutoTranslate': enableAutoTranslate.value,
     'preTranslatePageCount': preTranslatePageCount.value,
+    'preTranslateConcurrency': preTranslateConcurrency.value,
     'contextBatchSize': contextBatchSize.value.name,
     'imageProcessingDisplayMode': imageProcessingDisplayMode.value.name,
     'autoTranslateGalleryText': autoTranslateGalleryText.value,
@@ -372,6 +389,11 @@ class ImageTranslationSetting
 
   Future<void> savePreTranslatePageCount(int value) async {
     preTranslatePageCount.value = value.clamp(1, 500);
+    await saveBeanConfig();
+  }
+
+  Future<void> savePreTranslateConcurrency(int value) async {
+    preTranslateConcurrency.value = value.clamp(1, 20);
     await saveBeanConfig();
   }
 

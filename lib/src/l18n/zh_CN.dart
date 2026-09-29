@@ -1144,6 +1144,8 @@ favnote：匹配收藏备注
       'enableAutoTranslateHint': '开始阅读或翻页时，自动翻译当前页与下一页。',
       'preTranslatePageCount': '预翻译页数',
       'preTranslatePageCountHint': '在漫画详情页开启预翻译后，预先翻译该漫画的前 N 页。',
+      'preTranslateConcurrency': '预翻译并发数',
+      'preTranslateConcurrencyHint': '同时翻译的页数，默认 5。',
       'preTranslate': '预翻译',
       'preTranslateEnabled': '预翻译已开',
       'preTranslateHint': '开启后立即在后台预翻译本漫画前 @count 页。',

@@ -549,6 +549,7 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
         final regions = layoutRegionsForRecognizedTextGroup(
           group,
           result.containers,
+          blocks: result.blocks,
         );
         // Interior text placement must not leave old OCR glyphs visible while
         // the reader is still using backing plates instead of inpainting.

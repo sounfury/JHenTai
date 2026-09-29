@@ -24,6 +24,7 @@ import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/service/path_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/utils/gallery_image_translation_language.dart';
+import 'package:jhentai/src/utils/bounded_page_jobs.dart';
 import 'package:jhentai/src/setting/site_setting.dart';
 import 'package:jhentai/src/utils/eh_spider_parser.dart';
 import 'package:jhentai/src/utils/image_cache_util.dart';
@@ -44,6 +45,7 @@ class GalleryPreTranslateRunner extends GetxController
     implements JHLifeCircleBean {
   int? _activeGid;
   int _jobEpoch = 0;
+  Future<void>? _jobFuture;
   final Set<int> _finishedGids = <int>{};
 
   /// Gid currently owned by an in-flight detail-page pre-translate job.
@@ -108,15 +110,23 @@ class GalleryPreTranslateRunner extends GetxController
     cancelForGallery(gid);
     _finishedGids.remove(gid);
     final int epoch = ++_jobEpoch;
+    final Future<void>? previousJob = _jobFuture;
     _activeGid = gid;
-    unawaited(
-      _runJob(
+    _jobFuture = () async {
+      if (previousJob != null) {
+        await previousJob;
+      }
+      if (!_isCurrent(epoch, gid)) {
+        return;
+      }
+      await _runJob(
         epoch: epoch,
         galleryUrl: galleryUrl,
         pageCount: pageCount,
         seedThumbnails: seedThumbnails,
-      ),
-    );
+      );
+    }();
+    unawaited(_jobFuture);
   }
 
   /// Cancels an in-flight job for [gid] if this runner owns it.
@@ -138,9 +148,15 @@ class GalleryPreTranslateRunner extends GetxController
     List<GalleryThumbnail>? seedThumbnails,
   }) async {
     final int gid = galleryUrl.gid;
-    final int n = imageTranslationSetting.preTranslatePageCount.value
-        .clamp(1, pageCount);
+    final int n = imageTranslationSetting.preTranslatePageCount.value.clamp(
+      1,
+      pageCount,
+    );
     final int generation = imageTranslationService.beginBatch(n);
+    final int concurrency = imageTranslationSetting
+        .preTranslateConcurrency
+        .value
+        .clamp(1, n);
     bool completedCleanly = false;
     try {
       final _ResolvedSources sources = await _resolveSources(
@@ -151,25 +167,31 @@ class GalleryPreTranslateRunner extends GetxController
         epoch: epoch,
       );
       if (!_isCurrent(epoch, gid)) {
+        _cancelRemaining(sources.requests, 0, generation);
         return;
       }
-      for (int i = 0; i < n; i++) {
-        if (!_isCurrent(epoch, gid) ||
-            imageTranslationService.isCancelRequested) {
-          _cancelRemaining(sources.requests, i, generation);
-          return;
-        }
-        await _translateOne(
-          index: i,
-          image: sources.images[i],
-          mode: sources.mode,
-          generation: generation,
-          requests: sources.requests,
-        );
+      final int nextIndex = await runBoundedPageJobs(
+        total: n,
+        concurrency: concurrency,
+        shouldStop:
+            () =>
+                !_isCurrent(epoch, gid) ||
+                imageTranslationService.isCancelRequested,
+        runPage:
+            (int index) => _translateOne(
+              index: index,
+              image: sources.images[index],
+              mode: sources.mode,
+              generation: generation,
+              requests: sources.requests,
+            ),
+      );
+      if (!_isCurrent(epoch, gid) ||
+          imageTranslationService.isCancelRequested) {
+        _cancelRemaining(sources.requests, nextIndex, generation);
       }
       completedCleanly =
-          _isCurrent(epoch, gid) &&
-          !imageTranslationService.isCancelRequested;
+          _isCurrent(epoch, gid) && !imageTranslationService.isCancelRequested;
     } catch (e, stack) {
       log.warning('Gallery pre-translate failed for gid=$gid: $e');
       log.trace(stack);
@@ -197,8 +219,7 @@ class GalleryPreTranslateRunner extends GetxController
       return;
     }
     for (int i = from; i < imageTranslationService.batchTotal; i++) {
-      final String cacheKey =
-          requests[i]?.cacheKey ?? 'pretranslate-page:$i';
+      final String cacheKey = requests[i]?.cacheKey ?? 'pretranslate-page:$i';
       imageTranslationService.markCanceled(cacheKey);
       imageTranslationService.recordBatchResult(
         cacheKey,
@@ -238,8 +259,8 @@ class GalleryPreTranslateRunner extends GetxController
     final ArchiveDownloadInfo? archiveInfo =
         archiveDownloadService.archiveDownloadInfos[gid];
     if (archiveInfo?.archiveStatus == ArchiveStatus.completed) {
-      final List<GalleryImage> images =
-          await archiveDownloadService.getUnpackedImages(gid);
+      final List<GalleryImage> images = await archiveDownloadService
+          .getUnpackedImages(gid);
       if (!_isCurrent(epoch, gid)) {
         return _ResolvedSources.empty(ReadMode.archive, count);
       }
@@ -254,8 +275,10 @@ class GalleryPreTranslateRunner extends GetxController
     }
 
     // Online: resolve thumbnail hrefs then image page URLs for the first N.
-    final List<GalleryThumbnail?> thumbnails =
-        List<GalleryThumbnail?>.filled(pageCount, null);
+    final List<GalleryThumbnail?> thumbnails = List<GalleryThumbnail?>.filled(
+      pageCount,
+      null,
+    );
     if (seedThumbnails != null) {
       for (int i = 0; i < seedThumbnails.length && i < pageCount; i++) {
         thumbnails[i] = seedThumbnails[i];
@@ -290,15 +313,12 @@ class GalleryPreTranslateRunner extends GetxController
               detailPageInfo.thumbnails[i - detailPageInfo.imageNoFrom];
         }
       } catch (e, stack) {
-        log.warning(
-          'Pre-translate thumbnail fetch failed at index $index: $e',
-        );
+        log.warning('Pre-translate thumbnail fetch failed at index $index: $e');
         log.trace(stack);
       }
     }
 
-    final List<GalleryImage?> images =
-        List<GalleryImage?>.filled(count, null);
+    final List<GalleryImage?> images = List<GalleryImage?>.filled(count, null);
     for (int index = 0; index < count; index++) {
       if (!_isCurrent(epoch, gid)) {
         break;
@@ -350,11 +370,15 @@ class GalleryPreTranslateRunner extends GetxController
       return;
     }
 
-    final ImageTranslationRequest? request = await _buildRequest(
-      index: index,
-      image: image,
-      mode: mode,
-    );
+    ImageTranslationRequest? request;
+    try {
+      request = await _buildRequest(index: index, image: image, mode: mode);
+    } catch (e, stack) {
+      log.warning(
+        'Pre-translate source preparation failed for page $index: $e',
+      );
+      log.trace(stack);
+    }
     if (request == null) {
       imageTranslationService.markDownloadError(
         fallbackKey,
@@ -370,20 +394,14 @@ class GalleryPreTranslateRunner extends GetxController
     imageTranslationService.queue(request.cacheKey);
 
     try {
-      final RecognizedImage? recognized =
-          await imageTranslationService.recognizeImage(request);
-      if (recognized != null) {
-        await imageTranslationService.translateRecognizedText(
-          request,
-          recognized,
-        );
-      }
+      await imageTranslationService.translate(request);
       await _maybeRepair(request);
     } catch (e, stack) {
       log.warning('Pre-translate page $index failed: $e');
       log.trace(stack);
-      final ImageTranslationResult result =
-          imageTranslationService.resultFor(request.cacheKey);
+      final ImageTranslationResult result = imageTranslationService.resultFor(
+        request.cacheKey,
+      );
       if (!result.isTerminal) {
         imageTranslationService.markOcrError(
           request.cacheKey,
@@ -408,8 +426,10 @@ class GalleryPreTranslateRunner extends GetxController
       final String taskKey = 'online:$cacheKey';
       imageTranslationService.markDownloading(taskKey);
       try {
-        final File? file = await _ensureOnlineImageFile(url, cacheKey)
-            .timeout(const Duration(seconds: 30));
+        final File? file = await _ensureOnlineImageFile(
+          url,
+          cacheKey,
+        ).timeout(const Duration(seconds: 30));
         if (file != null && await file.exists()) {
           return ImageTranslationRequest(
             cacheKey: taskKey,
@@ -431,8 +451,9 @@ class GalleryPreTranslateRunner extends GetxController
       return ImageTranslationRequest(
         cacheKey: 'downloaded:${image.path}',
         imagePath:
-            DownloadPathResolver
-                .computeImageDownloadAbsolutePathFromRelativePath(image.path!),
+            DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(
+              image.path!,
+            ),
       );
     }
     if (mode == ReadMode.archive && image.path != null) {
@@ -491,8 +512,8 @@ class GalleryPreTranslateRunner extends GetxController
       return;
     }
     imageInpaintingService.setDisplayMode(mode);
-    final ImageTranslationResult translation =
-        imageTranslationService.resultFor(request.cacheKey);
+    final ImageTranslationResult translation = imageTranslationService
+        .resultFor(request.cacheKey);
     final List<RecognizedTextBlock> eraseBlocks =
         translatedBlocksEligibleForErase(translation);
     if (eraseBlocks.isEmpty) {

@@ -43,19 +43,101 @@ bool isOnomatopoeia(String text, {bool? insideBubble}) {
   return decoratedTail && length <= 4;
 }
 
-/// Only sound effects positively located outside a speech bubble stay in the
-/// artwork. When bubble detection is unavailable, keep the text in the
-/// translation pipeline rather than dropping possible dialogue.
-bool shouldPreserveSoundEffect(String text, {required bool? insideBubble}) =>
-    insideBubble == false && isOnomatopoeia(text, insideBubble: false);
+/// Keep effects outside speech bubbles in the artwork. Hand-lettered effects
+/// may be OCR'd as a digit plus katakana
+/// ("4チ" for "ムチッ") or a couple of Latin capitals ("VH"). Limit those
+/// fallback cases to low-confidence, vertically drawn blocks so ordinary
+/// captions are still translated. Without bubble detection, preserve only a
+/// small vocabulary of unambiguous effects, not arbitrary short kana/dialogue.
+bool shouldPreserveSoundEffect(
+  String text, {
+  required bool? insideBubble,
+  double? confidence,
+  double? width,
+  double? height,
+  bool matchesSoundEffectStyle = false,
+}) {
+  final plain = text.replaceAll(RegExp(r'\s'), '').replaceAll(_decoration, '');
+  // Missing transparent balloons are not proof that short grammatical
+  // dialogue (e.g. a separate vertical 「って」 column) is a sound effect.
+  if (_dialogueFragments.contains(text.replaceAll(_dialoguePunctuation, ''))) {
+    return false;
+  }
+  if (insideBubble == null) {
+    final core = text.replaceAll(RegExp(r'\s'), '').replaceAll(_decoration, '');
+    return _standaloneEffects.contains(core);
+  }
+  if (insideBubble) {
+    return false;
+  }
+  if (matchesSoundEffectStyle &&
+      confidence != null &&
+      confidence < .8 &&
+      plain.runes.length <= 2) {
+    return true;
+  }
+  if (isOnomatopoeia(text, insideBubble: false)) {
+    return true;
+  }
+  if (confidence == null ||
+      confidence >= 0.8 ||
+      width == null ||
+      height == null ||
+      height < width * 1.4) {
+    return false;
+  }
+  final String core = text
+      .replaceAll(RegExp(r'\s'), '')
+      .replaceAll(_decoration, '');
+  return (_digitKatakana.hasMatch(core) && _digit.hasMatch(core)) ||
+      (confidence < 0.7 && _shortLatinCapitals.hasMatch(core));
+}
 
-final RegExp _decoration = RegExp(
-  r'[ーｰ〜～~っッ・…‥、。，．,.!！?？♡♥❤☆★♪「」『』（）()]',
-);
+final RegExp _decoration = RegExp(r'[ーｰ〜～~っッ・…‥、。，．,.!！?？♡♥❤☆★♪「」『』（）()]');
+const _standaloneEffects = {
+  'ドキ',
+  'ドキドキ',
+  'どきどき',
+  'ソワ',
+  'ソワソワ',
+  'そわそわ',
+  'ビク',
+  'ビクビク',
+  'びくびく',
+  'ガタガタ',
+  'ガタン',
+  'バタン',
+  'ズキ',
+  'ズキズキ',
+  'ワクワク',
+  'わくわく',
+  'キラキラ',
+};
+const _dialogueFragments = {
+  'って',
+  'から',
+  'ので',
+  'けど',
+  'でも',
+  'だって',
+  'です',
+  'ます',
+  'はい',
+  'いいえ',
+  'そう',
+  'なに',
+  'なんで',
+  'どうして',
+  'ちょっと',
+};
+final _dialoguePunctuation = RegExp(r'[\s…‥、。，．,.!！?？「」『』（）()]');
 const int _outsideBubbleMaxLength = 6;
 final RegExp _heartAsV = RegExp(r'(?<=[ぁ-ゟ゠-ヿ])[vVｖＶ]+$');
 final RegExp _kanaOnly = RegExp(r'^[ぁ-ゟ゠-ヿ]+$');
 final RegExp _katakanaOnly = RegExp(r'^[゠-ヿ]+$');
+final RegExp _digitKatakana = RegExp(r'^[0-9０-９゠-ヿ]{2,4}$');
+final RegExp _digit = RegExp(r'[0-9０-９]');
+final RegExp _shortLatinCapitals = RegExp(r'^[A-Z]{1,2}$');
 // Cries stretched with a repeated vowel: わああ, ひいい, んんん.
 final RegExp _drawnOutVowel = RegExp(r'([あいうえおぁぃぅぇぉん])\1+$');
 final RegExp _decoratedTail = RegExp(r'[ーｰ〜～~っッぁぃぅぇぉァィゥェォ♡♥❤]+[!！?？…‥]*$');

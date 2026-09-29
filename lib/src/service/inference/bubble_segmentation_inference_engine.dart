@@ -14,6 +14,7 @@ import 'inference_task.dart';
 import 'onnx_ocr_engine.dart' show OnnxProviderResolver;
 import 'onnx_runtime.dart';
 import '../../utils/rgba_raster.dart';
+import '../../utils/bubble_mask_decoder.dart';
 
 class BubbleSegmentationModelInfo {
   const BubbleSegmentationModelInfo({
@@ -31,8 +32,8 @@ class BubbleSegmentationModelInfo {
 /// images [1,3,1600,1600] -> output0 [1,37,52500] and output1
 /// [1,32,400,400]. The first four values are xywh, the fifth is the
 /// single-class confidence, and the remaining 32 values are mask coefficients.
-/// This detector exposes conservative source-image boxes to the OCR/layout
-/// pipeline. It never exposes its full-bubble masks to the inpainting path.
+/// Boxes and instance interiors feed OCR/layout; balloon interiors are never
+/// exposed as text-removal masks to the inpainting path.
 class BubbleSegmentationInferenceEngine {
   BubbleSegmentationInferenceEngine({
     required this.runtime,
@@ -146,14 +147,26 @@ class BubbleSegmentationInferenceEngine {
       }
       final int? readStart = timings?.now;
       final List<dynamic> values = await raw.asFlattenedList();
-      timings?.record('bubble.tensor_download', readStart!);
       if (values.length != candidateChannels * candidateCount) {
         throw StateError('unexpected bubble detector output length');
       }
+      final rawPrototypes = outputs['output1'];
+      Float32List? prototypes;
+      if (rawPrototypes != null &&
+          _sameShape(rawPrototypes.shape, [1, 32, 400, 400])) {
+        final data = await rawPrototypes.asFlattenedList();
+        prototypes = Float32List(data.length);
+        for (int i = 0; i < data.length; i++) {
+          prototypes[i] = (data[i] as num).toDouble();
+        }
+      }
+      timings?.record('bubble.tensor_download', readStart!);
+      cancellationToken.throwIfCancelled();
       final int? postStart = timings?.now;
       final DetectionResult result = await compute(_extractDetections, (
         prepared,
         values,
+        prototypes,
       ));
       timings?.record('bubble.postprocess', postStart!);
       cancellationToken.throwIfCancelled();
@@ -178,18 +191,24 @@ class BubbleSegmentationInferenceEngine {
     if (source == null) {
       throw StateError('unsupported bubble segmentation input image');
     }
-    events.add({'stage': 'bubble.decode', 'ms': clock.elapsedMicroseconds / 1000});
+    events.add({
+      'stage': 'bubble.decode',
+      'ms': clock.elapsedMicroseconds / 1000,
+    });
     clock.reset();
     final _Letterbox letterbox = _Letterbox.fromSource(source);
     final Float32List input = letterbox.toNchw(source);
-    events.add({'stage': 'bubble.resize_pad', 'ms': clock.elapsedMicroseconds / 1000});
+    events.add({
+      'stage': 'bubble.resize_pad',
+      'ms': clock.elapsedMicroseconds / 1000,
+    });
     return _BubbleInput(input, letterbox, source.width, source.height, events);
   }
 
   static DetectionResult _extractDetections(
-    (_BubbleInput, List<dynamic>) request,
+    (_BubbleInput, List<dynamic>, Float32List?) request,
   ) {
-    final (prepared, values) = request;
+    final (prepared, values, prototypes) = request;
     final List<_BubbleCandidate> candidates = <_BubbleCandidate>[];
     for (int index = 0; index < candidateCount; index++) {
       final double confidence =
@@ -203,6 +222,11 @@ class BubbleSegmentationInferenceEngine {
           (values[2 * candidateCount + index] as num).toDouble();
       final double height =
           (values[3 * candidateCount + index] as num).toDouble();
+      if (![cx, cy, width, height].every((v) => v.isFinite) ||
+          width <= 0 ||
+          height <= 0) {
+        continue;
+      }
       final Rect rect = _mapRect(
         cx - width / 2,
         cy - height / 2,
@@ -215,7 +239,9 @@ class BubbleSegmentationInferenceEngine {
       if (rect.width < 12 || rect.height < 12) {
         continue;
       }
-      candidates.add(_BubbleCandidate(rect: rect, confidence: confidence));
+      candidates.add(
+        _BubbleCandidate(rect: rect, confidence: confidence, index: index),
+      );
     }
     final List<_BubbleCandidate> selected = nms(
       candidates,
@@ -230,6 +256,25 @@ class BubbleSegmentationInferenceEngine {
               width: candidate.rect.width,
               height: candidate.rect.height,
               confidence: candidate.confidence,
+              bubbleInterior:
+                  prototypes == null
+                      ? null
+                      : decodeBubbleInteriorMask(
+                        coefficients: [
+                          for (int c = 0; c < 32; c++)
+                            (values[(5 + c) * candidateCount + candidate.index]
+                                    as num)
+                                .toDouble(),
+                        ],
+                        prototypes: prototypes,
+                        prototypeWidth: 400,
+                        prototypeHeight: 400,
+                        inputSize: inputSize,
+                        sourceBox: candidate.rect,
+                        scale: prepared.letterbox.scale,
+                        padX: prepared.letterbox.padX,
+                        padY: prepared.letterbox.padY,
+                      ),
             ),
           )
           .toList(growable: false),
@@ -309,10 +354,15 @@ class BubbleSegmentationInferenceEngine {
 }
 
 class _BubbleCandidate {
-  const _BubbleCandidate({required this.rect, required this.confidence});
+  const _BubbleCandidate({
+    required this.rect,
+    required this.confidence,
+    required this.index,
+  });
 
   final Rect rect;
   final double confidence;
+  final int index;
 }
 
 class _Letterbox {
@@ -354,11 +404,8 @@ class _Letterbox {
   Float32List toNchw(RgbaRaster source) {
     const int size = BubbleSegmentationInferenceEngine.inputSize;
     const int plane = size * size;
-    final Float32List result = Float32List(plane * 3)..fillRange(
-      0,
-      plane * 3,
-      114 / 255,
-    );
+    final Float32List result = Float32List(plane * 3)
+      ..fillRange(0, plane * 3, 114 / 255);
     source.writeResizedNchw(
       result,
       targetWidth: width,

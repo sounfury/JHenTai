@@ -156,6 +156,7 @@ class _SettingImageTranslationPageState
             children: [
               _buildAutoTranslate(),
               _buildPreTranslatePageCount(),
+              _buildPreTranslateConcurrency(),
             ],
           ),
           EHAppleSettingsGroup(
@@ -487,33 +488,31 @@ class _SettingImageTranslationPageState
   /// layout before OCR, and its own install state must be visible where the
   /// switch is configured.
   Widget _buildBubbleDetectionModelTile() {
-    return Obx(
-      () {
-        if (!imageTranslationSetting.enableBubbleDetection.value) {
-          return const SizedBox.shrink();
-        }
-        // The app registers the store while initializing inference.  Keep the
-        // settings page safe during early startup (and in widget tests) rather
-        // than crashing before that registration has completed.
-        if (!Get.isRegistered<OnnxModelStore>()) {
-          return ListTile(
-            key: const ValueKey('image-translation-bubble-model-loading'),
-            title: Text('imageTranslationBubbleModel'.tr),
-            subtitle: Text('initializing'.tr),
-            trailing: const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        }
-        return OnnxModelTile(
-          key: const ValueKey('image-translation-bubble-model'),
-          manifestId: OnnxModelStore.bubbleSegmentationManifestId,
-          title: 'imageTranslationBubbleModel'.tr,
+    return Obx(() {
+      if (!imageTranslationSetting.enableBubbleDetection.value) {
+        return const SizedBox.shrink();
+      }
+      // The app registers the store while initializing inference.  Keep the
+      // settings page safe during early startup (and in widget tests) rather
+      // than crashing before that registration has completed.
+      if (!Get.isRegistered<OnnxModelStore>()) {
+        return ListTile(
+          key: const ValueKey('image-translation-bubble-model-loading'),
+          title: Text('imageTranslationBubbleModel'.tr),
+          subtitle: Text('initializing'.tr),
+          trailing: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         );
-      },
-    );
+      }
+      return OnnxModelTile(
+        key: const ValueKey('image-translation-bubble-model'),
+        manifestId: OnnxModelStore.bubbleSegmentationManifestId,
+        title: 'imageTranslationBubbleModel'.tr,
+      );
+    });
   }
 
   Widget _buildTranslationBackgroundStyle() {
@@ -758,6 +757,35 @@ class _SettingImageTranslationPageState
           onChanged: (int? value) {
             if (value != null) {
               imageTranslationSetting.savePreTranslatePageCount(value);
+            }
+          },
+          items: [
+            for (final int count in values)
+              DropdownMenuItem<int>(value: count, child: Text('$count')),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildPreTranslateConcurrency() {
+    final List<int> options = <int>[1, 2, 3, 5, 8, 10, 15, 20];
+    return Obx(() {
+      final int current = imageTranslationSetting.preTranslateConcurrency.value;
+      final List<int> values =
+          options.contains(current) ? options : <int>[...options, current]
+            ..sort();
+      return ListTile(
+        title: Text('preTranslateConcurrency'.tr),
+        subtitle: Text(
+          'preTranslateConcurrencyHint'.tr,
+          style: const TextStyle(fontSize: 12),
+        ),
+        trailing: EHCodexStyleDropdown<int>(
+          value: current,
+          onChanged: (int? value) {
+            if (value != null) {
+              imageTranslationSetting.savePreTranslateConcurrency(value);
             }
           },
           items: [
