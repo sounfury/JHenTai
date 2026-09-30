@@ -14,7 +14,17 @@ List<(Rect, String, double)> layoutTranslationInRegions(
   TextDirection direction, {
   required double maxFontSize,
   required bool vertical,
+  List<String>? regionTexts,
 }) {
+  if (regionTexts != null && regionTexts.length != regions.length) {
+    throw ArgumentError('regionTexts must match regions');
+  }
+  final textByRegion =
+      regionTexts == null
+          ? null
+          : {
+            for (int i = 0; i < regions.length; i++) regions[i]: regionTexts[i],
+          };
   final ordered =
       regions.where((rect) => rect.width > 4 && rect.height > 4).toList();
   // Stable band ordering avoids a non-transitive pairwise overlap comparator.
@@ -42,13 +52,16 @@ List<(Rect, String, double)> layoutTranslationInRegions(
   if (characters.isEmpty || ordered.isEmpty) {
     return [];
   }
-  final chunks = <String>[];
+  final chunks =
+      textByRegion == null
+          ? <String>[]
+          : ordered.map((rect) => textByRegion[rect]!).toList();
   int start = 0;
   double remainingArea = ordered.fold(
     0.0,
     (sum, r) => sum + (r.width - 4) * (r.height - 4),
   );
-  for (int i = 0; i < ordered.length; i++) {
+  for (int i = 0; textByRegion == null && i < ordered.length; i++) {
     final rect = ordered[i];
     final area = (rect.width - 4) * (rect.height - 4);
     final remaining = characters.length - start;

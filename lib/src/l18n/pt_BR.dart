@@ -1184,8 +1184,6 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'translationStageIdle': 'Preparando',
       'translationStageRecognizing': 'Reconhecendo',
       'translationStageTranslating': 'Traduzindo',
-      'translationStageMasking': 'Mascarando',
-      'translationStageEmbedding': 'Inserindo texto',
       'translationStageDone': 'Concluído',
       'imageTranslationSourceUnavailable':
           'A imagem atual não está disponível.',
@@ -1207,15 +1205,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationLocalFfiRuntime': 'Runtime llama.cpp no dispositivo',
       'imageTranslationLocalFfiRuntimeHint':
           'Usa o runtime Flutter FFI integrado quando disponível neste dispositivo.',
-      'imageTranslationLlamaServerPath': 'Executável llama-server',
-      'imageTranslationLlamaServerPathHint':
-          'Selecione o executável llama-server local',
       'imageTranslationBrowseRuntime': 'Selecionar runtime',
-      'imageTranslationLlamaRuntime': 'Runtime llama.cpp gerenciado',
-      'imageTranslationLlamaRuntimeHint':
-          'Baixado e verificado automaticamente com os modelos de tradução local.',
-      'imageTranslationLlamaRuntimeUnsupported':
-          'Não há runtime llama.cpp gerenciado para esta plataforma.',
       'imageTranslationTranslatorHint':
           'Usa um endpoint OpenAI-compatible Chat Completions. A chave fica somente neste dispositivo.',
       'imageTranslationEndpoint': 'Endpoint',

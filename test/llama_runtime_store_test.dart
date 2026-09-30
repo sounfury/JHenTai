@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jhentai/src/service/engine/llama_runtime_store.dart';
+import 'support/legacy_llama_runtime_store.dart';
 import 'package:jhentai/src/service/engine/model_catalog.dart';
 import 'package:path/path.dart' as p;
 

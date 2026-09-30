@@ -1,0 +1,55 @@
+param(
+    [switch]$WithModels,
+    [string]$ModelRoot,
+    [string]$CaseId
+)
+
+$ErrorActionPreference = 'Stop'
+$projectRoot = Split-Path -Parent $PSScriptRoot
+Push-Location -LiteralPath $projectRoot
+try {
+    flutter test --no-pub test/acceptance
+    if ($LASTEXITCODE -ne 0) { throw 'Acceptance regression tests failed.' }
+    if (-not $WithModels) { return }
+
+    if (-not $ModelRoot) {
+        $ModelRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'JHTData/OCRmodel/onnx'
+    }
+    $ModelRoot = (Resolve-Path -LiteralPath $ModelRoot).Path
+    flutter build windows --debug --no-pub -t tools/ocr_pipeline_diagnostic.dart
+    if ($LASTEXITCODE -ne 0) { throw 'Native acceptance runner build failed.' }
+
+    $cases = @(Get-ChildItem -LiteralPath 'test/acceptance/image_translation' -Filter case.json -File -Recurse)
+    if ($CaseId) { $cases = @($cases | Where-Object { $_.Directory.Name -eq $CaseId }) }
+    if ($cases.Count -eq 0) { throw 'No matching image translation acceptance case.' }
+    foreach ($case in $cases) {
+        $annotation = Get-Content -LiteralPath $case.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($annotation.id -ne $case.Directory.Name) { throw "Case ID does not match directory: $($case.FullName)" }
+        $outputDir = Join-Path $projectRoot ".dart_tool/acceptance/$($case.Directory.Name)"
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        $reportPath = Join-Path $outputDir 'pipeline.json'
+        # Prevent an aborted native run from being mistaken for a previous pass.
+        if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath }
+        $nativeArguments = @(
+            (Join-Path $case.Directory.FullName 'source.png'),
+            $ModelRoot, $reportPath, 'directml', '1', $case.Directory.FullName
+        ) | ForEach-Object { '"' + $_ + '"' }
+        $runner = Start-Process -FilePath (Join-Path $projectRoot 'build/windows/x64/runner/Debug/jhentai.exe') `
+            -ArgumentList $nativeArguments -WindowStyle Hidden -PassThru
+        if (-not $runner.WaitForExit(180000)) {
+            Stop-Process -Id $runner.Id
+            throw "Native acceptance timed out: $($annotation.id)"
+        }
+        if ($runner.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $reportPath)) {
+            throw "Native acceptance failed: $($annotation.id); inspect $reportPath"
+        }
+        $report = Get-Content -LiteralPath $reportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($report.error -or $report.runs[-1].acceptance.passed -ne $true) {
+            throw "Native acceptance failed: $($annotation.id); inspect $reportPath"
+        }
+        $resultFile = if ($annotation.ocrArtifactAudit) { 'acceptance.json' } elseif ($annotation.backgroundOnly) { 'repaired.png' } else { 'translated.png' }
+        Write-Output "PASS $($annotation.id): $outputDir/$resultFile"
+    }
+} finally {
+    Pop-Location
+}

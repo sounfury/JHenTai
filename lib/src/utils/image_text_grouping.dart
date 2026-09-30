@@ -297,8 +297,18 @@ List<TranslationLayoutRegion> _sourceColumnRegions(
   final columnWidth = _median(members.map((b) => b.width).toList());
   final runs = <List<RecognizedTextBlock>>[];
   for (final block in members) {
+    final previous = runs.isEmpty ? null : runs.last.last;
+    // Connected balloons can start at nearly the same y: a short call in a
+    // small lobe sits across a wide gap from the longer paragraph. A top-only
+    // split misses that lobe and moves its translation into the large one.
+    final separateShortColumn =
+        previous != null &&
+        previous.left - (block.left + block.width) > columnWidth * .6 &&
+        math.min(previous.height, block.height) <
+            math.max(previous.height, block.height) * .65;
     if (runs.isEmpty ||
-        (block.top - runs.last.first.top).abs() > columnWidth * 1.5) {
+        (block.top - runs.last.first.top).abs() > columnWidth * 1.5 ||
+        separateShortColumn) {
       runs.add([block]);
     } else {
       runs.last.add(block);
@@ -328,6 +338,64 @@ List<TranslationLayoutRegion> _sourceColumnRegions(
     }
   }
   return regions;
+}
+
+/// Keep line translations attached to their source lobes when the recovered
+/// regions each contain complete OCR columns. If the interior partition cuts
+/// across columns, retain the ordinary area-based paragraph layout instead.
+List<String>? translationTextsForLayoutRegions(
+  String translation,
+  RecognizedTextGroup group,
+  List<RecognizedTextBlock> blocks,
+  List<TranslationLayoutRegion> regions,
+) {
+  if (regions.length < 2) {
+    return null;
+  }
+  final assignments = <int>[];
+  for (final block in group.blocksOf(blocks)) {
+    if (block.width <= 0 || block.height <= 0) {
+      return null;
+    }
+    int best = -1;
+    double bestCoverage = .55;
+    for (int i = 0; i < regions.length; i++) {
+      final r = regions[i];
+      final width = math.max(
+        0.0,
+        math.min(block.left + block.width, r.left + r.width) -
+            math.max(block.left, r.left),
+      );
+      final height = math.max(
+        0.0,
+        math.min(block.top + block.height, r.top + r.height) -
+            math.max(block.top, r.top),
+      );
+      final coverage = width * height / (block.width * block.height);
+      if (coverage > bestCoverage) {
+        bestCoverage = coverage;
+        best = i;
+      }
+    }
+    if (best < 0) {
+      return null;
+    }
+    assignments.add(best);
+  }
+  final lines = splitGroupTranslationIntoLines(
+    translation: translation,
+    sourceLines: group.blocksOf(blocks).map((b) => b.text).toList(),
+  );
+  final texts = List.generate(regions.length, (_) => <String>[]);
+  for (int i = 0; i < assignments.length; i++) {
+    if (lines[i].trim().isNotEmpty) {
+      texts[assignments[i]].add(lines[i]);
+    }
+  }
+  if (texts.any((text) => text.isEmpty)) {
+    return null;
+  }
+  return texts.map((text) => text.join('\n')).toList();
 }
 
 /// Returns one conservative render rectangle for [group].

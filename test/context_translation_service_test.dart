@@ -8,6 +8,8 @@ import 'package:jhentai/src/service/engine/context_translation_contract.dart';
 import 'package:jhentai/src/service/engine/engine_contract.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 
+import 'support/test_logging.dart';
+
 class _FakeContextEngine implements ContextTranslationEngine {
   _FakeContextEngine({this.omitPageId, this.waitForCancellation = false});
 
@@ -127,6 +129,7 @@ ContextTranslationBatch _batch(ContextBatchSize size, {int? pageCount}) {
 }
 
 void main() {
+  setUpTestLogging();
   test('only the fixed 1/2/4/8 batch sizes are partitioned', () {
     final List<int> values =
         ContextBatchSize.values

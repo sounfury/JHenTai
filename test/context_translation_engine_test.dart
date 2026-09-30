@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jhentai/src/service/engine/api_translation_engine.dart';
 import 'package:jhentai/src/service/engine/context_translation_contract.dart';
 import 'package:jhentai/src/service/engine/engine_registry.dart';
-import 'package:jhentai/src/service/engine/local_translation_prompt.dart';
+import 'package:jhentai/src/service/engine/translation_protocol.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
+
+import 'support/test_logging.dart';
 
 ContextTranslationEngineRequest _request() {
   return const ContextTranslationEngineRequest(
@@ -45,6 +47,7 @@ ContextTranslationEngineRequest _request() {
 }
 
 void main() {
+  setUpTestLogging();
   test(
     'API context engine sends both pages once and parses stable IDs',
     () async {
@@ -112,18 +115,18 @@ void main() {
   );
 
   test('local context prompt preserves page and line IDs and parses JSON', () {
-    final LocalContextTranslationPrompt prompt =
-        buildLocalContextTranslationPrompt(_request());
+    final TranslationPrompt prompt = buildContextTranslationPrompt(_request());
     final Map<String, dynamic> payload =
         jsonDecode(prompt.prompt) as Map<String, dynamic>;
     expect(payload['pages'], hasLength(2));
     expect(payload['targetPageIds'], <String>['page-10', 'page-11']);
 
-    final ContextTranslationResult result =
-        parseLocalContextTranslationResponse('''<think>hidden</think>
+    final ContextTranslationResult result = parseContextTranslationResponse(
+      '''<think>hidden</think>
 ```json
 {"translations":[{"pageId":"page-11","lineId":"line-b","text":"完成"}]}
-```''');
+```''',
+    );
     expect(result.lines.single.pageId, 'page-11');
     expect(result.lines.single.lineId, 'line-b');
     expect(result.lines.single.translatedText, '完成');

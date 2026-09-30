@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,7 +7,6 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../service/engine/engine_contract.dart';
 import '../service/engine/gguf_model_store.dart';
 import '../service/engine/local_translation_model_catalog.dart';
-import '../service/engine/llama_runtime_store.dart';
 import '../service/engine/model_catalog.dart';
 import 'eh_apple_controls.dart';
 import 'eh_apple_glass_toolbar.dart';
@@ -34,10 +32,8 @@ class GgufModelManagerController extends GetxController {
   GgufModelManagerController({
     GgufModelStore? store,
     GgufModelDownloadManager? downloads,
-    LlamaRuntimeStore? runtimeStore,
   }) : store = store ?? GgufModelStore.instance,
-       downloads = downloads ?? GgufModelDownloadManager(),
-       runtimeStore = runtimeStore ?? LlamaRuntimeStore.instance;
+       downloads = downloads ?? GgufModelDownloadManager();
 
   static GgufModelManagerController? _instance;
 
@@ -46,7 +42,6 @@ class GgufModelManagerController extends GetxController {
 
   final GgufModelStore store;
   final GgufModelDownloadManager downloads;
-  final LlamaRuntimeStore runtimeStore;
   final Map<String, ModelInstallState> states = <String, ModelInstallState>{};
   final Map<String, double> progress = <String, double>{};
   final Map<String, String> progressArtifact = <String, String>{};
@@ -56,10 +51,6 @@ class GgufModelManagerController extends GetxController {
       <String, EngineTask<ModelInstallResult>>{};
   final Map<String, StreamSubscription<EngineTaskProgress>> _subscriptions =
       <String, StreamSubscription<EngineTaskProgress>>{};
-  ModelInstallState runtimeState = ModelInstallState.notInstalled;
-  double runtimeProgress = 0;
-  String? runtimeError;
-  bool runtimeDownloading = false;
   bool _initialized = false;
 
   bool isDownloading(String modelId) => _tasks.containsKey(modelId);
@@ -69,18 +60,7 @@ class GgufModelManagerController extends GetxController {
       return;
     }
     _initialized = true;
-    await Future.wait(<Future<void>>[refreshStates(), refreshRuntimeState()]);
-  }
-
-  Future<void> refreshRuntimeState() async {
-    try {
-      runtimeState = await runtimeStore.installState();
-      runtimeError = null;
-    } on Object catch (error) {
-      runtimeState = ModelInstallState.invalid;
-      runtimeError = error.toString();
-    }
-    update(<Object>['llama-runtime']);
+    await refreshStates();
   }
 
   Future<void> refreshStates([String? modelId]) async {
@@ -104,11 +84,6 @@ class GgufModelManagerController extends GetxController {
   Future<void> download(String modelId, {bool forceUpdate = false}) async {
     if (_tasks.containsKey(modelId)) {
       return;
-    }
-    if (runtimeStore.artifact != null &&
-        runtimeState != ModelInstallState.ready &&
-        !runtimeDownloading) {
-      unawaited(downloadRuntime());
     }
     errors.remove(modelId);
     progress[modelId] = 0;
@@ -144,51 +119,6 @@ class GgufModelManagerController extends GetxController {
       progressSpeed.remove(modelId);
       update(<Object>[modelId, 'gguf-model-list']);
     }
-  }
-
-  Future<void> downloadRuntime() async {
-    if (runtimeDownloading || runtimeStore.artifact == null) {
-      return;
-    }
-    runtimeDownloading = true;
-    runtimeProgress = 0;
-    runtimeError = null;
-    runtimeState = ModelInstallState.validating;
-    update(<Object>['llama-runtime']);
-    try {
-      await runtimeStore.download(
-        onProgress: (double value) {
-          runtimeProgress = value;
-          update(<Object>['llama-runtime']);
-        },
-      );
-      runtimeState = ModelInstallState.ready;
-    } on LlamaRuntimeDownloadCancelled {
-      runtimeState = await runtimeStore.installState();
-    } on Object catch (error) {
-      runtimeError = error.toString();
-      runtimeState = await runtimeStore.installState();
-    } finally {
-      runtimeDownloading = false;
-      update(<Object>['llama-runtime']);
-    }
-  }
-
-  void cancelRuntime() {
-    runtimeStore.cancel();
-  }
-
-  Future<void> deleteRuntime() async {
-    await runtimeStore.delete();
-    runtimeState = ModelInstallState.notInstalled;
-    runtimeProgress = 0;
-    runtimeError = null;
-    update(<Object>['llama-runtime']);
-  }
-
-  Future<void> reinstallRuntime() async {
-    await deleteRuntime();
-    await downloadRuntime();
   }
 
   void cancel(String modelId) {
@@ -273,20 +203,12 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
               (GgufModelManagerController manager) =>
                   _buildDownloadTile(selected, manager),
         ),
-        if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-          GetBuilder<GgufModelManagerController>(
-            init: _manager,
-            global: true,
-            autoRemove: false,
-            id: 'llama-runtime',
-            builder: _buildManagedRuntimeTile,
-          )
-        else
-          ListTile(
-            leading: const Icon(Icons.developer_board_outlined),
-            title: Text('imageTranslationLocalFfiRuntime'.tr),
-            subtitle: Text('imageTranslationLocalFfiRuntimeHint'.tr),
-          ),
+        ListTile(
+          key: const ValueKey('image-translation-local-ffi-runtime'),
+          leading: const Icon(Icons.developer_board_outlined),
+          title: Text('imageTranslationLocalFfiRuntime'.tr),
+          subtitle: Text('imageTranslationLocalFfiRuntimeHint'.tr),
+        ),
       ],
     );
   }
@@ -331,7 +253,9 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text(formatDownloadSpeed(manager.progressSpeed[model.id] ?? 0)),
+                  Text(
+                    formatDownloadSpeed(manager.progressSpeed[model.id] ?? 0),
+                  ),
                 ],
               ),
           ],
@@ -370,64 +294,6 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
                 icon: const Icon(Icons.download),
                 tooltip: 'download'.tr,
                 onPressed: () => manager.download(model.id),
-              ),
-    );
-  }
-
-  Widget _buildManagedRuntimeTile(GgufModelManagerController manager) {
-    final LlamaRuntimeArtifact? artifact = manager.runtimeStore.artifact;
-    final String status =
-        manager.runtimeDownloading
-            ? 'imageTranslationLocalModelDownloading'.trParams(<String, String>{
-              'progress':
-                  '${(manager.runtimeProgress * 100).clamp(0, 100).toStringAsFixed(0)}%',
-            })
-            : switch (manager.runtimeState) {
-              ModelInstallState.notInstalled =>
-                'inferenceModelNotDownloaded'.tr,
-              ModelInstallState.validating => 'inferenceModelValidating'.tr,
-              ModelInstallState.ready => 'inferenceModelReady'.tr,
-              ModelInstallState.invalid => 'inferenceModelInvalid'.tr,
-            };
-    return ListTile(
-      key: const ValueKey('image-translation-managed-llama-runtime'),
-      leading: const Icon(Icons.terminal),
-      title: Text('imageTranslationLlamaRuntime'.tr),
-      subtitle: Text(
-        artifact == null
-            ? 'imageTranslationLlamaRuntimeUnsupported'.tr
-            : '${'imageTranslationLlamaRuntimeHint'.tr}\n$status'
-                '${manager.runtimeError == null ? '' : '\n${manager.runtimeError}'}',
-      ),
-      trailing:
-          artifact == null
-              ? null
-              : manager.runtimeDownloading
-              ? EHAppleIconButton(
-                icon: const Icon(Icons.close),
-                tooltip: 'cancel'.tr,
-                onPressed: manager.cancelRuntime,
-              )
-              : manager.runtimeState == ModelInstallState.ready
-              ? EHAppleGlassToolbar(
-                materialSpacing: 0,
-                items: <EHAppleToolbarItem>[
-                  EHAppleToolbarItem(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'inferenceRefresh'.tr,
-                    onPressed: manager.reinstallRuntime,
-                  ),
-                  EHAppleToolbarItem(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'delete'.tr,
-                    onPressed: manager.deleteRuntime,
-                  ),
-                ],
-              )
-              : EHAppleIconButton(
-                icon: const Icon(Icons.download),
-                tooltip: 'download'.tr,
-                onPressed: manager.downloadRuntime,
               ),
     );
   }

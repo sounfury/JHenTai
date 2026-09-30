@@ -18,15 +18,7 @@ enum ImageTranslationStatus {
   failed,
 }
 
-enum ImageTranslationStage {
-  idle,
-  downloading,
-  recognizing,
-  translating,
-  masking,
-  embedding,
-  done,
-}
+enum ImageTranslationStage { idle, downloading, recognizing, translating, done }
 
 class RecognizedTextBlock {
   final String text;
@@ -110,7 +102,8 @@ class RecognizedTextContainer {
 
   /// Records successful analysis even when no safe interior was found.
   final int layoutAnalysisVersion;
-  bool get hasAnalyzedLayout => layoutAnalysisVersion >= 1 || layoutRegions.isNotEmpty;
+  bool get hasAnalyzedLayout =>
+      layoutAnalysisVersion >= 1 || layoutRegions.isNotEmpty;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'blockIndices': blockIndices,
@@ -119,7 +112,8 @@ class RecognizedTextContainer {
     'width': width,
     'height': height,
     'confidence': confidence,
-    if (layoutAnalysisVersion > 0) 'layoutAnalysisVersion': layoutAnalysisVersion,
+    if (layoutAnalysisVersion > 0)
+      'layoutAnalysisVersion': layoutAnalysisVersion,
     if (layoutRegions.isNotEmpty)
       'layoutRegions': layoutRegions.map((region) => region.toJson()).toList(),
   };
@@ -135,7 +129,8 @@ class RecognizedTextContainer {
         width: (json['width'] as num?)?.toDouble() ?? 0,
         height: (json['height'] as num?)?.toDouble() ?? 0,
         confidence: (json['confidence'] as num?)?.toDouble() ?? 0,
-        layoutAnalysisVersion: (json['layoutAnalysisVersion'] as num?)?.toInt() ?? 0,
+        layoutAnalysisVersion:
+            (json['layoutAnalysisVersion'] as num?)?.toInt() ?? 0,
         layoutRegions:
             (json['layoutRegions'] as List? ?? const [])
                 .whereType<Map>()
@@ -188,6 +183,7 @@ class ImageTranslationResult {
   final int? imageWidth;
   final int? imageHeight;
   final bool fromCache;
+  final int ocrArtifactCheckVersion;
 
   const ImageTranslationResult({
     required this.status,
@@ -202,6 +198,7 @@ class ImageTranslationResult {
     this.imageWidth,
     this.imageHeight,
     this.fromCache = false,
+    this.ocrArtifactCheckVersion = 0,
   });
 
   const ImageTranslationResult.idle()
@@ -246,6 +243,7 @@ class ImageTranslationResult {
     int? imageWidth,
     int? imageHeight,
     bool? fromCache,
+    int? ocrArtifactCheckVersion,
   }) {
     return ImageTranslationResult(
       status: status ?? this.status,
@@ -260,10 +258,13 @@ class ImageTranslationResult {
       imageWidth: imageWidth ?? this.imageWidth,
       imageHeight: imageHeight ?? this.imageHeight,
       fromCache: fromCache ?? this.fromCache,
+      ocrArtifactCheckVersion:
+          ocrArtifactCheckVersion ?? this.ocrArtifactCheckVersion,
     );
   }
 
   Map<String, dynamic> toJson() => {
+    if (status == ImageTranslationStatus.noText) 'status': 'noText',
     'sourceText': sourceText,
     'translatedText': translatedText,
     if (translatedGroups.isNotEmpty) 'translatedGroups': translatedGroups,
@@ -273,11 +274,30 @@ class ImageTranslationResult {
       'containers': containers.map((container) => container.toJson()).toList(),
     if (imageWidth != null) 'imageWidth': imageWidth,
     if (imageHeight != null) 'imageHeight': imageHeight,
+    if (ocrArtifactCheckVersion > 0)
+      'ocrArtifactCheckVersion': ocrArtifactCheckVersion,
   };
+
+  /// Older translation caches omit status and contain successful translations.
+  factory ImageTranslationResult.fromCacheJson(Map<String, dynamic> json) {
+    if (json['status'] == 'noText') {
+      return ImageTranslationResult(
+        status: ImageTranslationStatus.noText,
+        ocrArtifactCheckVersion:
+            (json['ocrArtifactCheckVersion'] as num?)?.toInt() ?? 0,
+        errorMessage: 'NO_TEXT',
+        imageWidth: (json['imageWidth'] as num?)?.toInt(),
+        imageHeight: (json['imageHeight'] as num?)?.toInt(),
+      );
+    }
+    return ImageTranslationResult.successFromJson(json);
+  }
 
   factory ImageTranslationResult.successFromJson(Map<String, dynamic> json) =>
       ImageTranslationResult(
         status: ImageTranslationStatus.success,
+        ocrArtifactCheckVersion:
+            (json['ocrArtifactCheckVersion'] as num?)?.toInt() ?? 0,
         sourceText: json['sourceText'] as String? ?? '',
         translatedText: json['translatedText'] as String? ?? '',
         translatedGroups: (json['translatedGroups'] as List? ?? const [])

@@ -1111,8 +1111,6 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'translationStageIdle': '준비 중',
       'translationStageRecognizing': '인식 중',
       'translationStageTranslating': '번역 중',
-      'translationStageMasking': '마스킹 중',
-      'translationStageEmbedding': '텍스트 삽입 중',
       'translationStageDone': '완료',
       'imageTranslationSourceUnavailable': '현재 이미지를 가져올 수 없습니다.',
       'imageTranslationSettingHint': 'OCR 및 번역 제공자 설정',
@@ -1133,13 +1131,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationLocalFfiRuntime': '온디바이스 llama.cpp 런타임',
       'imageTranslationLocalFfiRuntimeHint':
           '이 기기에서 사용할 수 있으면 내장 Flutter FFI 런타임을 사용합니다.',
-      'imageTranslationLlamaServerPath': 'llama-server 실행 파일',
-      'imageTranslationLlamaServerPathHint': '로컬 llama-server 실행 파일 선택',
       'imageTranslationBrowseRuntime': '런타임 선택',
-      'imageTranslationLlamaRuntime': '관리형 llama.cpp 런타임',
-      'imageTranslationLlamaRuntimeHint': '로컬 번역 모델과 함께 자동으로 다운로드하고 검증합니다.',
-      'imageTranslationLlamaRuntimeUnsupported':
-          '이 플랫폼에서는 관리형 llama.cpp 런타임을 사용할 수 없습니다.',
       'imageTranslationTranslatorHint':
           'OpenAI 호환 Chat Completions 엔드포인트를 사용합니다. 키는 이 기기에만 저장됩니다.',
       'imageTranslationEndpoint': '엔드포인트',

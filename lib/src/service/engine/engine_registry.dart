@@ -13,7 +13,6 @@ import 'context_translation_contract.dart';
 import 'engine_contract.dart';
 import 'gguf_model_store.dart';
 import 'llama_cpp_ffi_engine.dart';
-import 'llama_server_translation_engine.dart';
 import 'local_translation_model_catalog.dart';
 import 'lama_inpaint_engine.dart';
 import 'model_catalog.dart';
@@ -33,13 +32,14 @@ import '../inference/onnx_runtime.dart';
 List<ort.OrtProvider> _visionModelProviders() {
   final List<ort.OrtProvider> available =
       OnnxRuntime.instance.availableProviders;
-  final ort.OrtProvider? gpu = Platform.isWindows
-      ? switch (inferenceService.resolveBackendFor(InferenceDomain.ocr)) {
-          InferenceBackend.directml => ort.OrtProvider.DIRECT_ML,
-          InferenceBackend.cuda => ort.OrtProvider.CUDA,
-          _ => null,
-        }
-      : null;
+  final ort.OrtProvider? gpu =
+      Platform.isWindows
+          ? switch (inferenceService.resolveBackendFor(InferenceDomain.ocr)) {
+            InferenceBackend.directml => ort.OrtProvider.DIRECT_ML,
+            InferenceBackend.cuda => ort.OrtProvider.CUDA,
+            _ => null,
+          }
+          : null;
   return <ort.OrtProvider>[
     if (gpu != null && available.contains(gpu)) gpu,
     if (available.contains(ort.OrtProvider.CPU)) ort.OrtProvider.CPU,
@@ -139,10 +139,6 @@ class EngineRegistry {
     registerTranslation(apiTranslation);
     registerContextTranslation(apiTranslation);
     registerTranslation(AppleTranslationEngine());
-    final LlamaServerTranslationEngine llamaServer =
-        LlamaServerTranslationEngine(setting: _setting);
-    registerTranslation(llamaServer);
-    registerContextTranslation(llamaServer);
     final LlamaCppFfiTranslationEngine llamaFfi = LlamaCppFfiTranslationEngine(
       setting: _setting,
     );
@@ -203,12 +199,11 @@ class EngineRegistry {
           providerResolver: _visionModelProviders,
           modelResolver: () {
             final Map<String, String>? files = OnnxModelStore.instance
-                .manifestFilePaths(
-                  OnnxModelStore.bubbleSegmentationManifestId,
-                );
+                .manifestFilePaths(OnnxModelStore.bubbleSegmentationManifestId);
             return BubbleSegmentationModelInfo(
               modelPath: files?['model'],
-              fingerprint: OnnxModelStore.instance.fingerprintOf(
+              fingerprint:
+                  OnnxModelStore.instance.fingerprintOf(
                     OnnxModelStore.bubbleSegmentationManifestId,
                   ) ??
                   '',
@@ -353,10 +348,6 @@ class EngineRegistry {
     final String id = switch (_setting.translatorEngine.value) {
       ImageTranslationEngine.appleOnDevice => 'apple-translation',
       ImageTranslationEngine.api => 'api-translation',
-      // The federated llama.cpp FFI runtime is the single local-GGUF path on
-      // every supported target. The server adapter remains registered for
-      // compatibility with older desktop settings, but is not selected for
-      // new work and therefore cannot make mobile/desktop behavior diverge.
       ImageTranslationEngine.localGguf => 'llama-ffi-translation',
     };
     return _translations[id]!;

@@ -33,7 +33,7 @@ class LocalTranslationModelCatalog extends ModelCatalog {
       minimumMemoryHint: '约 1 GB；实际取决于上下文和后端',
       runtimeRequirements: <String>[
         'llama.cpp with Qwen3.5 support (at or after fc0fe40)',
-        'llama-server on desktop or the maintained JHenTai FFI bridge on mobile',
+        'Bundled llama.cpp FFI runtime on every supported platform',
       ],
       artifacts: <ModelArtifactDescriptor>[
         ModelArtifactDescriptor(
@@ -52,7 +52,7 @@ class LocalTranslationModelCatalog extends ModelCatalog {
           ],
         ),
       ],
-      engineIds: <String>['llama-server-translation', 'llama-ffi-translation'],
+      engineIds: <String>['llama-ffi-translation'],
     ),
     ModelDescriptor(
       id: 'hy-mt2-1.8b-q4-k-m',
@@ -89,7 +89,7 @@ class LocalTranslationModelCatalog extends ModelCatalog {
           ],
         ),
       ],
-      engineIds: <String>['llama-server-translation', 'llama-ffi-translation'],
+      engineIds: <String>['llama-ffi-translation'],
     ),
     ModelDescriptor(
       id: 'qwen35-2b-hauhaucs-aggressive-q4-k-m',
@@ -144,7 +144,7 @@ class LocalTranslationModelCatalog extends ModelCatalog {
           ],
         ),
       ],
-      engineIds: <String>['llama-server-translation', 'llama-ffi-translation'],
+      engineIds: <String>['llama-ffi-translation'],
     ),
     ModelDescriptor(
       id: 'qwen35-4b-hauhaucs-aggressive-q4-k-m',
@@ -200,7 +200,7 @@ class LocalTranslationModelCatalog extends ModelCatalog {
           ],
         ),
       ],
-      engineIds: <String>['llama-server-translation', 'llama-ffi-translation'],
+      engineIds: <String>['llama-ffi-translation'],
     ),
   ];
 

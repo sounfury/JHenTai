@@ -67,9 +67,11 @@ void main() {
       const GetMaterialApp(home: Scaffold(body: ImageTranslationConfigSheet())),
     );
 
+    await _showControl(tester, 'image-translation-ocr-engine');
     final EHCodexStyleDropdown<ImageOcrEngine> ocr = tester.widget(
       find.byKey(const ValueKey('image-translation-ocr-engine')),
     );
+    await _showControl(tester, 'image-translation-translator-engine');
     final EHCodexStyleDropdown<ImageTranslationEngine> translator = tester
         .widget(
           find.byKey(const ValueKey('image-translation-translator-engine')),
@@ -90,8 +92,7 @@ void main() {
     await tester.pumpWidget(
       const GetMaterialApp(home: Scaffold(body: ImageTranslationConfigSheet())),
     );
-    await tester.drag(find.byType(ListView), const Offset(0, -280));
-    await tester.pumpAndSettle();
+    await _showControl(tester, 'image-translation-auto-merge-text');
 
     final EHAppleSwitchListTile tile = tester.widget(
       find.byKey(const ValueKey('image-translation-auto-merge-text')),
@@ -175,12 +176,7 @@ void main() {
     await tester.pumpWidget(
       const GetMaterialApp(home: Scaffold(body: ImageTranslationConfigSheet())),
     );
-    // Bubble detection and its model download row now sit before OCR, so the
-    // context selector is no longer in the initial compact-sheet viewport.
-    await tester.drag(find.byType(ListView), const Offset(0, -220));
-    // The early-startup model row intentionally contains a live progress
-    // indicator, so settling would wait forever in this isolated widget test.
-    await tester.pump();
+    await _showControl(tester, 'image-translation-context-batch-size');
 
     final EHCodexStyleDropdown<ContextBatchSize> context = tester.widget(
       find.byKey(const ValueKey('image-translation-context-batch-size')),
@@ -205,8 +201,7 @@ void main() {
     await tester.pumpWidget(
       const GetMaterialApp(home: Scaffold(body: ImageTranslationConfigSheet())),
     );
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
-    await tester.pumpAndSettle();
+    await _showControl(tester, 'image-translation-image-processing-mode');
 
     final EHCodexStyleDropdown<ImageProcessingDisplayMode> processing = tester
         .widget(
@@ -224,7 +219,7 @@ void main() {
     );
   });
 
-  testWidgets('local GGUF exposes model download and runtime configuration', (
+  testWidgets('local GGUF exposes model download and bundled FFI runtime', (
     WidgetTester tester,
   ) async {
     final ImageTranslationSetting setting = ImageTranslationSetting();
@@ -236,19 +231,43 @@ void main() {
     );
     await tester.pump();
 
+    await _showControl(tester, 'image-translation-local-model');
     final EHCodexStyleDropdown<String> model = tester.widget(
       find.byKey(const ValueKey('image-translation-local-model')),
     );
     expect(model.value, setting.localModelId.value);
+    await _showControl(tester, 'image-translation-local-model-download');
     expect(
       find.byKey(const ValueKey('image-translation-local-model-download')),
       findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey('image-translation-managed-llama-runtime')),
+      findsNothing,
+    );
+    await _showControl(tester, 'image-translation-local-ffi-runtime');
+    expect(
+      find.byKey(const ValueKey('image-translation-local-ffi-runtime')),
       findsOneWidget,
     );
   });
+}
+
+Future<void> _showControl(WidgetTester tester, String key) async {
+  // Locate controls by identity instead of assuming a fixed sheet scroll offset.
+  // Model initialization can show an animated indicator, so do not settle it.
+  await tester.scrollUntilVisible(
+    find.byKey(ValueKey(key)),
+    150,
+    scrollable:
+        find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+  );
+  await tester.pump();
 }
 
 class _ImmediateSetting extends ImageTranslationSetting {

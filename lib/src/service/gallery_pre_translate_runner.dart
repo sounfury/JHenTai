@@ -216,14 +216,20 @@ class GalleryPreTranslateRunner extends GetxController
             );
             if (request == null || !current()) return;
             job._preparedRequests[index] = request;
-            if (await imageTranslationService.hasCachedTranslation(request)) {
+            final ImageTranslationStatus? cachedStatus =
+                await imageTranslationService.cachedStatusForRequest(request);
+            if (!current()) {
+              return;
+            }
+            if (cachedStatus == ImageTranslationStatus.success ||
+                cachedStatus == ImageTranslationStatus.noText) {
               job.pages[index].fromCache = true;
               _setPage(
                 job,
                 index,
                 PreTranslatePagePhase.finished,
                 cacheKey: request.cacheKey,
-                terminalStatus: ImageTranslationStatus.success,
+                terminalStatus: cachedStatus,
               );
             }
           } catch (error, stack) {
@@ -396,7 +402,8 @@ class GalleryPreTranslateRunner extends GetxController
                 imageTranslationService.isCancelRequested,
         runPage: (int index) async {
           final PreTranslatePageProgress page = job.pages[index];
-          if (page.terminalStatus == ImageTranslationStatus.success) {
+          if (page.terminalStatus == ImageTranslationStatus.success ||
+              page.terminalStatus == ImageTranslationStatus.noText) {
             final ImageTranslationRequest? prepared =
                 job._preparedRequests[index];
             if (prepared != null &&
@@ -405,6 +412,7 @@ class GalleryPreTranslateRunner extends GetxController
                 prepared.cacheKey,
                 generation: generation,
               );
+              _setPage(job, index, PreTranslatePagePhase.finished);
               return;
             }
             // The source or cache may have changed since inspection.
@@ -722,7 +730,7 @@ class GalleryPreTranslateRunner extends GetxController
     imageTranslationService.queue(request.cacheKey);
 
     try {
-      await imageTranslationService.translate(request);
+      await imageTranslationService.translate(request, preprocessNoText: true);
       if (imageTranslationSetting.imageProcessingDisplayMode.value !=
               ImageProcessingDisplayMode.overlay &&
           imageTranslationService.resultFor(request.cacheKey).status ==
@@ -764,7 +772,8 @@ class GalleryPreTranslateRunner extends GetxController
       onKey?.call(taskKey);
       if (!reportProgress &&
           imageTranslationService.resultFor(taskKey).status ==
-              ImageTranslationStatus.success) {
+              ImageTranslationStatus.success &&
+          !imageTranslationService.needsCachedArtifactCheck(taskKey)) {
         return ImageTranslationRequest(cacheKey: taskKey, sourceUrl: url);
       }
       if (reportProgress) {
@@ -855,36 +864,14 @@ class GalleryPreTranslateRunner extends GetxController
   }
 
   Future<void> _maybeRepair(ImageTranslationRequest request) async {
-    final ImageProcessingDisplayMode mode =
-        imageTranslationSetting.imageProcessingDisplayMode.value;
-    if (mode == ImageProcessingDisplayMode.overlay) {
-      return;
-    }
-    final String? sourcePath = request.imagePath;
-    if (sourcePath == null) {
-      return;
-    }
-    if (imageTranslationService.resultFor(request.cacheKey).status !=
-        ImageTranslationStatus.success) {
-      return;
-    }
-    imageInpaintingService.setDisplayMode(mode);
-    final ImageTranslationResult translation = imageTranslationService
-        .resultFor(request.cacheKey);
-    final List<RecognizedTextBlock> eraseBlocks =
-        translatedBlocksEligibleForErase(translation);
-    if (eraseBlocks.isEmpty) {
-      return;
-    }
-    await imageInpaintingService.detectAndRepair(
+    await imageInpaintingService.repairTranslation(
       requestKey: request.cacheKey,
-      sourcePath: sourcePath,
-      eraseOnlyBlocks: eraseBlocks,
-      protectedBlocks: translation.blocks
-          .where((block) => !eraseBlocks.contains(block))
-          .toList(growable: false),
+      sourcePath: request.imagePath,
+      translation: imageTranslationService.resultFor(request.cacheKey),
+      mode: imageTranslationSetting.imageProcessingDisplayMode.value,
     );
   }
+
 }
 
 class _ResolvedSources {

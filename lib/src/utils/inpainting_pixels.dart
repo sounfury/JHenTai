@@ -3,6 +3,146 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
+/// Rasterize only detector polygons; OCR rectangles never authorize erasure.
+Uint8List rasterizeInpaintingMask(
+  int width,
+  int height,
+  Iterable<List<math.Point<double>>> polygons,
+) {
+  final result = Uint8List(width * height)..fillRange(0, width * height, 255);
+  bool painted = false;
+  for (final points in polygons) {
+    if (points.length < 3) throw ArgumentError('invalid polygon');
+    final left = math.max(0, points.map((p) => p.x).reduce(math.min).floor());
+    final top = math.max(0, points.map((p) => p.y).reduce(math.min).floor());
+    final right = math.min(
+      width - 1,
+      points.map((p) => p.x).reduce(math.max).ceil(),
+    );
+    final bottom = math.min(
+      height - 1,
+      points.map((p) => p.y).reduce(math.max).ceil(),
+    );
+    for (int y = top; y <= bottom; y++) {
+      for (int x = left; x <= right; x++) {
+        bool inside = false;
+        for (int i = 0, j = points.length - 1; i < points.length; j = i++) {
+          final a = points[i], b = points[j];
+          if ((a.y > y + .5) != (b.y > y + .5) &&
+              x + .5 < (b.x - a.x) * (y + .5 - a.y) / (b.y - a.y) + a.x) {
+            inside = !inside;
+          }
+        }
+        if (inside) {
+          result[y * width + x] = 0;
+          painted = true;
+        }
+      }
+    }
+  }
+  if (!painted)
+    throw StateError('polygon masks do not cover any source pixels');
+  return result;
+}
+
+class FlatInpaintingResult {
+  const FlatInpaintingResult(
+    this.image,
+    this.remainingMask,
+    this.repairedPixels,
+  );
+  final img.Image image;
+  final Uint8List remainingMask;
+  final int repairedPixels;
+}
+
+/// Flat balloon fills need no generative prediction. Require nearly all
+/// unmasked context to agree on a colour; patterned/shaded regions keep their
+/// original mask for LaMa. Modify only glyph pixels already approved for erase.
+FlatInpaintingResult repairFlatInpaintingRegions(
+  img.Image source,
+  Uint8List knownMask,
+) {
+  final w = source.width, h = source.height;
+  if (knownMask.length != w * h) throw ArgumentError('mask dimensions');
+  final output = img.Image.from(source);
+  final remaining = Uint8List.fromList(knownMask);
+  final visited = Uint8List(w * h);
+  final queue = <int>[];
+  int repaired = 0;
+  for (int seed = 0; seed < knownMask.length; seed++) {
+    if (knownMask[seed] != 0 || visited[seed] != 0) continue;
+    queue.clear();
+    queue.add(seed);
+    visited[seed] = 1;
+    int left = seed % w, right = left, top = seed ~/ w, bottom = top;
+    for (int head = 0; head < queue.length; head++) {
+      final i = queue[head], x = i % w, y = i ~/ w;
+      left = math.min(left, x);
+      right = math.max(right, x);
+      top = math.min(top, y);
+      bottom = math.max(bottom, y);
+      for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+          final nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          final next = ny * w + nx;
+          if (knownMask[next] == 0 && visited[next] == 0) {
+            visited[next] = 1;
+            queue.add(next);
+          }
+        }
+      }
+    }
+    final x0 = math.max(0, left - 3), x1 = math.min(w - 1, right + 3);
+    final y0 = math.max(0, top - 3), y1 = math.min(h - 1, bottom + 3);
+    final bins = <int, List<int>>{};
+    int samples = 0;
+    for (int y = y0; y <= y1; y++) {
+      for (int x = x0; x <= x1; x++) {
+        if (knownMask[y * w + x] == 0) continue;
+        final p = source.getPixel(x, y);
+        final r = p.r.toInt(), g = p.g.toInt(), b = p.b.toInt();
+        final bin = bins.putIfAbsent(
+          (r >> 4) * 256 + (g >> 4) * 16 + (b >> 4),
+          () => [0, 0, 0, 0],
+        );
+        bin[0]++;
+        bin[1] += r;
+        bin[2] += g;
+        bin[3] += b;
+        samples++;
+      }
+    }
+    if (samples < 12) continue;
+    final best = bins.values.reduce((a, b) => a[0] >= b[0] ? a : b);
+    final r = (best[1] / best[0]).round(),
+        g = (best[2] / best[0]).round(),
+        b = (best[3] / best[0]).round();
+    // Scanned white paper contains faint grain and antialiasing. Allow this
+    // small luminance variation only around an almost-white dominant colour.
+    final tolerance = r >= 250 && g >= 250 && b >= 250 ? 20 : 8;
+    int agreeing = 0;
+    for (int y = y0; y <= y1; y++) {
+      for (int x = x0; x <= x1; x++) {
+        if (knownMask[y * w + x] == 0) continue;
+        final p = source.getPixel(x, y);
+        if ((p.r - r).abs() <= tolerance &&
+            (p.g - g).abs() <= tolerance &&
+            (p.b - b).abs() <= tolerance)
+          agreeing++;
+      }
+    }
+    if (agreeing < samples * .97) continue;
+    for (final i in queue) {
+      output.setPixelRgb(i % w, i ~/ w, r, g, b);
+      remaining[i] = 255;
+    }
+    repaired += queue.length;
+  }
+  return FlatInpaintingResult(output, remaining, repaired);
+}
+
 /// Refine coarse detection polygons against source pixels. Keep complete ink
 /// components supported by the detector, reject lines connected to surrounding
 /// artwork, then grow by a glyph-relative radius to cover antialiased edges.
@@ -20,11 +160,17 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
       gray[y * w + x] = ((p.r * 299 + p.g * 587 + p.b * 114) / 1000).round();
     }
   }
-  // Text can be dark on a light bubble or light on a dark one. Process both
-  // polarities; a page background component is rejected by support/size tests.
-  for (final bool dark in <bool>[true, false]) {
+  // The extra bright pass separates white outlines from a midtone balloon.
+  // Outlines may connect several letters, so only this pass accepts taller
+  // components, and only when anchored to already accepted dark glyphs.
+  for (int polarity = 0; polarity < 3; polarity++) {
     visited.fillRange(0, visited.length, 0);
-    bool isInk(int i) => dark ? gray[i] < 180 : gray[i] > 75;
+    final outlined = polarity == 2;
+    bool isInk(int i) => switch (polarity) {
+      0 => gray[i] < 180,
+      1 => gray[i] > 75,
+      _ => gray[i] > 220,
+    };
     for (int seed = 0; seed < coarse.length; seed++) {
       if (visited[seed] != 0 || !isInk(seed)) continue;
       int head = 0, tail = 1, supported = 0;
@@ -53,7 +199,30 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
       if (tail < 2 || supported / tail < 0.9) continue;
       final bw = right - left + 1, bh = bottom - top + 1;
       // Reject backgrounds, panel edges and long connected illustration lines.
-      if (bw > w * 0.12 || bh > h * 0.08 || tail > w * h * 0.002) continue;
+      if (bw > w * 0.12 ||
+          bh > h * (outlined ? 0.4 : 0.08) ||
+          tail > w * h * (outlined ? 0.006 : 0.002))
+        continue;
+      if (outlined) {
+        int anchored = 0;
+        for (int j = 0; j < tail; j++) {
+          final x = queue[j] % w, y = queue[j] ~/ w;
+          bool touchesGlyph = false;
+          for (int dy = -2; dy <= 2 && !touchesGlyph; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
+              final nx = x + dx, ny = y + dy;
+              if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+              final next = ny * w + nx;
+              if (result[next] == 0 && gray[next] < 100) {
+                touchesGlyph = true;
+                break;
+              }
+            }
+          }
+          if (touchesGlyph) anchored++;
+        }
+        if (anchored < math.min(12, tail * .1)) continue;
+      }
       final radius = (math.min(bw, bh) * 0.12).ceil().clamp(1, 4);
       for (int j = 0; j < tail; j++) {
         final x = queue[j] % w, y = queue[j] ~/ w;

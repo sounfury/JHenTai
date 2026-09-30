@@ -6,7 +6,6 @@ export 'context_translation_contract.dart';
 export 'engine_contract.dart';
 export 'gguf_model_store.dart';
 export 'llama_cpp_ffi_engine.dart';
-export 'llama_server_translation_engine.dart';
 export 'local_translation_model_catalog.dart';
 export 'model_catalog.dart';
 export 'manga_ocr_engine_adapter.dart';

@@ -131,20 +131,6 @@ List<RecognizedTextBlock> translatedBlocksEligibleForErase(
       indices.add(index);
     }
   }
-  // Group-level translations still mark every member line as covered.
-  if (result.translatedGroups.isNotEmpty) {
-    final List<RecognizedTextGroup> groups = translationTextGroups(
-      result.blocks,
-      merge: result.mergeTextBlocks,
-      containers: result.containers,
-    );
-    for (int groupIndex = 0; groupIndex < groups.length; groupIndex++) {
-      if (groupIndex < result.translatedGroups.length &&
-          result.translatedGroups[groupIndex].trim().isNotEmpty) {
-        indices.addAll(groups[groupIndex].blockIndices);
-      }
-    }
-  }
   final List<RecognizedTextGroup> renderGroups = translationTextGroups(
     result.blocks,
     merge: result.mergeTextBlocks,
@@ -152,6 +138,11 @@ List<RecognizedTextBlock> translatedBlocksEligibleForErase(
   );
   for (int i = 0; i < renderGroups.length; i++) {
     final RecognizedTextGroup group = renderGroups[i];
+    // Group-level translations still mark every member line as covered.
+    if (i < result.translatedGroups.length &&
+        result.translatedGroups[i].trim().isNotEmpty) {
+      indices.addAll(group.blockIndices);
+    }
     final String translation =
         i < result.translatedGroups.length &&
                 result.translatedGroups[i].trim().isNotEmpty
@@ -176,7 +167,7 @@ class ImageInpaintingService extends GetxController
     implements JHLifeCircleBean {
   // Old request indexes may point to a background erased under a previous
   // OCR, sound-effect, or mask-matching policy.
-  static const int _requestIndexPolicyVersion = 4;
+  static const int _requestIndexPolicyVersion = 6;
 
   ImageInpaintingService({EngineRegistry? registry})
     : engineRegistry = registry ?? EngineRegistry();
@@ -235,6 +226,46 @@ class ImageInpaintingService extends GetxController
       displayMode ==
           ImageProcessingDisplayMode.repairedBackgroundEmbeddedText ||
       displayMode == ImageProcessingDisplayMode.translatedImage;
+
+  /// Shared post-translation repair flow. Viewport hydration calls
+  /// [hydrateCachedRepair] directly and never starts native inference.
+  Future<InpaintingResult?> repairTranslation({
+    required String requestKey,
+    required String? sourcePath,
+    required ImageTranslationResult translation,
+    required ImageProcessingDisplayMode mode,
+    bool force = false,
+  }) async {
+    if (mode == ImageProcessingDisplayMode.overlay ||
+        sourcePath == null ||
+        translation.status != ImageTranslationStatus.success) {
+      return null;
+    }
+    setDisplayMode(mode);
+    if (!force) {
+      final InpaintingResult? cached = await hydrateCachedRepair(
+        requestKey: requestKey,
+        sourcePath: sourcePath,
+      );
+      if (cached?.status == InpaintingStatus.success) {
+        return cached;
+      }
+    }
+    final List<RecognizedTextBlock> eraseBlocks =
+        translatedBlocksEligibleForErase(translation);
+    if (eraseBlocks.isEmpty) {
+      return null;
+    }
+    return detectAndRepair(
+      requestKey: requestKey,
+      sourcePath: sourcePath,
+      force: force,
+      eraseOnlyBlocks: eraseBlocks,
+      protectedBlocks: translation.blocks
+          .where((block) => !eraseBlocks.contains(block))
+          .toList(growable: false),
+    );
+  }
 
   /// Cold-start / viewport hydrate: restore a previously written repair
   /// artifact for [requestKey] without re-running CTD/LaMa Large when the
@@ -352,23 +383,7 @@ class ImageInpaintingService extends GetxController
   /// Returns the derived image for the selected display mode, or null when
   /// normal overlay rendering must remain the fallback.
   String? displayPathFor(String requestKey) {
-    final InpaintingResult result = resultFor(requestKey);
-    if (displayMode == ImageProcessingDisplayMode.overlay) {
-      return null;
-    }
-    if (displayMode == ImageProcessingDisplayMode.translatedImage) {
-      final String? translated =
-          _translatedImagePaths[requestKey] ?? result.translatedImagePath;
-      if (translated != null && File(translated).existsSync()) {
-        return translated;
-      }
-    }
-    final String? repaired = result.outputPath;
-    return result.status == InpaintingStatus.success &&
-            repaired != null &&
-            File(repaired).existsSync()
-        ? repaired
-        : null;
+    return _usableDisplayPath(requestKey, displayMode);
   }
 
   bool shouldDrawTranslationOverlay(String requestKey) =>
@@ -816,7 +831,7 @@ class ImageInpaintingService extends GetxController
                 'sourceHash': sourceHash,
                 'maskHash': maskHash,
                 'modelHash': modelHash,
-                'pipeline': 'lama-refined-v1',
+                'pipeline': 'lama-refined-v3-outlined-fill',
               }),
             ),
           )

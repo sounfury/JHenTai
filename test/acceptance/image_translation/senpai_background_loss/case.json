@@ -1,0 +1,28 @@
+{
+  "id": "senpai_background_loss",
+  "reportedOn": "2026-09-30",
+  "sourceWidth": 1198,
+  "sourceHeight": 291,
+  "symptom": "相连气泡中的先輩～译文移到大气泡，小气泡被擦除后没有译文。",
+  "targetSourceText": "先輩～",
+  "targetTranslation": "前辈～",
+  "translations": {
+    "ハロウィンイベにて": "在万圣节活动上",
+    "牢屋に閉じ込められ": "两人被关进牢房",
+    "なんとか脱出方法を": "虽然想办法",
+    "探る２人であったが…": "寻找逃脱的方法……",
+    "先輩～": "前辈～",
+    "申し訳ありませぬ": "真是抱歉",
+    "先輩の魅力的なバニーに": "前辈那充满魅力的兔女郎",
+    "目移りしてしまい": "让我看入迷了",
+    "ブッ扱けよ": "揍飞它啊",
+    "いいからさっさと": "别管了快点"
+  },
+  "files": {
+    "source.png": "1da843b20149848552312c75180f6daef3194c406f0775918210dc08aa9ad1a0",
+    "observed.png": "4526a00020a4e223416eed66dffccb0ab61ddc0984b66c39efc2c5129d774721",
+    "observed_detail.png": "d55aa535bba012c527a62ce769b10eea697bf6aa1030566951d754022dca813d",
+    "pipeline_snapshot.json": "7766df22dcc9d6260d0fe12868d53f05d1eb6f5097b0f3e489f451bbbd70daa1",
+    "verified.png": "0b20b3959d6f8e4f5609e27871c06d2fd646a291a246fffd2f21835ae6e43cb8"
+  }
+}

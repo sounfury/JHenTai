@@ -9,18 +9,14 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 /// Floating mini-window for [ImageTranslationService] batch progress.
 /// Shared by the reader and the gallery detail page pre-translate job.
 class ImageTranslationBatchProgressBanner extends StatelessWidget {
-  const ImageTranslationBatchProgressBanner({
-    super.key,
-    this.topPadding,
-  });
+  const ImageTranslationBatchProgressBanner({super.key, this.topPadding});
 
   /// Extra offset below the status bar / app bar. Defaults to status-bar + 8.
   final double? topPadding;
 
   @override
   Widget build(BuildContext context) {
-    final double top =
-        topPadding ?? MediaQuery.of(context).padding.top + 8;
+    final double top = topPadding ?? MediaQuery.of(context).padding.top + 8;
     return Positioned(
       top: top,
       left: 0,
@@ -60,17 +56,13 @@ class ImageTranslationBatchProgressBanner extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       'translationProgress'.trParams({
-                        'current':
-                            '${imageTranslationService.batchCompleted}',
+                        'current': '${imageTranslationService.batchCompleted}',
                         'total': '${imageTranslationService.batchTotal}',
                         'stage': _stageLabel(
                           imageTranslationService.currentStage,
                         ),
                       }),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                     const SizedBox(width: 4),
                     InkWell(
@@ -85,11 +77,7 @@ class ImageTranslationBatchProgressBanner extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       child: const Padding(
                         padding: EdgeInsets.all(2),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        child: Icon(Icons.close, color: Colors.white, size: 16),
                       ),
                     ),
                   ],
@@ -111,10 +99,6 @@ class ImageTranslationBatchProgressBanner extends StatelessWidget {
         return 'translationStageRecognizing'.tr;
       case ImageTranslationStage.translating:
         return 'translationStageTranslating'.tr;
-      case ImageTranslationStage.masking:
-        return 'translationStageMasking'.tr;
-      case ImageTranslationStage.embedding:
-        return 'translationStageEmbedding'.tr;
       case ImageTranslationStage.done:
         return 'translationStageDone'.tr;
     }

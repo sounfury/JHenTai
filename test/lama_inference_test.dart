@@ -83,6 +83,14 @@ void main() {
     input = '${directory.path}/source.png';
     final image = img.Image(width: 128, height: 128);
     img.fill(image, color: img.ColorRgb8(255, 255, 255));
+    // These existing tests exercise native inference/fallback. Use textured
+    // context so the flat-background fast path does not bypass that boundary.
+    for (int y = 15; y <= 35; y++) {
+      for (int x = 15; x <= 33; x++) {
+        final shade = 210 + (x % 5) * 10;
+        image.setPixelRgb(x, y, shade, shade, shade);
+      }
+    }
     img.fillRect(
       image,
       x1: 22,

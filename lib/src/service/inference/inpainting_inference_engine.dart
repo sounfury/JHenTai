@@ -148,16 +148,29 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         clock,
         stageStart,
         'image=${repair.source.width}x${repair.source.height} '
-            'tensor=${repair.input.width}x${repair.input.height}',
+            'tensor=${repair.input == null ? 'none' : '${repair.input!.width}x${repair.input!.height}'} '
+            'flat_pixels=${repair.flatPixels}',
       );
       for (final MapEntry<String, double> entry in repair.timingsMs.entries) {
         _logLamaTiming(
           '[背景融合/LaMa] preprocess.${entry.key}=${entry.value.toStringAsFixed(1)}ms',
         );
       }
-      final LamaInput prepared = repair.input;
+      final LamaInput? modelInput = repair.input;
       token.throwIfCancelled();
       onProgress?.call(0.12);
+      token.throwIfCancelled();
+      if (modelInput == null) {
+        final png = await compute(_encodeFlatRepair, repair.source);
+        await _writeAtomically(outputPath, png, token);
+        _logLamaTiming(
+          '[背景融合/LaMa] flat_fill=${repair.flatPixels} pixels; model skipped',
+        );
+        onProgress?.call(1);
+        completed = true;
+        return;
+      }
+      final LamaInput prepared = modelInput;
 
       final int pixels = prepared.width * prepared.height;
       stageStart = clock.elapsedMicroseconds;
@@ -385,11 +398,23 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     if (!mask.contains(0)) {
       throw StateError('no text pixels remain after mask refinement');
     }
+    stageStart = clock.elapsedMicroseconds;
+    final flat = repairFlatInpaintingRegions(source, mask);
+    timingsMs['flat_fill'] = (clock.elapsedMicroseconds - stageStart) / 1000;
+    if (!flat.remainingMask.contains(0)) {
+      return _PreparedRepair(
+        flat.image,
+        flat.remainingMask,
+        null,
+        timingsMs,
+        flat.repairedPixels,
+      );
+    }
     // Bound feature-map memory independently of the execution provider.
     stageStart = clock.elapsedMicroseconds;
     final LamaInput prepared = prepareLamaInput(
-      source,
-      mask,
+      flat.image,
+      flat.remainingMask,
       maxSide:
           Platform.isAndroid || Platform.isIOS || Platform.isWindows
               ? 1024
@@ -397,12 +422,21 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     );
     timingsMs['resize_tensor'] =
         (clock.elapsedMicroseconds - stageStart) / 1000;
-    return _PreparedRepair(source, mask, prepared, timingsMs);
+    return _PreparedRepair(
+      flat.image,
+      flat.remainingMask,
+      prepared,
+      timingsMs,
+      flat.repairedPixels,
+    );
   }
+
+  static Uint8List _encodeFlatRepair(image.Image source) =>
+      Uint8List.fromList(image.encodePng(source, level: 3));
 
   static _FinishedRepair _finishRepair(_RepairOutput request) {
     final Stopwatch clock = Stopwatch()..start();
-    final LamaInput prepared = request.repair.input;
+    final LamaInput prepared = request.repair.input!;
     final image.Image predicted = _fromNchw(
       request.values,
       prepared.width,
@@ -457,50 +491,14 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     int width,
     int height,
     List<PolygonMask> polygons,
-  ) {
-    final Uint8List result = Uint8List.fromList(
-      List<int>.filled(width * height, 255),
-    );
-    bool painted = false;
-    for (final PolygonMask polygon in polygons) {
-      final int left = math.max(0, polygon.left.floor());
-      final int top = math.max(0, polygon.top.floor());
-      final int right = math.min(width - 1, polygon.right.ceil());
-      final int bottom = math.min(height - 1, polygon.bottom.ceil());
-      for (int y = top; y <= bottom; y++) {
-        for (int x = left; x <= right; x++) {
-          if (_contains(polygon.points, x + 0.5, y + 0.5)) {
-            result[y * width + x] = 0;
-            painted = true;
-          }
-        }
-      }
-    }
-    if (!painted) {
-      throw StateError('polygon masks do not cover any source pixels');
-    }
-    return result;
-  }
-
-  static bool _contains(List<EnginePoint> points, double x, double y) {
-    bool inside = false;
-    for (
-      int index = 0, previous = points.length - 1;
-      index < points.length;
-      previous = index++
-    ) {
-      final EnginePoint current = points[index];
-      final EnginePoint prior = points[previous];
-      final bool crosses = (current.y > y) != (prior.y > y);
-      if (crosses &&
-          x <
-              (prior.x - current.x) * (y - current.y) / (prior.y - current.y) +
-                  current.x) {
-        inside = !inside;
-      }
-    }
-    return inside;
-  }
+  ) => rasterizeInpaintingMask(
+    width,
+    height,
+    polygons.map(
+      (polygon) =>
+          polygon.points.map((p) => math.Point<double>(p.x, p.y)).toList(),
+    ),
+  );
 
   Future<void> _writeAtomically(
     String outputPath,
@@ -535,10 +533,17 @@ class _RepairRequest {
 }
 
 class _PreparedRepair {
-  const _PreparedRepair(this.source, this.mask, this.input, this.timingsMs);
+  const _PreparedRepair(
+    this.source,
+    this.mask,
+    this.input,
+    this.timingsMs,
+    this.flatPixels,
+  );
   final image.Image source;
   final Uint8List mask;
-  final LamaInput input;
+  final LamaInput? input;
+  final int flatPixels;
   final Map<String, double> timingsMs;
 }
 

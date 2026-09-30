@@ -8,7 +8,6 @@ import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
-import 'package:jhentai/src/utils/image_text_grouping.dart';
 import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -47,7 +46,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
           case ImageTranslationStatus.noText:
           case ImageTranslationStatus.canceled:
           case ImageTranslationStatus.failed:
-            return _buildFailureChip(context, result);
+            return _buildResultChip(context, result);
           case ImageTranslationStatus.success:
             return _buildOverlay(context, result);
         }
@@ -119,10 +118,10 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
     );
   }
 
-  Widget _buildFailureChip(
-    BuildContext context,
-    ImageTranslationResult result,
-  ) {
+  Widget _buildResultChip(BuildContext context, ImageTranslationResult result) {
+    // No-text is a completed recognition outcome. Cache hydration may clear
+    // its optional errorMessage, so the status must determine its presentation.
+    final bool noText = result.status == ImageTranslationStatus.noText;
     return Stack(
       alignment: Alignment.topCenter,
       children: [
@@ -141,9 +140,9 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Colors.orangeAccent,
+                  Icon(
+                    noText ? Icons.info_outline : Icons.error_outline,
+                    color: noText ? Colors.white70 : Colors.orangeAccent,
                     size: 16,
                   ),
                   const SizedBox(width: 6),
@@ -157,7 +156,9 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      _errorMessage(result),
+                      noText
+                          ? 'imageTranslationNoText'.tr
+                          : _errorMessage(result),
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
@@ -203,8 +204,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
           id: request.cacheKey,
           builder: (ImageInpaintingService inpainting) {
             return StreamBuilder<Color>(
-              stream:
-                  imageTranslationSetting.translationBackgroundColor.stream,
+              stream: imageTranslationSetting.translationBackgroundColor.stream,
               initialData:
                   imageTranslationSetting.translationBackgroundColor.value,
               builder:
@@ -218,8 +218,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
                             .translationBackgroundOpacity
                             .value,
                     builder: (context, opacitySnapshot) {
-                      final double userOpacity =
-                          opacitySnapshot.data ?? 0.9;
+                      final double userOpacity = opacitySnapshot.data ?? 0.9;
                       // Until a repaired background is restored after hydrate,
                       // keep plates opaque so cached text cannot overlap the
                       // original English glyphs (cold-start overlap bug).
@@ -388,7 +387,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
         return 'imageTranslationRequestFailed'.tr;
       case 'CONTEXT_ENGINE_UNSUPPORTED_PLATFORM':
         return 'imageTranslationUnsupportedPlatform'.tr;
-      // Local-engine runtime failures (llama-server / llama-ffi) and model
+      // Local-engine runtime failures (llama-ffi) and model
       // resolution errors are left to the default branch, which surfaces the
       // CONTEXT_* code verbatim so the exact failure is identifiable.
       default:
@@ -465,151 +464,20 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
     if (visibleImage.isEmpty) {
       return;
     }
-    final double scaleX = visibleImage.width / imageWidth;
-    final double scaleY = visibleImage.height / imageHeight;
-    final List<String> translations =
-        result.translatedText.split('\n').map((line) => line.trim()).toList();
-
-    // Render each speech bubble as one text layout. Keeping each OCR line in a
-    // separate narrow box makes a natural translation fragment into tiny,
-    // disconnected labels; the merged rect gives the whole utterance one
-    // readable size and natural wrapping.
-    final List<(Rect, String, double, Color, bool)> entries =
-        <(Rect, String, double, Color, bool)>[];
-    final List<(Rect, Color)> mergedBackgrounds = <(Rect, Color)>[];
-    final List<RecognizedTextGroup> groups = translationTextGroups(
-      result.blocks,
-      merge: result.mergeTextBlocks,
-      containers: result.containers,
+    final layout = buildTranslationOverlayLayout(
+      result: result,
+      sourceSize: Size(imageWidth.toDouble(), imageHeight.toDouble()),
+      visibleImage: visibleImage,
+      textDirection: textDirection,
+      backgroundColor: backgroundColor,
+      backgroundOpacity: backgroundOpacity,
     );
-    for (int groupIndex = 0; groupIndex < groups.length; groupIndex++) {
-      final RecognizedTextGroup group = groups[groupIndex];
-      Rect? merged;
-      final List<String> groupLines = <String>[];
-      for (final int index in group.blockIndices) {
-        final String translation =
-            index < translations.length ? translations[index] : '';
-        if (translation.trim().isEmpty) {
-          continue;
-        }
-        groupLines.add(translation);
-        // The group rectangle is the unit of layout. For a stable multi-line
-        // container this is expanded beyond the OCR glyph boxes; otherwise it
-        // remains the conservative OCR-group union.
-        if (merged == null) {
-          final RecognizedTextGroupRenderBounds? detected =
-              explicitRenderBoundsForRecognizedTextGroup(
-                group,
-                result.containers,
-              );
-          final RecognizedTextGroupRenderBounds bounds =
-              detected ??
-              renderBoundsForRecognizedTextGroup(group, result.blocks);
-          merged = Rect.fromLTRB(
-            visibleImage.left + bounds.left * scaleX - 4,
-            visibleImage.top + bounds.top * scaleY - 3,
-            visibleImage.left + bounds.right * scaleX + 4,
-            visibleImage.top + bounds.bottom * scaleY + 3,
-          );
-        }
-      }
-      if (merged != null) {
-        final Rect? safeRect = safeTranslationBackgroundRect(merged, size);
-        if (safeRect == null) {
-          continue;
-        }
-        final (plateColor, textColor) = translationBubbleColors(
-          result.blocks,
-          group.blockIndices,
-          backgroundColor,
-          backgroundOpacity,
-        );
-        final String translation =
-            groupIndex < result.translatedGroups.length &&
-                    result.translatedGroups[groupIndex].trim().isNotEmpty
-                ? result.translatedGroups[groupIndex].trim()
-                : groupLines.join('\n');
-        if (translationPreservesSource(
-          group.textOf(result.blocks),
-          translation,
-        )) {
-          continue;
-        }
-        final bool vertical = translationUsesVerticalLayout(
-          result.blocks,
-          group.blockIndices,
-        );
-        final double sourceFont = estimateSourceTranslationFontSize(
-          result.blocks,
-          group.blockIndices,
-          vertical: vertical,
-          scaleY: scaleY,
-          scaleX: scaleX,
-        );
-        final regions = layoutRegionsForRecognizedTextGroup(
-          group,
-          result.containers,
-          blocks: result.blocks,
-        );
-        // Interior text placement must not leave old OCR glyphs visible while
-        // the reader is still using backing plates instead of inpainting.
-        if (regions.isNotEmpty) {
-          for (final index in group.blockIndices) {
-            final block = result.blocks[index];
-            mergedBackgrounds.add((
-              Rect.fromLTWH(
-                visibleImage.left + block.left * scaleX,
-                visibleImage.top + block.top * scaleY,
-                block.width * scaleX,
-                block.height * scaleY,
-              ).intersect(visibleImage),
-              plateColor,
-            ));
-          }
-        }
-        final areas =
-            regions.isEmpty
-                ? <Rect>[safeRect]
-                : <Rect>[
-                  for (final region in regions)
-                    Rect.fromLTWH(
-                      visibleImage.left + region.left * scaleX,
-                      visibleImage.top + region.top * scaleY,
-                      region.width * scaleX,
-                      region.height * scaleY,
-                    ).intersect(visibleImage),
-                ];
-        for (final (rect, text, fontSize) in layoutTranslationInRegions(
-          translation,
-          areas,
-          textDirection,
-          maxFontSize: sourceFont,
-          vertical: vertical,
-        )) {
-          mergedBackgrounds.add((rect, plateColor));
-          entries.add((rect, text, fontSize, textColor, vertical));
-        }
-      }
-    }
-    for (final (Rect rect, Color plateColor) in mergedBackgrounds) {
-      paintTranslationBubbleBackground(
-        canvas,
-        rect,
-        color: plateColor,
-        opacity: backgroundOpacity,
-      );
-    }
-    for (final (rect, translation, fontSize, textColor, vertical) in entries) {
-      paintTranslationBubbleText(
-        canvas,
-        rect,
-        translation,
-        textDirection,
-        fontSize: fontSize,
-        color: textColor,
-        vertical: vertical,
-      );
-    }
+    paintTranslationOverlay(
+      canvas,
+      layout,
+      textDirection: textDirection,
+      backgroundOpacity: backgroundOpacity,
+    );
   }
 
   @override

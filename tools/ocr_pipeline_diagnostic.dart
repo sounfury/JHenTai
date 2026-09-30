@@ -1,5 +1,6 @@
-// Build with Flutter Windows --release -t tools/ocr_pipeline_diagnostic.dart.
+// Build with Flutter Windows --debug -t tools/ocr_pipeline_diagnostic.dart.
 // Run: jhentai.exe <image> <onnx-model-directory> <report.json> [cpu|directml]
+// Optional next arguments: <iterations> <acceptance-case-directory>.
 // This headless entrypoint never initializes account/network services or sends
 // translations. It uses production inference and pixel/layout implementations.
 import 'dart:convert';
@@ -29,6 +30,8 @@ import 'package:jhentai/src/utils/bubble_detection_refinement.dart';
 import 'package:jhentai/src/utils/ocr_artifact_filter.dart';
 import 'package:jhentai/src/utils/sound_effect_style.dart';
 import 'package:jhentai/src/utils/image_text_grouping.dart';
+import 'package:jhentai/src/utils/ocr_layout_protocol.dart';
+import 'image_translation_acceptance_support.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +49,48 @@ Future<void> main(List<String> args) async {
       ort.OrtProvider.CPU,
     ];
     final root = args[1];
+    if (args.length > 5) {
+      final annotation = jsonDecode(
+        await File('${args[5]}/case.json').readAsString(),
+      );
+      if (annotation['ocrArtifactAudit'] == true) {
+        final evidence = await runOcrArtifactCacheAcceptance(
+          caseDirectory: args[5],
+          modelRoot: root,
+          outputDirectory: report.parent.path,
+          runtime: runtime,
+          providers: providers,
+        );
+        await report.writeAsString(
+          jsonEncode({
+            'runs': [
+              {'acceptance': evidence},
+            ],
+          }),
+        );
+        await runtime.dispose();
+        exit(evidence['passed'] == true ? 0 : 1);
+      }
+      if (annotation['backgroundOnly'] == true) {
+        final evidence = await runBackgroundAcceptance(
+          caseDirectory: args[5],
+          sourcePath: args[0],
+          modelRoot: root,
+          outputDirectory: report.parent.path,
+          runtime: runtime,
+          providers: providers,
+        );
+        await report.writeAsString(
+          jsonEncode({
+            'runs': [
+              {'acceptance': evidence},
+            ],
+          }),
+        );
+        await runtime.dispose();
+        exit(evidence['passed'] == true ? 0 : 1);
+      }
+    }
     final ocrRoot = '$root/rapidocr-ppocrv6-small-multilingual';
     final iterations = args.length > 4 ? int.parse(args[4]) : 3;
     for (int run = 0; run < iterations; run++) {
@@ -114,7 +159,7 @@ Future<void> main(List<String> args) async {
       });
       timings.record('pipeline.colors', colorStart);
       final layoutStart = timings.now;
-      blocks = mergeOverlappingOcrArtifacts(blocks);
+      blocks = sortRecognizedTextBlocks(mergeOverlappingOcrArtifacts(blocks));
       final originalDetection = detection;
       if (page != null) {
         detection = await refineBubbleDetection(
@@ -285,6 +330,19 @@ Future<void> main(List<String> args) async {
           'containers': refined,
         },
       });
+      if (args.length > 5) {
+        runs.last['acceptance'] = await runImageTranslationAcceptance(
+          caseDirectory: args[5],
+          sourcePath: args[0],
+          modelRoot: root,
+          outputDirectory: report.parent.path,
+          runtime: runtime,
+          providers: providers,
+          ocr: engine,
+          blocks: blocks,
+          containers: refined.map(RecognizedTextContainer.fromJson).toList(),
+        );
+      }
       await report.writeAsString(
         const JsonEncoder.withIndent('  ').convert({
           'runtime': runtime.runtimeVersion,

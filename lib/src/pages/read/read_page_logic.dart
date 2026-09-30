@@ -27,6 +27,7 @@ import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/context_translation_service.dart';
+import 'package:jhentai/src/service/image_translation/translation_configuration.dart';
 import 'package:jhentai/src/service/engine/context_translation_contract.dart';
 import 'package:jhentai/src/service/reader_image_prefetch_queue.dart';
 import 'package:jhentai/src/service/reader_pipeline_scheduler.dart';
@@ -2298,35 +2299,20 @@ class ReadPageLogic extends GetxController
       if (pages.isEmpty) {
         continue;
       }
-      final String modelVersion = switch (imageTranslationSetting
-          .translatorEngine
-          .value) {
-        ImageTranslationEngine.api =>
-          imageTranslationSetting.translatorModel.value,
-        ImageTranslationEngine.localGguf =>
-          imageTranslationSetting.localModelId.value,
-        ImageTranslationEngine.appleOnDevice => 'apple-on-device',
-      };
+      final configuration = captureImageTranslationConfiguration();
       final ContextTranslationBatchOutcome
       outcome = await _contextTranslationService.translateBatch(
         ContextTranslationBatch(
           pages: pages,
           batchSize: contextSize,
-          modelVersion: modelVersion,
-          // OCR artifact cleanup changes the text sent for context translation.
-          promptVersion: 5,
-          targetLanguage: imageTranslationSetting.targetLanguage.value,
+          modelVersion: configuration.modelVersion,
+          promptVersion: contextTranslationPromptVersion,
+          targetLanguage: configuration.targetLanguage,
           ocrConfiguration: <String, dynamic>{
-            'engine': imageTranslationSetting.ocrEngine.value.name,
-            'onnxModel': imageTranslationSetting.onnxModelId.value,
-            'appleLanguage':
-                imageTranslationSetting.appleLiveTextLanguage.value,
+            'model': configuration.ocrModel,
+            ...configuration.ocr,
           },
-          configuration: <String, dynamic>{
-            'provider': imageTranslationSetting.translatorProvider.value.name,
-            'thinking': imageTranslationSetting.enableThinking.value,
-            'mergeTextBlocks': imageTranslationSetting.autoMergeText.value,
-          },
+          configuration: configuration.translation,
         ),
         batchGeneration: generation,
       );

@@ -4,12 +4,11 @@ import 'dart:math' as math;
 import 'package:lib_llama_cpp/lib_llama_cpp.dart';
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
-import 'package:jhentai/src/utils/image_text_grouping.dart';
 
 import 'context_translation_contract.dart';
 import 'engine_contract.dart';
 import 'gguf_model_store.dart';
-import 'local_translation_prompt.dart';
+import 'translation_protocol.dart';
 import 'model_catalog.dart';
 
 /// The app-owned seam around the federated llama.cpp package.
@@ -184,12 +183,7 @@ class LlamaCppFfiTranslationEngine
         context.report(EngineTaskStage.loading, 0.05);
         await _store.validateInstalled(modelId);
         context.cancellation.throwIfCancelled();
-        final LocalTranslationPrompt prompt = buildLocalTranslationPrompt(
-          request.blocks,
-          request.targetLanguage,
-          mergeTextBlocks: request.mergeTextBlocks,
-          containers: request.containers,
-        );
+        final TranslationPrompt prompt = buildTranslationPrompt(request);
         final String raw = await _runExclusive<String>(() async {
           context.cancellation.throwIfCancelled();
           return _runtime.generate(
@@ -203,7 +197,7 @@ class LlamaCppFfiTranslationEngine
                     ),
             instruction: prompt.instruction,
             prompt: prompt.prompt,
-            maxOutputTokens: _maxOutputTokens(prompt.sourceLines.length),
+            maxOutputTokens: _maxOutputTokens(request.blocks.length),
             imagePath:
                 model.supportsImages && model.imageProjectorArtifactId != null
                     ? request.imagePath
@@ -211,32 +205,18 @@ class LlamaCppFfiTranslationEngine
           );
         });
         context.cancellation.throwIfCancelled();
-        final List<RecognizedTextGroup> groups = translationTextGroups(
-          request.blocks,
-          merge: request.mergeTextBlocks,
-          containers: request.containers,
+        final TranslationResult result = parseTranslationResponse(
+          raw,
+          request,
+          prompt,
         );
-        final List<String> groupTranslations = parseNumberedTranslations(
-          stripLocalReasoning(raw),
-          groups.length,
-          legacyCount: prompt.sourceLines.length,
-        );
-        final List<String> lines = expandGroupTranslationsToLines(
-          blocks: request.blocks,
-          groups: groups,
-          groupTranslations: groupTranslations,
-        );
-        if (lines.every((String line) => line.trim().isEmpty)) {
+        if (result.lines.every((String line) => line.trim().isEmpty)) {
           throw const FormatException(
             'The local llama.cpp runtime returned no translation.',
           );
         }
         context.report(EngineTaskStage.finalizing, 0.98);
-        return TranslationResult(
-          translatedText: lines.join('\n'),
-          lines: lines,
-          groupTranslations: groupTranslations,
-        );
+        return result;
       } on EngineException {
         rethrow;
       } on Object catch (error) {
@@ -272,8 +252,7 @@ class LlamaCppFfiTranslationEngine
         context.report(EngineTaskStage.loading, 0.05);
         await _store.validateInstalled(modelId);
         context.cancellation.throwIfCancelled();
-        final LocalContextTranslationPrompt prompt =
-            buildLocalContextTranslationPrompt(request);
+        final TranslationPrompt prompt = buildContextTranslationPrompt(request);
         final String raw = await _runExclusive<String>(() async {
           context.cancellation.throwIfCancelled();
           return _runtime.generate(
@@ -285,7 +264,7 @@ class LlamaCppFfiTranslationEngine
         });
         context.cancellation.throwIfCancelled();
         context.report(EngineTaskStage.finalizing, 0.98);
-        return parseLocalContextTranslationResponse(stripLocalReasoning(raw));
+        return parseContextTranslationResponse(raw);
       } on EngineException {
         rethrow;
       } on Object catch (error) {

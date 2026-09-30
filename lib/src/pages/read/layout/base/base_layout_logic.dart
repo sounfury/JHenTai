@@ -418,48 +418,22 @@ abstract class BaseLayoutLogic extends GetxController
   /// It runs after OCR/translation so large native inference sessions do not
   /// overlap on memory-constrained mobile devices.
   Future<void> repairTranslatedImage(int index, {bool force = false}) async {
-    final ImageProcessingDisplayMode mode =
-        imageTranslationSetting.imageProcessingDisplayMode.value;
-    if (mode == ImageProcessingDisplayMode.overlay) return;
     final ImageTranslationRequest? request =
         readPageState.imageTranslationRequests[index];
-    final String? sourcePath = request?.imagePath;
-    if (request == null || sourcePath == null) return;
-    final ImageTranslationResult translation =
-        imageTranslationService.resultFor(request.cacheKey);
-    if (translation.status != ImageTranslationStatus.success) {
+    if (request == null) {
       return;
     }
-    imageInpaintingService.setDisplayMode(mode);
-    // Prefer the request-keyed on-disk repair index so cold start / viewport
-    // hydrate can swap to the cleaned background without waiting on CTD.
-    if (!force) {
-      final InpaintingResult? cached = await imageInpaintingService
-          .hydrateCachedRepair(
-            requestKey: request.cacheKey,
-            sourcePath: sourcePath,
-          );
-      if (cached != null && cached.status == InpaintingStatus.success) {
-        updateSafely([BaseLayoutLogic.pageId]);
-        return;
-      }
-    }
-    final List<RecognizedTextBlock> eraseBlocks =
-        translatedBlocksEligibleForErase(translation);
-    if (eraseBlocks.isEmpty) {
-      // Sparse/empty translation must not trigger a full-page CTD erase.
-      return;
-    }
-    final InpaintingResult repairResult = await imageInpaintingService
-        .detectAndRepair(
+    final InpaintingResult? repairResult = await imageInpaintingService
+        .repairTranslation(
           requestKey: request.cacheKey,
-          sourcePath: sourcePath,
+          sourcePath: request.imagePath,
+          translation: imageTranslationService.resultFor(request.cacheKey),
+          mode: imageTranslationSetting.imageProcessingDisplayMode.value,
           force: force,
-          eraseOnlyBlocks: eraseBlocks,
-          protectedBlocks: translation.blocks
-              .where((block) => !eraseBlocks.contains(block))
-              .toList(growable: false),
         );
+    if (repairResult == null) {
+      return;
+    }
     if (repairResult.fallbackToOverlay &&
         repairResult.errorCode != null &&
         repairResult.errorCode != 'canceled' &&

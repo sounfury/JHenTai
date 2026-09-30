@@ -1,33 +1,23 @@
 import 'dart:convert';
 
-import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/utils/image_text_grouping.dart';
 
 import 'context_translation_contract.dart';
+import 'engine_contract.dart';
 
-class LocalTranslationPrompt {
-  const LocalTranslationPrompt({
+class TranslationPrompt {
+  const TranslationPrompt({
     required this.instruction,
     required this.prompt,
-    required this.sourceLines,
+    this.groups = const <RecognizedTextGroup>[],
   });
 
   final String instruction;
   final String prompt;
-  final List<String> sourceLines;
+  final List<RecognizedTextGroup> groups;
 }
 
-class LocalContextTranslationPrompt {
-  const LocalContextTranslationPrompt({
-    required this.instruction,
-    required this.prompt,
-  });
-
-  final String instruction;
-  final String prompt;
-}
-
-LocalContextTranslationPrompt buildLocalContextTranslationPrompt(
+TranslationPrompt buildContextTranslationPrompt(
   ContextTranslationEngineRequest request,
 ) {
   const String instruction =
@@ -36,7 +26,7 @@ LocalContextTranslationPrompt buildLocalContextTranslationPrompt(
       'Sound effects outside speech bubbles have already been excluded. '
       'Return only one JSON object with a translations array. Every item must contain the exact input pageId and lineId plus translated text. '
       'Return items only for targetPageIds, preserve every target line exactly once, and never add markdown, commentary, or reasoning.';
-  return LocalContextTranslationPrompt(
+  return TranslationPrompt(
     instruction: instruction,
     prompt: jsonEncode(<String, dynamic>{
       'targetLanguage': request.targetLanguage,
@@ -58,7 +48,7 @@ LocalContextTranslationPrompt buildLocalContextTranslationPrompt(
   );
 }
 
-ContextTranslationResult parseLocalContextTranslationResponse(dynamic value) {
+ContextTranslationResult parseContextTranslationResponse(dynamic value) {
   if (value is Map && value['translations'] is List) {
     return ContextTranslationResult.fromJson(value);
   }
@@ -70,11 +60,11 @@ ContextTranslationResult parseLocalContextTranslationResponse(dynamic value) {
           : null;
   if (text == null || text.trim().isEmpty) {
     throw const FormatException(
-      'The local translation runtime returned no context translation.',
+      'The translation response contained no context translation.',
     );
   }
   final String cleaned =
-      stripLocalReasoning(text)
+      stripTranslationReasoning(text)
           .replaceFirst(
             RegExp(r'^\s*```(?:json)?\s*', caseSensitive: false),
             '',
@@ -85,7 +75,7 @@ ContextTranslationResult parseLocalContextTranslationResponse(dynamic value) {
   final int end = cleaned.lastIndexOf('}');
   if (start < 0 || end < start) {
     throw const FormatException(
-      'The local context translation did not contain a JSON object.',
+      'Context translation response did not contain a JSON object.',
     );
   }
   return ContextTranslationResult.fromJson(
@@ -93,21 +83,16 @@ ContextTranslationResult parseLocalContextTranslationResponse(dynamic value) {
   );
 }
 
-LocalTranslationPrompt buildLocalTranslationPrompt(
-  List<RecognizedTextBlock> blocks,
-  String targetLanguage, {
-  bool mergeTextBlocks = true,
-  List<RecognizedTextContainer> containers = const <RecognizedTextContainer>[],
-}) {
-  final List<String> sourceLines = blocks
-      .map((RecognizedTextBlock block) => block.text.trim())
-      .toList(growable: false);
+TranslationPrompt buildTranslationPrompt(TranslationEngineRequest request) {
   final List<RecognizedTextGroup> groups = translationTextGroups(
-    blocks,
-    merge: mergeTextBlocks,
-    containers: containers,
+    request.blocks,
+    merge: request.mergeTextBlocks,
+    containers: request.containers,
   );
-  final String numberedSource = buildGroupedTranslationSource(blocks, groups);
+  final String numberedSource = buildGroupedTranslationSource(
+    request.blocks,
+    groups,
+  );
   const String instruction =
       'You translate comic dialogue accurately. Each numbered group is one speech bubble or utterance. '
       'Translate the whole group as one natural, context-aware utterance. Keep names, tone, hesitation, '
@@ -115,19 +100,37 @@ LocalTranslationPrompt buildLocalTranslationPrompt(
       'Sound effects outside speech bubbles have already been excluded. Return exactly one translated line per group, '
       'using the same group number (for example "1: ..."). Do not split a group into extra lines, '
       'add headings or commentary, or include reasoning/think blocks.';
-  return LocalTranslationPrompt(
+  return TranslationPrompt(
     instruction: instruction,
     prompt:
-        'Translate the following comic text into $targetLanguage. Keep the same group numbers:\n\n$numberedSource',
-    sourceLines: sourceLines,
+        'Translate the following comic text into ${request.targetLanguage}. Keep the same group numbers:\n\n$numberedSource',
+    groups: groups,
   );
 }
 
-List<String> parseLocalNumberedTranslations(String text, int lineCount) {
-  return parseNumberedTranslations(text, lineCount);
+TranslationResult parseTranslationResponse(
+  String text,
+  TranslationEngineRequest request,
+  TranslationPrompt prompt,
+) {
+  final List<String> groupTranslations = parseNumberedTranslations(
+    stripTranslationReasoning(text),
+    prompt.groups.length,
+    legacyCount: request.blocks.length,
+  );
+  final List<String> lines = expandGroupTranslationsToLines(
+    blocks: request.blocks,
+    groups: prompt.groups,
+    groupTranslations: groupTranslations,
+  );
+  return TranslationResult(
+    translatedText: lines.join('\n'),
+    lines: lines,
+    groupTranslations: groupTranslations,
+  );
 }
 
-String stripLocalReasoning(String text) =>
+String stripTranslationReasoning(String text) =>
     text
         .replaceAllMapped(
           RegExp(r'<think>[\s\S]*?</think>', caseSensitive: false),

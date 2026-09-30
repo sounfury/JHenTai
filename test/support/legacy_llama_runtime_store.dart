@@ -5,9 +5,11 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-import '../../utils/archive_util.dart';
-import '../path_service.dart';
-import 'model_catalog.dart';
+// Historical installer fixture, retained only for the existing archive tests.
+// Production local translation uses the bundled FFI runtime.
+import 'package:jhentai/src/utils/archive_util.dart';
+import 'package:jhentai/src/service/path_service.dart';
+import 'package:jhentai/src/service/engine/model_catalog.dart';
 
 class LlamaRuntimeArtifact {
   const LlamaRuntimeArtifact({

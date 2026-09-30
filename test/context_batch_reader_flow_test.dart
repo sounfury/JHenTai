@@ -7,6 +7,8 @@ import 'package:jhentai/src/service/engine/context_translation_contract.dart';
 import 'package:jhentai/src/service/engine/engine_contract.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 
+import 'support/test_logging.dart';
+
 /// A fake engine that behaves like a *cooperative* model: it echoes the exact
 /// pageId/lineId pairs from the request. This mirrors what the existing service
 /// tests assume.
@@ -139,6 +141,7 @@ Future<ContextTranslationBatchOutcome?> runReaderFlow({
 }
 
 void main() {
+  setUpTestLogging();
   test(
     'reader multi-batch context flow succeeds when the engine echoes exact IDs',
     () async {

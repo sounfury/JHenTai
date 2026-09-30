@@ -1,0 +1,10 @@
+{
+  "id": "no_text_status",
+  "reportedOn": "2026-09-30",
+  "symptom": "预翻译监控为无文字，进入阅读页却显示翻译失败",
+  "cacheSource": "c3dc64eb60b6719c885fcb27a30ff2b85e8d96a3178d83c94eeb6f2bf58918de.json",
+  "files": {
+    "cached_result.json": "b2eea3a91638daab5a173b315b30618b2a622ab6c7db55e9ca948d91c9aaabea",
+    "observed.png": "c6544c0f36639415415d879e1102c344bfc4638383b3553ca22636e18f693232"
+  }
+}

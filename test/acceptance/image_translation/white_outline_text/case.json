@@ -1,0 +1,57 @@
+{
+  "id": "white_outline_text",
+  "backgroundOnly": true,
+  "reportedOn": "2026-09-30",
+  "symptom": "灰色气泡里的白描边黑字擦除后留下白色原文字形",
+  "sourceWidth": 1280,
+  "sourceHeight": 963,
+  "textBounds": [
+    1109,
+    59,
+    71,
+    204
+  ],
+  "translatedBlocks": [
+    {
+      "text": "少し静かにして",
+      "confidence": 0.9980701378413609,
+      "left": 1149.9562655804343,
+      "top": 59.60626558043435,
+      "width": 28.96246883913136,
+      "height": 144.60934383913127,
+      "backgroundColor": 4294572795,
+      "sourceGlyphWidth": 30.0,
+      "sourceGlyphHeight": 146.0
+    },
+    {
+      "text": "吟子の可愛い声が",
+      "confidence": 0.998646505177021,
+      "left": 1129.3025941755293,
+      "top": 59.51509417552927,
+      "width": 29.144811648941413,
+      "height": 162.84793664894147,
+      "backgroundColor": 4294572539,
+      "sourceGlyphWidth": 30.0,
+      "sourceGlyphHeight": 58.0
+    },
+    {
+      "text": "部屋から漏れちゃうよ",
+      "confidence": 0.9992615580558777,
+      "left": 1109.5821435237776,
+      "top": 60.381101857110835,
+      "width": 29.419046285778222,
+      "height": 201.2409212857783,
+      "backgroundColor": 4294507003,
+      "sourceGlyphWidth": 31.0,
+      "sourceGlyphHeight": 202.0
+    }
+  ],
+  "maxResidualFraction": 0.01,
+  "files": {
+    "observed.png": "77a432ae5e8af0869cd74ee4b8e164a0e4789ead9dd4d83db9f571224441f790",
+    "observed_background.png": "23dbc7f2c130bd881a174098d54b687a87e24abac5463db54b622d3436344da3",
+    "pipeline_snapshot.json": "97131ee2aef1565b8a1f6a9d629aa2fd54c51f6aa6faa5a5bb8b0e08491e9307",
+    "source.png": "e51af073a8c8f0749a7bd35b85e226d5126a95a8ebb9aa574e168237599ee862",
+    "source_detail.png": "f85ca6713071f22136bad3181e8c6c2e0dbcb3e366e976b4fe06957a2929bfdc"
+  }
+}

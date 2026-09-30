@@ -1,0 +1,29 @@
+{
+  "id": "background_residual",
+  "reportedOn": "2026-09-30",
+  "sourceWidth": 1198,
+  "sourceHeight": 291,
+  "symptom": "背景修复仍留下模糊的日文黑字，冷启动和热运行耗时差异很大。",
+  "targetSourceText": "先輩～",
+  "targetTranslation": "前辈～",
+  "translations": {
+    "ハロウィンイベにて": "在万圣节活动上",
+    "牢屋に閉じ込められ": "两人被关进牢房",
+    "なんとか脱出方法を": "虽然想办法",
+    "探る２人であったが…": "寻找逃脱的方法……",
+    "先輩～": "前辈～",
+    "申し訳ありませぬ": "真是抱歉",
+    "先輩の魅力的なバニーに": "前辈那充满魅力的兔女郎",
+    "目移りしてしまい": "让我看入迷了",
+    "ブッ扱けよ": "揍飞它啊",
+    "いいからさっさと": "别管了快点"
+  },
+  "files": {
+    "source.png": "1da843b20149848552312c75180f6daef3194c406f0775918210dc08aa9ad1a0",
+    "observed.png": "69d2aa003a9c8a18120c67193b0fa168249a7c6f49dcce50f9a3d95aa416f025",
+    "observed_background.png": "633e506446811a428d75f32fda6ab2112a87db518fc0297c074bb1d2ceb8a7e9",
+    "pipeline_snapshot.json": "6c013757dd004cf17b6ba1e4d16a36bfb5bb93d7cab53c5841f17f0e621d1c23"
+  },
+  "maxResidualInkFraction": 0.01,
+  "expectNoLamaSession": true
+}

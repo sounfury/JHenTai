@@ -71,9 +71,6 @@ class ImageTranslationSetting
   /// Verified GGUF catalog id used by the local llama.cpp adapter.
   final RxString localModelId = 'qwen35-0.8b-q4-k-m'.obs;
 
-  /// Desktop llama-server executable. Mobile never reads this path and uses
-  /// the maintained FFI bridge instead.
-  final RxnString localLlamaServerPath = RxnString();
   final RxnString translatorEndpoint = RxnString();
   final RxnString translatorApiKey = RxnString();
   final RxString translatorModel = 'gpt-4.1-mini'.obs;
@@ -176,7 +173,6 @@ class ImageTranslationSetting
     translatorApiKey.value = config['translatorApiKey'];
     translatorModel.value = config['translatorModel'] ?? translatorModel.value;
     localModelId.value = config['localModelId'] ?? localModelId.value;
-    localLlamaServerPath.value = config['localLlamaServerPath'];
     targetLanguage.value = config['targetLanguage'] ?? targetLanguage.value;
     enableThinking.value = config['enableThinking'] ?? enableThinking.value;
     autoMergeText.value = config['autoMergeText'] ?? autoMergeText.value;
@@ -248,7 +244,6 @@ class ImageTranslationSetting
     'translatorApiKey': translatorApiKey.value,
     'translatorModel': translatorModel.value,
     'localModelId': localModelId.value,
-    'localLlamaServerPath': localLlamaServerPath.value,
     'targetLanguage': targetLanguage.value,
     'enableThinking': enableThinking.value,
     'autoMergeText': autoMergeText.value,
@@ -463,11 +458,6 @@ class ImageTranslationSetting
       return;
     }
     localModelId.value = value.trim();
-    await saveBeanConfig();
-  }
-
-  Future<void> saveLocalLlamaServerPath(String value) async {
-    localLlamaServerPath.value = value.trim().isEmpty ? null : value.trim();
     await saveBeanConfig();
   }
 
