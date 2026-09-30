@@ -31,6 +31,8 @@ Windows 本机模型验收（真实 OCR、气泡检测、CTD、LaMa、生产成�
 | [senpai_background_loss](image_translation/senpai_background_loss/case.json) | 相连气泡的“前辈～”被挪到大气泡，小气泡只剩擦除残影 | 两个气泡分别获得文字；“前辈～”留在原来的小气泡；整组译文完整 |
 | [background_residual](image_translation/background_residual/case.json) | 原字已被修复替换，但白气泡仍有灰色日文残影，首次模型推理慢 | 原墨点恢复纸色；擦除区外像素不变；此纯白案例无需创建 LaMa 会话；中文位置正确 |
 | [white_outline_text](image_translation/white_outline_text/case.json) | 灰色气泡里的白描边黑字留下白色原文字形 | 黑色笔画和白色描边一起清除；气泡边框及周围画面保持原样 |
+| [pink_outline_text](image_translation/pink_outline_text/case.json) | 浅粉色渐变底色与白描边连通，旧阈值漏擦描边 | 根据局部底色自动识别描边；多种派生底色均覆盖原字；边框及拟声词保持原样 |
+| [connected_outline_text](image_translation/connected_outline_text/case.json) | 弯斜相连的竖排文字区域混入气泡外背景采样，修复后留下淡色原字 | 沿实际轮廓采样，恢复均匀灰底；无需 LaMa 会话；边框及拟声词不变 |
 | [no_text_status](reader/no_text_status/case.json) | 预翻译监控为“无文字”，阅读页却显示“翻译失败” | 缓存恢复后提示“未在图片中识别到文字”；保留手动重试；真实失败仍显示失败 |
 | [false_text_gallery_16](image_translation/false_text_gallery_16/case.json) | 16页漫画有8页无字，但6页被画面误识别成短字符并缓存为翻译完成 | 第9–16页为无文字；保留前8页译文；纠正旧缓存并落盘；重启不重复复核 |
 

@@ -8,7 +8,15 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Push-Location -LiteralPath $projectRoot
 try {
-    flutter test --no-pub test/acceptance
+    if ($CaseId) {
+        $quickTests = @(Get-ChildItem -LiteralPath 'test/acceptance' -Filter '*_test.dart' -File -Recurse |
+            Where-Object { $_.BaseName -eq "${CaseId}_test" })
+        if ($quickTests.Count -eq 0) { throw "No matching acceptance test: $CaseId" }
+        $quickTestPaths = @($quickTests | ForEach-Object { $_.FullName })
+        flutter test --no-pub @quickTestPaths
+    } else {
+        flutter test --no-pub test/acceptance
+    }
     if ($LASTEXITCODE -ne 0) { throw 'Acceptance regression tests failed.' }
     if (-not $WithModels) { return }
 

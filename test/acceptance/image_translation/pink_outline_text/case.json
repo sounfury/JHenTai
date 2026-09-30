@@ -1,0 +1,61 @@
+{
+  "id": "pink_outline_text",
+  "backgroundOnly": true,
+  "reportedOn": "2026-10-01",
+  "symptom": "浅粉色渐变气泡中的白描边原字残留",
+  "sourceWidth": 1280,
+  "sourceHeight": 963,
+  "textBounds": [
+    123,
+    335,
+    50,
+    185
+  ],
+  "translatedBlocks": [
+    {
+      "text": "わたくし…そんな事",
+      "confidence": 0.9941992229885526,
+      "left": 142.96957017144058,
+      "top": 335.2914451714406,
+      "width": 29.31085965711884,
+      "height": 184.0796096571189,
+      "backgroundColor": 4294768888,
+      "sourceGlyphWidth": 18.0,
+      "sourceGlyphHeight": 17.0
+    },
+    {
+      "text": "言えま…",
+      "confidence": 0.9687761515378952,
+      "left": 123.11867396708223,
+      "top": 336.0030489670823,
+      "width": 27.88765206583554,
+      "height": 87.35952706583555,
+      "backgroundColor": 4294768888,
+      "sourceGlyphWidth": 15.0,
+      "sourceGlyphHeight": 16.0
+    }
+  ],
+  "maxResidualFraction": 0.01,
+  "whiteSourceThreshold": 245,
+  "whiteResidualThreshold": 240,
+  "files": {
+    "observed.png": "079f1e53a79cabd6a03d496b6367163aa6f9c2c6e91eafed5aeea1756848b72b",
+    "source.png": "01a35b225836bf7ec12aa3e6f518d2cdc704058d06308490a6cce8cd8b51b1e6",
+    "source_detail.png": "fffbb01f1048c7de7b879ee20fcb78b1ffc73f0eb2c44c10335b2ee219b1150f",
+    "pipeline_snapshot.json": "1f4a739b0ba15bc4ee71d14b8358d5b40738af268c6274a3d8ea7b561bcc5a7b"
+  },
+  "evaluationRects": [
+    [
+      143,
+      335,
+      30,
+      185
+    ],
+    [
+      123,
+      336,
+      28,
+      88
+    ]
+  ]
+}

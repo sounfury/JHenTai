@@ -138,14 +138,36 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
   final source = img.decodeImage(await File(sourcePath).readAsBytes())!;
   final repaired = img.decodeImage(await File(output).readAsBytes())!;
   final bounds = annotation['textBounds'] as List;
+  final evaluationRects = annotation['evaluationRects'] as List?;
+  final uniformBackground = annotation['uniformBackgroundColor'] as List?;
+  final lamaSessionReady = [
+    '$modelRoot/lama-large-512px/lamalarge.onnx',
+    '$modelRoot/lama-large-512px/lamalarge.onnx.dml-rank4-v1.onnx',
+  ].any((path) => runtime.hasReadySessions([path]));
+  int foreground = 0, backgroundResidual = 0;
   int white = 0, whiteResidual = 0, black = 0, blackResidual = 0;
   for (int y = bounds[1]; y < bounds[1] + bounds[3]; y++) {
     for (int x = bounds[0]; x < bounds[0] + bounds[2]; x++) {
+      if (evaluationRects != null &&
+          !evaluationRects.any(
+            (r) => x >= r[0] && x < r[0] + r[2] && y >= r[1] && y < r[1] + r[3],
+          ))
+        continue;
       final before = source.getPixel(x, y).luminance;
       final after = repaired.getPixel(x, y).luminance;
-      if (before > 235) {
+      if (uniformBackground != null && (before > 235 || before < 80)) {
+        foreground++;
+        final pixel = repaired.getPixel(x, y);
+        if ((pixel.r - uniformBackground[0]).abs() > 12 ||
+            (pixel.g - uniformBackground[1]).abs() > 12 ||
+            (pixel.b - uniformBackground[2]).abs() > 12) {
+          backgroundResidual++;
+        }
+      }
+      if (before > (annotation['whiteSourceThreshold'] ?? 235)) {
         white++;
-        if (after > 220) whiteResidual++;
+        if (after > (annotation['whiteResidualThreshold'] ?? 220))
+          whiteResidual++;
       }
       if (before < 80) {
         black++;
@@ -157,6 +179,9 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
     'case': annotation['id'],
     'repairMilliseconds': clock.elapsedMilliseconds,
     'selectedMasks': masks.length,
+    'lamaSessionReady': lamaSessionReady,
+    if (uniformBackground != null)
+      'backgroundResidualFraction': backgroundResidual / foreground,
     'whitePixels': white,
     'blackPixels': black,
     'whiteResidualFraction': whiteResidual / white,
@@ -165,7 +190,12 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
         white > 100 &&
         black > 100 &&
         whiteResidual / white < annotation['maxResidualFraction'] &&
-        blackResidual / black < annotation['maxResidualFraction'],
+        blackResidual / black < annotation['maxResidualFraction'] &&
+        (uniformBackground == null ||
+            (foreground > 100 &&
+                backgroundResidual / foreground <
+                    annotation['maxResidualFraction'])) &&
+        (annotation['expectNoLamaSession'] != true || !lamaSessionReady),
   };
   await File(
     '$outputDirectory/acceptance.json',

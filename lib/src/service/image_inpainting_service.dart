@@ -167,7 +167,7 @@ class ImageInpaintingService extends GetxController
     implements JHLifeCircleBean {
   // Old request indexes may point to a background erased under a previous
   // OCR, sound-effect, or mask-matching policy.
-  static const int _requestIndexPolicyVersion = 6;
+  static const int _requestIndexPolicyVersion = 8;
 
   ImageInpaintingService({EngineRegistry? registry})
     : engineRegistry = registry ?? EngineRegistry();
@@ -831,7 +831,7 @@ class ImageInpaintingService extends GetxController
                 'sourceHash': sourceHash,
                 'maskHash': maskHash,
                 'modelHash': modelHash,
-                'pipeline': 'lama-refined-v3-outlined-fill',
+                'pipeline': 'lama-refined-v5-contour-context',
               }),
             ),
           )

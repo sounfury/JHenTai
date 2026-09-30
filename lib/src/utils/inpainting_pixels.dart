@@ -75,13 +75,8 @@ FlatInpaintingResult repairFlatInpaintingRegions(
     queue.clear();
     queue.add(seed);
     visited[seed] = 1;
-    int left = seed % w, right = left, top = seed ~/ w, bottom = top;
     for (int head = 0; head < queue.length; head++) {
       final i = queue[head], x = i % w, y = i ~/ w;
-      left = math.min(left, x);
-      right = math.max(right, x);
-      top = math.min(top, y);
-      bottom = math.max(bottom, y);
       for (int dy = -1; dy <= 1; dy++) {
         for (int dx = -1; dx <= 1; dx++) {
           final nx = x + dx, ny = y + dy;
@@ -94,25 +89,50 @@ FlatInpaintingResult repairFlatInpaintingRegions(
         }
       }
     }
-    final x0 = math.max(0, left - 3), x1 = math.min(w - 1, right + 3);
-    final y0 = math.max(0, top - 3), y1 = math.min(h - 1, bottom + 3);
+    // Follow the actual component contour. The bounding rectangle of joined
+    // or slanted columns can include the balloon border and outside artwork,
+    // wrongly sending a uniform fill through generative inpainting.
+    final context = <int>{};
+    for (final i in queue) {
+      final x = i % w, y = i ~/ w;
+      bool boundary = false;
+      for (int dy = -1; dy <= 1 && !boundary; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+          final nx = x + dx, ny = y + dy;
+          if (nx >= 0 &&
+              ny >= 0 &&
+              nx < w &&
+              ny < h &&
+              knownMask[ny * w + nx] != 0) {
+            boundary = true;
+            break;
+          }
+        }
+      }
+      if (!boundary) continue;
+      for (int dy = -3; dy <= 3; dy++) {
+        for (int dx = -3; dx <= 3; dx++) {
+          final nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          final next = ny * w + nx;
+          if (knownMask[next] != 0) context.add(next);
+        }
+      }
+    }
     final bins = <int, List<int>>{};
     int samples = 0;
-    for (int y = y0; y <= y1; y++) {
-      for (int x = x0; x <= x1; x++) {
-        if (knownMask[y * w + x] == 0) continue;
-        final p = source.getPixel(x, y);
-        final r = p.r.toInt(), g = p.g.toInt(), b = p.b.toInt();
-        final bin = bins.putIfAbsent(
-          (r >> 4) * 256 + (g >> 4) * 16 + (b >> 4),
-          () => [0, 0, 0, 0],
-        );
-        bin[0]++;
-        bin[1] += r;
-        bin[2] += g;
-        bin[3] += b;
-        samples++;
-      }
+    for (final i in context) {
+      final p = source.getPixel(i % w, i ~/ w);
+      final r = p.r.toInt(), g = p.g.toInt(), b = p.b.toInt();
+      final bin = bins.putIfAbsent(
+        (r >> 4) * 256 + (g >> 4) * 16 + (b >> 4),
+        () => [0, 0, 0, 0],
+      );
+      bin[0]++;
+      bin[1] += r;
+      bin[2] += g;
+      bin[3] += b;
+      samples++;
     }
     if (samples < 12) continue;
     final best = bins.values.reduce((a, b) => a[0] >= b[0] ? a : b);
@@ -123,15 +143,12 @@ FlatInpaintingResult repairFlatInpaintingRegions(
     // small luminance variation only around an almost-white dominant colour.
     final tolerance = r >= 250 && g >= 250 && b >= 250 ? 20 : 8;
     int agreeing = 0;
-    for (int y = y0; y <= y1; y++) {
-      for (int x = x0; x <= x1; x++) {
-        if (knownMask[y * w + x] == 0) continue;
-        final p = source.getPixel(x, y);
-        if ((p.r - r).abs() <= tolerance &&
-            (p.g - g).abs() <= tolerance &&
-            (p.b - b).abs() <= tolerance)
-          agreeing++;
-      }
+    for (final i in context) {
+      final p = source.getPixel(i % w, i ~/ w);
+      if ((p.r - r).abs() <= tolerance &&
+          (p.g - g).abs() <= tolerance &&
+          (p.b - b).abs() <= tolerance)
+        agreeing++;
     }
     if (agreeing < samples * .97) continue;
     for (final i in queue) {
@@ -160,7 +177,8 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
       gray[y * w + x] = ((p.r * 299 + p.g * 587 + p.b * 114) / 1000).round();
     }
   }
-  // The extra bright pass separates white outlines from a midtone balloon.
+  final outlineCandidates = _contrastOutlineCandidates(gray, coarse, w, h);
+  // Local background contrast separates white outlines from the balloon.
   // Outlines may connect several letters, so only this pass accepts taller
   // components, and only when anchored to already accepted dark glyphs.
   for (int polarity = 0; polarity < 3; polarity++) {
@@ -169,7 +187,7 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
     bool isInk(int i) => switch (polarity) {
       0 => gray[i] < 180,
       1 => gray[i] > 75,
-      _ => gray[i] > 220,
+      _ => outlineCandidates[i] != 0,
     };
     for (int seed = 0; seed < coarse.length; seed++) {
       if (visited[seed] != 0 || !isInk(seed)) continue;
@@ -237,6 +255,91 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
     }
   }
   return result;
+}
+
+/// Estimate the surrounding tone independently for short bands of each CTD
+/// region. A dominant histogram bin rejects incidental ink in the context;
+/// bands follow gradients instead of assuming a page-wide background colour.
+/// Only pixels brighter than the midpoint between that tone and white become
+/// candidates. Detector support and dark-glyph anchors are still checked by
+/// [refineInpaintingMask] before any candidate authorizes erasure.
+Uint8List _contrastOutlineCandidates(
+  Uint8List gray,
+  Uint8List coarse,
+  int w,
+  int h,
+) {
+  final candidates = Uint8List(w * h);
+  final visited = Uint8List(w * h);
+  final queue = <int>[];
+  for (int seed = 0; seed < coarse.length; seed++) {
+    if (coarse[seed] != 0 || visited[seed] != 0) continue;
+    queue.clear();
+    queue.add(seed);
+    visited[seed] = 1;
+    int left = seed % w, right = left, top = seed ~/ w, bottom = top;
+    for (int head = 0; head < queue.length; head++) {
+      final i = queue[head], x = i % w, y = i ~/ w;
+      left = math.min(left, x);
+      right = math.max(right, x);
+      top = math.min(top, y);
+      bottom = math.max(bottom, y);
+      for (int dy = -1; dy <= 1; dy++) {
+        for (int dx = -1; dx <= 1; dx++) {
+          final nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          final next = ny * w + nx;
+          if (coarse[next] == 0 && visited[next] == 0) {
+            visited[next] = 1;
+            queue.add(next);
+          }
+        }
+      }
+    }
+    final shortSide = math.min(right - left + 1, bottom - top + 1);
+    final bandSize = (shortSide ~/ 2).clamp(8, 32);
+    final margin = (shortSide * .2).ceil().clamp(4, 12);
+    final x0 = math.max(0, left - margin), x1 = math.min(w - 1, right + margin);
+    final y0 = math.max(0, top - 4), y1 = math.min(h - 1, bottom + 4);
+    for (int band = y0; band <= y1; band += bandSize) {
+      final end = math.min(y1, band + bandSize - 1);
+      final counts = List<int>.filled(32, 0);
+      final sums = List<int>.filled(32, 0);
+      int samples = 0;
+      for (
+        int y = math.max(0, band - margin);
+        y <= math.min(h - 1, end + margin);
+        y++
+      ) {
+        for (int x = x0; x <= x1; x++) {
+          final i = y * w + x;
+          if (coarse[i] == 0) continue;
+          final bin = gray[i] >> 3;
+          counts[bin]++;
+          sums[bin] += gray[i];
+          samples++;
+        }
+      }
+      if (samples < 12) continue;
+      int best = 0;
+      for (int bin = 1; bin < counts.length; bin++) {
+        if (counts[bin] > counts[best]) best = bin;
+      }
+      final background = sums[best] / counts[best];
+      final threshold = background + (255 - background) * .5;
+      for (int y = band; y <= end; y++) {
+        for (
+          int x = math.max(0, left - 4);
+          x <= math.min(w - 1, right + 4);
+          x++
+        ) {
+          final i = y * w + x;
+          if (gray[i] > threshold) candidates[i] = 1;
+        }
+      }
+    }
+  }
+  return candidates;
 }
 
 class LamaInput {

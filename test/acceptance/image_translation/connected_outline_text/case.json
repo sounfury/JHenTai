@@ -1,0 +1,99 @@
+{
+  "id": "connected_outline_text",
+  "backgroundOnly": true,
+  "reportedOn": "2026-10-01",
+  "symptom": "相连灰色气泡的长竖排字串仍有局部原文残影",
+  "sourceWidth": 1280,
+  "sourceHeight": 963,
+  "textBounds": [
+    669,
+    41,
+    111,
+    244
+  ],
+  "evaluationRects": [
+    [
+      750.7677649154051,
+      42.92713991540518,
+      28.46447016918978,
+      88.68947016918966
+    ],
+    [
+      727.623698471022,
+      41.73604774532016,
+      36.245558512920525,
+      149.1962088294989
+    ],
+    [
+      687.4478814721906,
+      118.84788147219066,
+      32.104237055618796,
+      165.56048705561867
+    ],
+    [
+      669.9289598403592,
+      120.3289598403592,
+      30.142080319281604,
+      52.254580319281615
+    ]
+  ],
+  "translatedBlocks": [
+    {
+      "text": "そろそろ",
+      "confidence": 0.9992368966341019,
+      "left": 750.7677649154051,
+      "top": 42.92713991540518,
+      "width": 28.46447016918978,
+      "height": 88.68947016918966,
+      "backgroundColor": 4294572795,
+      "sourceGlyphWidth": 30.0,
+      "sourceGlyphHeight": 87.0
+    },
+    {
+      "text": "欲しくなった？",
+      "confidence": 0.9996171253068107,
+      "left": 727.623698471022,
+      "top": 41.73604774532016,
+      "width": 36.245558512920525,
+      "height": 149.1962088294989,
+      "backgroundColor": 4290165194,
+      "sourceGlyphWidth": 29.0,
+      "sourceGlyphHeight": 59.5
+    },
+    {
+      "text": "ほらおねだりして",
+      "confidence": 0.9959524720907211,
+      "left": 687.4478814721906,
+      "top": 118.84788147219066,
+      "width": 32.104237055618796,
+      "height": 165.56048705561867,
+      "backgroundColor": 4290165194,
+      "sourceGlyphWidth": 27.0,
+      "sourceGlyphHeight": 153.0
+    },
+    {
+      "text": "ほら",
+      "confidence": 0.9092245995998383,
+      "left": 669.9289598403592,
+      "top": 120.3289598403592,
+      "width": 30.142080319281604,
+      "height": 52.254580319281615,
+      "backgroundColor": 4294507259,
+      "sourceGlyphWidth": 29.0,
+      "sourceGlyphHeight": 46.0
+    }
+  ],
+  "maxResidualFraction": 0.01,
+  "files": {
+    "observed.png": "7fab4cd19caddae21d3e7c24b64cd5bf51bc37a416258da0bd5d5ba08655a4de",
+    "observed_background.png": "4056280304f17bb3ca4aa7e30cdf8621dc3f7597681dd2f58a67433c0a5e2857",
+    "source.png": "8908dbcd0fb209400119f2511142ad4cfab56e47bad7589d48a4f675f216c0a7",
+    "pipeline_snapshot.json": "4ce1749da8f8b03a4c0a52c1a311656fb142dcf0196820c6ca7f5e29b7a59bf8"
+  },
+  "uniformBackgroundColor": [
+    182,
+    185,
+    204
+  ],
+  "expectNoLamaSession": true
+}
