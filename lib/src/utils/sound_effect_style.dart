@@ -1,10 +1,139 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import '../model/image_translation.dart';
 import '../service/engine/engine_contract.dart';
 import '../service/image_translation/onomatopoeia_filter.dart';
 import 'bubble_detection_refinement.dart';
 import 'rgba_raster.dart';
+
+/// Large hand lettering can be recognized as arbitrary Latin/CJK fragments,
+/// leaving no correctly recognized effect to use as a colour anchor. Require
+/// uncertain, oversized text AND repeated white-edged ink in the source image.
+/// Balloon dialogue remains authoritative, even when it uses the same outline.
+Set<int> outlinedArtworkSoundEffects(
+  RgbaRaster page,
+  List<RecognizedTextBlock> blocks,
+  List<DetectedTextRegion>? bubbles,
+) {
+  final dialogueSizes =
+      blocks
+          .where((b) => b.confidence >= .85 && b.text.runes.length >= 4)
+          .map((b) => math.min(b.width, b.height))
+          .where((size) => size > 0)
+          .toList()
+        ..sort();
+  final minimumSize = math.max(
+    math.min(page.width, page.height) * .04,
+    dialogueSizes.isEmpty
+        ? 0.0
+        : dialogueSizes[dialogueSizes.length ~/ 2] * 1.8,
+  );
+  return {
+    for (int i = 0; i < blocks.length; i++)
+      if (blocks[i].confidence < .8 &&
+          math.min(blocks[i].width, blocks[i].height) >= minimumSize &&
+          _corruptedEffectText(blocks[i].text) &&
+          !(bubbles ?? const <DetectedTextRegion>[]).any(
+            (r) => bubbleRegionCoverage(blocks[i], r) >= .55,
+          ) &&
+          _hasWhiteEdgedInk(page, blocks[i]))
+        i,
+  };
+}
+
+bool _corruptedEffectText(String text) {
+  final core = text.replaceAll(RegExp(r'[\s\p{P}\p{S}]', unicode: true), '');
+  if (core.isEmpty || core.runes.length > 8) {
+    return false;
+  }
+  // Include short mixed kanji/katakana OCR errors. Dialogue remains protected
+  // by balloon membership and the source must independently show outlined ink.
+  return RegExp(r'[A-Za-z0-9]').hasMatch(core) ||
+      (core.runes.length <= 2 &&
+          RegExp(r'^[\u3400-\u9fff]+$').hasMatch(core)) ||
+      RegExp(r'^[\u3400-\u9fff゠-ヿ]{1,4}$').hasMatch(core);
+}
+
+bool _hasWhiteEdgedInk(RgbaRaster page, RecognizedTextBlock block) {
+  final left = block.left.floor().clamp(0, page.width);
+  final top = block.top.floor().clamp(0, page.height);
+  final right = (block.left + block.width).ceil().clamp(0, page.width);
+  final bottom = (block.top + block.height).ceil().clamp(0, page.height);
+  if (right <= left || bottom <= top) {
+    return false;
+  }
+  // Bound work per candidate while retaining several samples across an outline.
+  final step = math.max(1, math.max(right - left, bottom - top) ~/ 160);
+  final width = (right - left + step - 1) ~/ step;
+  final height = (bottom - top + step - 1) ~/ step;
+  final white = Uint8List(width * height);
+  final ink = Uint8List(width * height);
+  int whiteCount = 0, colouredCount = 0;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      final p = ((top + y * step) * page.width + left + x * step) * 4;
+      final r = page.pixels[p], g = page.pixels[p + 1], b = page.pixels[p + 2];
+      final high = math.max(r, math.max(g, b));
+      final low = math.min(r, math.min(g, b));
+      final index = y * width + x;
+      if (low >= 230 && high - low <= 25) {
+        white[index] = 1;
+        whiteCount++;
+      }
+      // Muted skin/background colours are not the bright effect outline. They
+      // can fill most of an OCR crop without obscuring the lettering itself.
+      if (high - low >= 50 && high >= 200) {
+        colouredCount++;
+        ink[index] = 1;
+      }
+      if (high <= 65) {
+        ink[index] = 1;
+      }
+    }
+  }
+  final total = width * height;
+  // White lettering on a solid coloured balloon is dialogue, not a glow.
+  if (whiteCount < total * .03 || colouredCount > total * .45) {
+    return false;
+  }
+  final radius = math.max(2, (10 / step).round());
+  final bins = <int, int>{};
+  final rows = <int>{}, columns = <int>{};
+  int edgedInk = 0;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      if (ink[y * width + x] == 0) {
+        continue;
+      }
+      bool l = false, r = false, t = false, b = false;
+      for (int d = 1; d <= radius; d++) {
+        l |= x >= d && white[y * width + x - d] != 0;
+        r |= x + d < width && white[y * width + x + d] != 0;
+        t |= y >= d && white[(y - d) * width + x] != 0;
+        b |= y + d < height && white[(y + d) * width + x] != 0;
+      }
+      if (!(l && r) && !(t && b)) {
+        continue;
+      }
+      edgedInk++;
+      rows.add(y);
+      columns.add(x);
+      final p = ((top + y * step) * page.width + left + x * step) * 4;
+      final key =
+          (page.pixels[p] ~/ 32) * 64 +
+          (page.pixels[p + 1] ~/ 32) * 8 +
+          page.pixels[p + 2] ~/ 32;
+      bins[key] = (bins[key] ?? 0) + 1;
+    }
+  }
+  // A few clothing highlights or one heart are not lettering. Require repeated
+  // strokes spread across the crop and a coherent ink colour along their edges.
+  return edgedInk >= total * .012 &&
+      rows.length >= height * .4 &&
+      columns.length >= width * .4 &&
+      bins.values.any((count) => count >= total * .005);
+}
 
 /// Corroborate an OCR-corrupted effect with the ink of a positively recognized
 /// effect on the SAME page. Never infer sound effects from coloured art alone.

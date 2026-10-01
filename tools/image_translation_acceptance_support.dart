@@ -16,6 +16,7 @@ import 'package:jhentai/src/service/path_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/utils/image_text_grouping.dart';
 import 'package:jhentai/src/utils/ocr_artifact_filter.dart';
+import 'package:jhentai/src/utils/rgba_raster.dart';
 import 'package:jhentai/src/service/engine/engine_contract.dart';
 
 Future<Map<String, dynamic>> runOcrArtifactCacheAcceptance({
@@ -25,6 +26,9 @@ Future<Map<String, dynamic>> runOcrArtifactCacheAcceptance({
   required OnnxRuntime runtime,
   required List<ort.OrtProvider> providers,
 }) async {
+  final annotation = jsonDecode(
+    await File('$caseDirectory/case.json').readAsString(),
+  );
   final pages =
       jsonDecode(
             await File('$caseDirectory/recorded_pages.json').readAsString(),
@@ -48,6 +52,7 @@ Future<Map<String, dynamic>> runOcrArtifactCacheAcceptance({
       cached.blocks,
       cached.imageWidth ?? 0,
       cached.imageHeight ?? 0,
+      containers: cached.containers,
     )) {
       final detected = await detector.detect(
         '$caseDirectory/${page['sourceFile']}',
@@ -58,19 +63,42 @@ Future<Map<String, dynamic>> runOcrArtifactCacheAcceptance({
         polygonMasks: detected.polygonMasks,
       );
     }
-    final checked = reconcileOversizedOcrPage(cached, detection);
+    final source =
+        detection == null
+            ? null
+            : RgbaRaster.decode(
+              await File('$caseDirectory/${page['sourceFile']}').readAsBytes(),
+            );
+    final checked = reconcileOversizedOcrPage(
+      cached,
+      detection,
+      source: source,
+    );
     evidence.add({
       'page': page['page'],
       'before': cached.status.name,
       'after': checked.status.name,
       'checked': detection != null,
       'polygonMasks': detection?.polygonMasks.map((m) => m.toJson()).toList(),
-      'passed': checked.status.name == page['expectedStatus'],
+      'retained': checked.blocks.map((b) => b.text).toList(),
+      'removed':
+          cached.blocks
+              .where((b) => !checked.blocks.contains(b))
+              .map((b) => b.text)
+              .toList(),
+      'passed':
+          checked.status.name == page['expectedStatus'] &&
+          (page['expectedExcluded'] as List? ?? const []).every(
+            (text) => !checked.blocks.any((b) => b.text == text),
+          ) &&
+          (page['expectedRetained'] as List? ?? const []).every(
+            (text) => checked.blocks.any((b) => b.text == text),
+          ),
     });
   }
   await Directory(outputDirectory).create(recursive: true);
   final result = <String, dynamic>{
-    'case': 'false_text_gallery_16',
+    'case': annotation['id'],
     'pages': evidence,
     'passed': evidence.every((p) => p['passed'] == true),
   };

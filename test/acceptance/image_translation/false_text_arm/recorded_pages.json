@@ -1,0 +1,31 @@
+[
+  {
+    "page": 1,
+    "sourceFile": "source.png",
+    "result": {
+      "sourceText": "AR",
+      "translatedText": "啊",
+      "translatedGroups": [
+        "啊"
+      ],
+      "mergeTextBlocks": true,
+      "blocks": [
+        {
+          "text": "AR",
+          "confidence": 0.6335117816925049,
+          "left": -43.7255084455662,
+          "top": 144.050666486953,
+          "width": 339.3646013606371,
+          "height": 331.2735693602665,
+          "backgroundColor": 4293970100,
+          "sourceGlyphWidth": 216.0,
+          "sourceGlyphHeight": 332.0
+        }
+      ],
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "ocrArtifactCheckVersion": 1
+    },
+    "expectedStatus": "noText"
+  }
+]

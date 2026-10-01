@@ -1,0 +1,17 @@
+{
+  "id": "mixed_ocr_artifacts",
+  "ocrArtifactAudit": true,
+  "problem": "同页有正常对白，头发轮廓被OCR读成MM并译为嗯嗯，绕过旧整页校验。",
+  "date": "2026-10-01",
+  "files": {
+    "observed.png": "68ea4ba09dc8c7af12dd95402722674345a43effe2f640202c11609839430f41",
+    "source.png": "cb504f772a20b3eff0cbc3325831de5e20bec693d0c67b708b7de7ca36fb812a",
+    "recorded_pages.json": "57fa725fe7feec62a3621fc1ebc2f4e1c0aee7f98bcbee177c4bbab3340fe588",
+    "detector_snapshot.json": "e9798b0b3497aa65b73300bf8d50c92834564ffb617e7a6fbc95b781c82de139"
+  },
+  "acceptance": [
+    "逐块复核：只去掉头发上的MM，保留14条正常对白",
+    "纠正旧缓存并重建气泡索引与译文分组",
+    "无法复核时保留原结果，避免误删正常文字"
+  ]
+}

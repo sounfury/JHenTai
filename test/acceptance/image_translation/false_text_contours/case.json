@@ -1,0 +1,18 @@
+{
+  "id": "false_text_contours",
+  "date": "2026-10-01",
+  "ocrArtifactAudit": true,
+  "problem": "无字画面轮廓被读成LET并译为让，CTD误检区域与OCR框重叠但笔画像素复核为空，修复失败仍叠上译文。",
+  "files": {
+    "observed.png": "8c1c22b029cdf3b4fa14864dcaf5060e1f366c3ee96c4ccf976c6af147f6414c",
+    "recorded_pages.json": "2cdd3f8ba0d39370d15f8dbcb91e5e4d5862e5d91c2fbb0736a53f3d3ca45216",
+    "source.png": "06a02435868b592d88f66df7e033e9f455623c92a3bbf63127044d64a423b0b4",
+    "detector_snapshot.json": "5d807af3a1ea7feadd589f17bf815a718a4c34453e80de3d0d9a650f57bd3e3e"
+  },
+  "acceptance": [
+    "可疑OCR在翻译前检查CTD实际文字笔画，无笔画则noText",
+    "版本2错误缓存自动纠正并落盘",
+    "无法取得原图或检测失败时保留结果并允许重试",
+    "正常文字和拟声词继续通过各自处理流程"
+  ]
+}

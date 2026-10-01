@@ -2046,7 +2046,14 @@ class ReadPageLogic extends GetxController
       }
       return;
     }
-    final int n = imageTranslationSetting.preTranslatePageCount.value;
+    final GalleryPreTranslateOptions options =
+        await GalleryPreTranslatePreference.optionsFor(gid);
+    if (isClosed ||
+        galleryPreTranslateRunner.isActiveOrFinished(gid) ||
+        imageTranslationService.isBatchTranslating) {
+      return;
+    }
+    final int n = options.pageCount;
     final int count = n.clamp(1, state.readPageInfo.pageCount);
     final int current = state.readPageInfo.currentImageIndex;
     // Prefer the pages the user is looking at when they fall inside the window.
@@ -2073,7 +2080,7 @@ class ReadPageLogic extends GetxController
     await _translatePagesOpportunistically(
       order.toList(growable: false),
       context,
-      concurrency: imageTranslationSetting.preTranslateConcurrency.value,
+      concurrency: options.concurrency,
     );
   }
 

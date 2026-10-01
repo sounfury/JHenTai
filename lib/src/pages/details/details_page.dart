@@ -30,7 +30,7 @@ import 'package:jhentai/src/widget/eh_translated_text.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
 import 'package:jhentai/src/widget/icon_text_button.dart';
 import 'package:jhentai/src/widget/image_translation_batch_progress_banner.dart';
-import 'package:jhentai/src/service/gallery_pre_translate_runner.dart';
+import 'package:jhentai/src/service/gallery_pre_translate_preference.dart';
 import 'package:jhentai/src/widget/keep_alive.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -1197,15 +1197,12 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
               ),
               onPressed: () async {
                 if (!alreadyTarget) {
-                  galleryPreTranslateRunner.inspectForGallery(
-                    galleryUrl: state.galleryUrl,
-                    pageCount: state.galleryDetails?.pageCount ??
-                        state.gallery?.pageCount ??
-                        state.galleryMetadata?.pageCount ??
-                        0,
-                    seedThumbnails: state.galleryDetails?.thumbnails,
-                  );
+                  await logic.inspectPreTranslate();
                 }
+                final GalleryPreTranslateOptions options =
+                    await GalleryPreTranslatePreference.optionsFor(
+                      state.galleryUrl.gid,
+                    );
                 final bool nowEnabled = await logic.isPreTranslateEnabled();
                 if (!context.mounted) {
                   return;
@@ -1216,6 +1213,7 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
                     logic: logic,
                     gid: state.galleryUrl.gid,
                     initialEnabled: nowEnabled,
+                    initialOptions: options,
                     pageCount: state.galleryDetails?.pageCount ??
                         state.gallery?.pageCount ??
                         state.galleryMetadata?.pageCount ??

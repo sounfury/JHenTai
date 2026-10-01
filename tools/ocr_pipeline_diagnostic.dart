@@ -176,6 +176,17 @@ Future<void> main(List<String> args) async {
         );
       }
       final unfilteredBlocks = blocks;
+      final outlinedEffects =
+          page == null
+              ? <RecognizedTextBlock>{}
+              : {
+                for (final i in outlinedArtworkSoundEffects(
+                  page,
+                  blocks,
+                  detection.regions,
+                ))
+                  blocks[i],
+              };
       final styledEffects =
           page == null
               ? <RecognizedTextBlock>{}
@@ -201,6 +212,9 @@ Future<void> main(List<String> args) async {
                       width: block.width,
                       height: block.height,
                       matchesSoundEffectStyle: styledEffects.contains(block),
+                      matchesSoundEffectOutline: outlinedEffects.contains(
+                        block,
+                      ),
                     ),
               )
               .toList();

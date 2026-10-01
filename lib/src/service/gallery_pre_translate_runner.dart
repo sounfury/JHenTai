@@ -110,6 +110,13 @@ class GalleryPreTranslateRunner extends GetxController
 
   PreTranslateJobProgress? progressFor(int gid) => _jobs[gid];
 
+  Future<void> waitForInspection(int gid) async {
+    final Future<void>? inspection = _inspections[gid];
+    if (inspection != null) {
+      await inspection;
+    }
+  }
+
   /// Gid currently owned by an in-flight detail-page pre-translate job.
   int? get activeGid => _activeGid;
 
@@ -142,6 +149,8 @@ class GalleryPreTranslateRunner extends GetxController
   void inspectForGallery({
     required GalleryUrl galleryUrl,
     required int pageCount,
+    int? requestedPageCount,
+    int? requestedConcurrency,
     List<GalleryThumbnail>? seedThumbnails,
   }) {
     if (pageCount <= 0 || isRunningFor(galleryUrl.gid)) {
@@ -151,18 +160,17 @@ class GalleryPreTranslateRunner extends GetxController
     if (_inspections.containsKey(gid)) {
       return;
     }
-    final int total = imageTranslationSetting.preTranslatePageCount.value.clamp(
-      1,
-      pageCount,
-    );
+    final int total = (requestedPageCount ??
+            imageTranslationSetting.preTranslatePageCount.value)
+        .clamp(1, pageCount);
     final PreTranslateJobProgress job = PreTranslateJobProgress(
       gid: gid,
       total: total,
-      concurrency: imageTranslationSetting.preTranslateConcurrency.value.clamp(
-        1,
-        total,
-      ),
+      concurrency: (requestedConcurrency ??
+              imageTranslationSetting.preTranslateConcurrency.value)
+          .clamp(1, total),
     );
+    _finishedGids.remove(gid);
     _jobs[gid] = job;
     update([progressIdFor(gid)]);
     final Future<void> inspection = _inspectJob(
@@ -270,6 +278,8 @@ class GalleryPreTranslateRunner extends GetxController
   void startForGallery({
     required GalleryUrl galleryUrl,
     required int pageCount,
+    int? requestedPageCount,
+    int? requestedConcurrency,
     List<GalleryThumbnail>? seedThumbnails,
     String? galleryLanguage,
     String? galleryTagsCsv,
@@ -296,13 +306,11 @@ class GalleryPreTranslateRunner extends GetxController
     }
     cancelForGallery(gid);
     _finishedGids.remove(gid);
-    final int total = imageTranslationSetting.preTranslatePageCount.value.clamp(
-      1,
-      pageCount,
-    );
-    final int concurrency = imageTranslationSetting
-        .preTranslateConcurrency
-        .value
+    final int total = (requestedPageCount ??
+            imageTranslationSetting.preTranslatePageCount.value)
+        .clamp(1, pageCount);
+    final int concurrency = (requestedConcurrency ??
+            imageTranslationSetting.preTranslateConcurrency.value)
         .clamp(1, total);
     final PreTranslateJobProgress job =
         previous != gid &&
@@ -316,7 +324,7 @@ class GalleryPreTranslateRunner extends GetxController
               concurrency: concurrency,
             );
     _jobs[gid] = job;
-    update([progressIdFor(gid)]);
+    _setJobStatus(job, PreTranslateJobStatus.waiting);
     final int epoch = ++_jobEpoch;
     final Future<void>? previousJob = _jobFuture;
     final Future<void>? inspection = _inspections[gid];
@@ -871,7 +879,6 @@ class GalleryPreTranslateRunner extends GetxController
       mode: imageTranslationSetting.imageProcessingDisplayMode.value,
     );
   }
-
 }
 
 class _ResolvedSources {

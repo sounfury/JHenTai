@@ -1,0 +1,19 @@
+{
+  "id": "false_text_arm",
+  "date": "2026-10-01",
+  "ocrArtifactAudit": true,
+  "problem": "无字差分页中手臂轮廓被OCR读为AR并译为啊，CTD在其他位置检测到5个区域导致旧复核误通过。",
+  "files": {
+    "observed.png": "6d43011a4649b077e73c80d314baa02e3e702022978bca12a2ff71d818c7c1a4",
+    "recorded_pages.json": "5bd6c62cf5b069b74caffcbd8ed7b2b8b2d722154d57f316b853a9308da54420",
+    "source.png": "3b40c387313b5a62a4fa2c26d8ee3da3a7bcabae43e07c782d415dabacc299c1",
+    "detector_snapshot.json": "1613ff2a3a3887dbcd89054d64e2574532239cd85815616c94387a14267c6a24"
+  },
+  "acceptance": [
+    "真实旧缓存自动复核为noText，清除错误译文和覆盖层",
+    "CTD存在其他位置的区域不能证明OCR文字有效",
+    "真实文字区域仍保留翻译",
+    "复核失败或不可用时保留原结果",
+    "通过复核后落盘，重启不重复复核"
+  ]
+}

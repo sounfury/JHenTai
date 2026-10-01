@@ -56,12 +56,16 @@ bool shouldPreserveSoundEffect(
   double? width,
   double? height,
   bool matchesSoundEffectStyle = false,
+  bool matchesSoundEffectOutline = false,
 }) {
   final plain = text.replaceAll(RegExp(r'\s'), '').replaceAll(_decoration, '');
   // Missing transparent balloons are not proof that short grammatical
   // dialogue (e.g. a separate vertical 「って」 column) is a sound effect.
   if (_dialogueFragments.contains(text.replaceAll(_dialoguePunctuation, ''))) {
     return false;
+  }
+  if (insideBubble != true && matchesSoundEffectOutline) {
+    return true;
   }
   if (insideBubble == null) {
     final core = text.replaceAll(RegExp(r'\s'), '').replaceAll(_decoration, '');

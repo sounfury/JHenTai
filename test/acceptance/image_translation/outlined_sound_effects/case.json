@@ -1,0 +1,86 @@
+{
+  "id": "outlined_sound_effects",
+  "soundEffectAudit": true,
+  "date": "2026-10-01",
+  "problem": "气泡外的拟声词被 OCR 识别成るW、Naldls、LYOE.，翻译成巨大的嗜W、纳德尔斯和乱码字母。 同类紫色花体被读成出クン，叠上出君。",
+  "acceptance": [
+    "保留三张截图里的花体拟声词原图，不发往翻译或擦除",
+    "无需同页正确拟声词锚点，气泡检测不可用时也能识别强视觉证据",
+    "保留气泡内全部对白及正常气泡外文字翻译",
+    "纯彩色背景、无描边文字及仅低置信度不能触发过滤"
+  ],
+  "cases": [
+    {
+      "id": "purple_glow",
+      "source": "purple_glow.source.png",
+      "snapshot": "purple_glow.pipeline_snapshot.json",
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "preserve": [
+        "るW"
+      ],
+      "translate": [
+        "书"
+      ],
+      "sourceSha256": "a106141db12e366da73129911a9bd9f75559846d03e0cfe58e14de36d6d6616d"
+    },
+    {
+      "id": "long_latin",
+      "source": "long_latin.source.png",
+      "snapshot": "long_latin.pipeline_snapshot.json",
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "preserve": [
+        "Naldls",
+        "t"
+      ],
+      "translate": [],
+      "sourceSha256": "d72f112e9519be993df790fb01f9a6154240da336ca2e1b78d9a97d3914cb3b8"
+    },
+    {
+      "id": "pink_outline",
+      "source": "pink_outline.source.png",
+      "snapshot": "pink_outline.pipeline_snapshot.json",
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "preserve": [
+        "LYOE.",
+        "MY",
+        "iいs",
+        "8oo"
+      ],
+      "translate": [
+        "入ったと思った？",
+        "残念♪",
+        "やめ…こ…",
+        "擦らないでえ…",
+        "ダメです…",
+        "Zこ敏感…",
+        "擦っただけで",
+        "その反応♪",
+        "ダイヤちゃん",
+        "ほらほらっ",
+        "欲しく…",
+        "入れてほしいでしょ？",
+        "ありません…",
+        "もうやめぇ…"
+      ],
+      "sourceSha256": "870b42ec6bb8da2b7b622dbce1322c2b478a40100aafb1ce255f735700e4d2a9"
+    },
+    {
+      "id": "mixed_katakana",
+      "source": "mixed_katakana.source.png",
+      "snapshot": "mixed_katakana.pipeline_snapshot.json",
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "preserve": [
+        "出クン",
+        "Le3hs"
+      ],
+      "translate": [
+        "ほれっ"
+      ],
+      "sourceSha256": "240c92315c5f6b7990bb1ef2812bcc1f80055b04909ff78abc93700575461845"
+    }
+  ]
+}

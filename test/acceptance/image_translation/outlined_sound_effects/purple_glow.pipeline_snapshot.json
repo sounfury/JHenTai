@@ -1,0 +1,53 @@
+{
+  "initialRegions": 0,
+  "allOcrBlocks": [
+    {
+      "text": "书",
+      "confidence": 0.7457783222198486,
+      "left": 220.9306755686028,
+      "top": 87.5785309927409,
+      "width": 89.02328364132632,
+      "height": 105.54824065360503,
+      "backgroundColor": 4294899708,
+      "sourceGlyphWidth": 90.0,
+      "sourceGlyphHeight": 107.0
+    },
+    {
+      "text": "るW",
+      "confidence": 0.669418141245842,
+      "left": 978.4126620260078,
+      "top": 46.344631012109346,
+      "width": 271.0499775684531,
+      "height": 588.5631923581852,
+      "backgroundColor": 4294769144,
+      "sourceGlyphWidth": 249.0,
+      "sourceGlyphHeight": 570.0
+    }
+  ],
+  "regions": [],
+  "blocks": [
+    {
+      "text": "书",
+      "confidence": 0.7457783222198486,
+      "left": 220.9306755686028,
+      "top": 87.5785309927409,
+      "width": 89.02328364132632,
+      "height": 105.54824065360503,
+      "backgroundColor": 4294899708,
+      "sourceGlyphWidth": 90.0,
+      "sourceGlyphHeight": 107.0
+    },
+    {
+      "text": "るW",
+      "confidence": 0.669418141245842,
+      "left": 978.4126620260078,
+      "top": 46.344631012109346,
+      "width": 271.0499775684531,
+      "height": 588.5631923581852,
+      "backgroundColor": 4294769144,
+      "sourceGlyphWidth": 249.0,
+      "sourceGlyphHeight": 570.0
+    }
+  ],
+  "containers": []
+}

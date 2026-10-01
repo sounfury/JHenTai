@@ -1,0 +1,31 @@
+[
+  {
+    "page": 1,
+    "sourceFile": "source.png",
+    "result": {
+      "sourceText": "LET",
+      "translatedText": "让",
+      "translatedGroups": [
+        "让"
+      ],
+      "mergeTextBlocks": true,
+      "blocks": [
+        {
+          "text": "LET",
+          "confidence": 0.5334050754706064,
+          "left": -120.66354496874084,
+          "top": 381.7191359676637,
+          "width": 824.3852917020554,
+          "height": 782.0384110874111,
+          "backgroundColor": 4294898149,
+          "sourceGlyphWidth": 704.0,
+          "sourceGlyphHeight": 582.0
+        }
+      ],
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "ocrArtifactCheckVersion": 2
+    },
+    "expectedStatus": "noText"
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "initialRegions": 0,
+  "allOcrBlocks": [
+    {
+      "text": "Naldls",
+      "confidence": 0.5629134128491083,
+      "left": 928.5793110151548,
+      "top": -48.34886823275905,
+      "width": 400.3545761066508,
+      "height": 840.1738571372566,
+      "backgroundColor": 4294769660,
+      "sourceGlyphWidth": 352.0,
+      "sourceGlyphHeight": 609.0
+    },
+    {
+      "text": "E",
+      "confidence": 0.5269330143928528,
+      "left": 164.31503961432338,
+      "top": 222.85578289313992,
+      "width": 219.82077572809328,
+      "height": 344.5569483263994,
+      "backgroundColor": 4294898670,
+      "sourceGlyphWidth": 221.0,
+      "sourceGlyphHeight": 346.0
+    },
+    {
+      "text": "t",
+      "confidence": 0.5563777089118958,
+      "left": 26.316881658912294,
+      "top": 388.4049845559224,
+      "width": 212.18666344373662,
+      "height": 295.5091718947431,
+      "backgroundColor": 4294494931,
+      "sourceGlyphWidth": 58.0,
+      "sourceGlyphHeight": 296.0
+    }
+  ],
+  "regions": [],
+  "blocks": [
+    {
+      "text": "Naldls",
+      "confidence": 0.5629134128491083,
+      "left": 928.5793110151548,
+      "top": -48.34886823275905,
+      "width": 400.3545761066508,
+      "height": 840.1738571372566,
+      "backgroundColor": 4294769660,
+      "sourceGlyphWidth": 352.0,
+      "sourceGlyphHeight": 609.0
+    },
+    {
+      "text": "t",
+      "confidence": 0.5563777089118958,
+      "left": 26.316881658912294,
+      "top": 388.4049845559224,
+      "width": 212.18666344373662,
+      "height": 295.5091718947431,
+      "backgroundColor": 4294494931,
+      "sourceGlyphWidth": 58.0,
+      "sourceGlyphHeight": 296.0
+    }
+  ],
+  "containers": []
+}

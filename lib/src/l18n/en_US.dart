@@ -1274,6 +1274,10 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslateMonitorNoPages': 'Page count is loading. Try again shortly.',
       'preTranslateMonitorContinue': 'Continue pre-translation',
       'preTranslateMonitorAllDone': 'All translated',
+      'preTranslateMonitorWholeGallery': 'Entire gallery (@count pages)',
+      'preTranslateMonitorApply': 'Apply settings',
+      'preTranslateMonitorApplyAndContinue': 'Apply and continue',
+      'preTranslateMonitorSettingsHint': 'For this gallery only. Apply or start after adjusting; completed pages use cached results.',
       'imageTranslationContextPages': 'Pages per context request',
       'imageTranslationContextPagesValue': '@count page(s)',
       'imageTranslationContextAppleUnsupported':
@@ -1283,6 +1287,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'translationStageIdle': 'Preparing',
       'translationStageRecognizing': 'Recognizing',
       'translationStageTranslating': 'Translating',
+      'translationStageMasking': 'Repairing background',
       'translationStageDone': 'Done',
       'imageTranslationSourceUnavailable': 'The current image is unavailable.',
       'imageTranslationSettingHint': 'Configure OCR and translation provider',

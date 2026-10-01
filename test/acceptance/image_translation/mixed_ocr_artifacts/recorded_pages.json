@@ -1,0 +1,346 @@
+[
+  {
+    "page": 1,
+    "sourceFile": "source.png",
+    "result": {
+      "sourceText": "入ったと思った？\n残念♪\nやめ…こ…\n擦らないでえ…\nダメです…\nzこ敏感…\n擦っただけで\nその反応♪\nMM\nダイヤちゃん\nほらほらっ\n欲しく…\n入れてほしいでしょ？\nありません…\nもうやめえ…",
+      "translatedText": "以为已经进去了？\n可惜♪\n不要…停…\n别擦了啊…\n不行…\n那里太敏感…\n只是擦了一下\n就有这种反应♪\n嗯嗯\n黛雅酱\n你看你看\n我才不…\n很想让我放进去吧？\n想要…\n快停下啊…",
+      "translatedGroups": [
+        "只是擦了一下\n就有这种反应♪",
+        "黛雅酱\n你看你看\n很想让我放进去吧？",
+        "以为已经进去了？\n可惜♪",
+        "不要…停…\n别擦了啊…",
+        "不行…\n那里太敏感…",
+        "我才不…\n想要…\n快停下啊…",
+        "嗯嗯"
+      ],
+      "mergeTextBlocks": true,
+      "blocks": [
+        {
+          "text": "入ったと思った？",
+          "confidence": 0.9989593774080276,
+          "left": 1189.0273059626807,
+          "top": 50.4825142960139,
+          "width": 29.15372140797217,
+          "height": 163.85997140797218,
+          "backgroundColor": 4290165194,
+          "sourceGlyphWidth": 25.0,
+          "sourceGlyphHeight": 57.0
+        },
+        {
+          "text": "残念♪",
+          "confidence": 0.9112734993298849,
+          "left": 1167.4688641957036,
+          "top": 50.465739195703975,
+          "width": 31.14560494192574,
+          "height": 70.60289660859206,
+          "backgroundColor": 4290230730,
+          "sourceGlyphWidth": 26.0,
+          "sourceGlyphHeight": 61.0
+        },
+        {
+          "text": "やめ…こ…",
+          "confidence": 0.752667024731636,
+          "left": 1057.0770395560967,
+          "top": 110.90724788942993,
+          "width": 28.679254221140127,
+          "height": 123.26050422114014,
+          "backgroundColor": 4294703352,
+          "sourceGlyphWidth": 17.0,
+          "sourceGlyphHeight": 17.0
+        },
+        {
+          "text": "擦らないでえ…",
+          "confidence": 0.9486924495015826,
+          "left": 1036.3927237319333,
+          "top": 111.39845646147069,
+          "width": 31.572638240025753,
+          "height": 143.2991178272588,
+          "backgroundColor": 4294703096,
+          "sourceGlyphWidth": 18.0,
+          "sourceGlyphHeight": 25.0
+        },
+        {
+          "text": "ダメです…",
+          "confidence": 0.9425536751747131,
+          "left": 931.4837890280472,
+          "top": 216.18378902804727,
+          "width": 29.032421943905547,
+          "height": 111.32617194390548,
+          "backgroundColor": 4294703096,
+          "sourceGlyphWidth": 16.0,
+          "sourceGlyphHeight": 54.0
+        },
+        {
+          "text": "zこ敏感…",
+          "confidence": 0.6898023962974549,
+          "left": 909.2567295622956,
+          "top": 215.25134721021058,
+          "width": 33.096738315641005,
+          "height": 107.11950491665405,
+          "backgroundColor": 4294703096,
+          "sourceGlyphWidth": 17.0,
+          "sourceGlyphHeight": 17.0
+        },
+        {
+          "text": "擦っただけで",
+          "confidence": 0.9994132320086161,
+          "left": 725.7051112416665,
+          "top": 115.09261124166646,
+          "width": 31.589777516667027,
+          "height": 127.93040251666709,
+          "backgroundColor": 4294507003,
+          "sourceGlyphWidth": 31.0,
+          "sourceGlyphHeight": 111.0
+        },
+        {
+          "text": "その反応♪",
+          "confidence": 0.8749214231967926,
+          "left": 704.7201262401065,
+          "top": 114.88913764846116,
+          "width": 33.51722852774492,
+          "height": 112.24308544210972,
+          "backgroundColor": 4294572795,
+          "sourceGlyphWidth": 31.0,
+          "sourceGlyphHeight": 53.0
+        },
+        {
+          "text": "MM",
+          "confidence": 0.594802126288414,
+          "left": 524.2235987415355,
+          "top": 74.42903400471843,
+          "width": 94.8733884659805,
+          "height": 92.05798029131685,
+          "backgroundColor": 4290947469,
+          "sourceGlyphWidth": 74.0,
+          "sourceGlyphHeight": 78.0
+        },
+        {
+          "text": "ダイヤちゃん",
+          "confidence": 0.9976998468240103,
+          "left": 202.34907356467767,
+          "top": 114.25428189801102,
+          "width": 30.989352870644666,
+          "height": 128.60393620397798,
+          "backgroundColor": 4290296780,
+          "sourceGlyphWidth": 25.0,
+          "sourceGlyphHeight": 117.0
+        },
+        {
+          "text": "ほらほらっ",
+          "confidence": 0.9863154649734497,
+          "left": 181.84114101973967,
+          "top": 116.82188749720515,
+          "width": 30.457089028354858,
+          "height": 103.41738779069897,
+          "backgroundColor": 4294507259,
+          "sourceGlyphWidth": 28.0,
+          "sourceGlyphHeight": 27.0
+        },
+        {
+          "text": "欲しく…",
+          "confidence": 0.9294133931398392,
+          "left": 157.35807959156156,
+          "top": 478.41537125822833,
+          "width": 27.95050748354356,
+          "height": 89.42863248354342,
+          "backgroundColor": 4294703095,
+          "sourceGlyphWidth": 16.0,
+          "sourceGlyphHeight": 16.0
+        },
+        {
+          "text": "入れてほしいでしょ？",
+          "confidence": 0.9971486985683441,
+          "left": 139.51228144560898,
+          "top": 154.72164487521272,
+          "width": 30.50905718510387,
+          "height": 203.13496909879692,
+          "backgroundColor": 4290362317,
+          "sourceGlyphWidth": 20.0,
+          "sourceGlyphHeight": 95.5
+        },
+        {
+          "text": "ありません…",
+          "confidence": 0.9812617103258768,
+          "left": 137.38712676456166,
+          "top": 480.0340017645617,
+          "width": 28.725746470876686,
+          "height": 126.31637147087667,
+          "backgroundColor": 4294703095,
+          "sourceGlyphWidth": 17.0,
+          "sourceGlyphHeight": 17.0
+        },
+        {
+          "text": "もうやめえ…",
+          "confidence": 0.8852560420831045,
+          "left": 68.20324023134435,
+          "top": 612.807406898011,
+          "width": 30.989352870644666,
+          "height": 128.60393620397804,
+          "backgroundColor": 4294627546,
+          "sourceGlyphWidth": 18.0,
+          "sourceGlyphHeight": 16.0
+        }
+      ],
+      "containers": [
+        {
+          "blockIndices": [
+            6,
+            7
+          ],
+          "left": 682.661279296875,
+          "top": 70.41351318359375,
+          "width": 105.62910156249995,
+          "height": 203.2849853515625,
+          "confidence": 0.9602550268173218,
+          "layoutAnalysisVersion": 2,
+          "layoutRegions": [
+            {
+              "left": 690.874755859375,
+              "top": 100.5606650015024,
+              "width": 82.98867187499997,
+              "height": 142.9906817157452
+            }
+          ]
+        },
+        {
+          "blockIndices": [
+            9,
+            10,
+            12
+          ],
+          "left": 100.27351684570313,
+          "top": 63.298974609375,
+          "width": 176.83631591796876,
+          "height": 355.81005859375,
+          "confidence": 0.9599019885063171,
+          "layoutAnalysisVersion": 2,
+          "layoutRegions": [
+            {
+              "left": 114.90468226841519,
+              "top": 141.54398716517858,
+              "width": 71.78699253627234,
+              "height": 256.5037928989955
+            },
+            {
+              "left": 190.69167480468752,
+              "top": 87.53710327148437,
+              "width": 65.47140982491631,
+              "height": 180.25878034319197
+            }
+          ]
+        },
+        {
+          "blockIndices": [
+            0,
+            1
+          ],
+          "left": 1143.73662109375,
+          "top": 9.630322265625,
+          "width": 108.74960937499986,
+          "height": 242.54184570312498,
+          "confidence": 0.9472187161445618,
+          "layoutAnalysisVersion": 2,
+          "layoutRegions": [
+            {
+              "left": 1158.1651478794643,
+              "top": 33.67958096590909,
+              "width": 79.89255580357133,
+              "height": 175.5439637023133
+            }
+          ]
+        },
+        {
+          "blockIndices": [
+            2,
+            3
+          ],
+          "left": 1018.548095703125,
+          "top": 73.72440185546876,
+          "width": 96.12958984374995,
+          "height": 195.47941894531252,
+          "confidence": 0.9320337176322937,
+          "layoutAnalysisVersion": 2,
+          "layoutRegions": [
+            {
+              "left": 1023.6490502142137,
+              "top": 100.94755268712198,
+              "width": 79.72577179939512,
+              "height": 141.03311728200606
+            }
+          ]
+        },
+        {
+          "blockIndices": [
+            4,
+            5
+          ],
+          "left": 881.51533203125,
+          "top": 178.97041015625,
+          "width": 113.87167968750009,
+          "height": 160.43603515625,
+          "confidence": 0.805696427822113,
+          "layoutAnalysisVersion": 2,
+          "layoutRegions": [
+            {
+              "left": 895.825783889358,
+              "top": 196.69943321078432,
+              "width": 72.94032411317573,
+              "height": 124.97798904718138
+            }
+          ]
+        },
+        {
+          "blockIndices": [
+            11,
+            13,
+            14
+          ],
+          "left": 45.270574951171874,
+          "top": 450.6591796875,
+          "width": 183.57032470703123,
+          "height": 311.80449218750005,
+          "confidence": 0.6963163018226624,
+          "layoutAnalysisVersion": 2,
+          "layoutRegions": [
+            {
+              "left": 53.600586147966055,
+              "top": 621.2881397480868,
+              "width": 59.3001119679418,
+              "height": 113.72210419323982
+            },
+            {
+              "left": 129.5607205094962,
+              "top": 465.3858936543367,
+              "width": 71.96013436153017,
+              "height": 132.81217514349493
+            }
+          ]
+        }
+      ],
+      "imageWidth": 1280,
+      "imageHeight": 963,
+      "ocrArtifactCheckVersion": 3
+    },
+    "expectedStatus": "success",
+    "expectedExcluded": [
+      "MM"
+    ],
+    "expectedRetained": [
+      "入ったと思った？",
+      "残念♪",
+      "やめ…こ…",
+      "擦らないでえ…",
+      "ダメです…",
+      "zこ敏感…",
+      "擦っただけで",
+      "その反応♪",
+      "ダイヤちゃん",
+      "ほらほらっ",
+      "欲しく…",
+      "入れてほしいでしょ？",
+      "ありません…",
+      "もうやめえ…"
+    ]
+  }
+]

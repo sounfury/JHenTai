@@ -2,54 +2,189 @@ import 'dart:math' as math;
 
 import '../model/image_translation.dart';
 import '../service/engine/engine_contract.dart';
+import 'image_text_grouping.dart';
+import 'inpainting_pixels.dart';
+import 'rgba_raster.dart';
 
 final RegExp _shortLatinFragment = RegExp(r'^[A-Za-z]{1,3}$');
 final RegExp _cjkText = RegExp(r'[\u3040-\u30ff\u3400-\u9fff]');
+const int currentOcrArtifactCheckVersion = 4;
 
-/// A recognizer can confidently read illustration features as a giant "1" or
-/// "sm". Only pages consisting entirely of oversized short ASCII fragments
-/// need a second detector's confirmation; normal text pages stay untouched.
+/// Check individual uncertain artwork fragments, including those on pages
+/// with real dialogue. Container membership always protects dialogue.
 bool needsOversizedOcrPageCheck(
   List<RecognizedTextBlock> blocks,
   int imageWidth,
-  int imageHeight,
-) =>
-    imageWidth > 0 &&
-    imageHeight > 0 &&
-    blocks.isNotEmpty &&
-    blocks.every(
-      (b) =>
-          RegExp(r'^[A-Za-z0-9]{1,6}$').hasMatch(b.text.trim()) &&
-          b.width > imageWidth * .05 &&
-          b.height > imageHeight * .12,
-    );
+  int imageHeight, {
+  List<RecognizedTextContainer> containers = const [],
+}) =>
+    _suspiciousOcrBlocks(
+      blocks,
+      imageWidth,
+      imageHeight,
+      containers,
+    ).isNotEmpty;
 
-/// A missing/failed second detector is not evidence of an empty page.
+Set<int> _suspiciousOcrBlocks(
+  List<RecognizedTextBlock> blocks,
+  int width,
+  int height,
+  List<RecognizedTextContainer> containers,
+) {
+  if (width <= 0 || height <= 0) {
+    return {};
+  }
+  final protected = containers.expand((c) => c.blockIndices).toSet();
+  final sizes =
+      blocks
+          .where((b) => b.confidence >= .85 && b.text.runes.length >= 4)
+          .map((b) => math.min(b.width, b.height))
+          .where((s) => s > 0)
+          .toList()
+        ..sort();
+  final minimum = math.max(
+    math.min(width, height) * .04,
+    sizes.isEmpty ? 0.0 : sizes[sizes.length ~/ 2] * 1.8,
+  );
+  return {
+    for (int i = 0; i < blocks.length; i++)
+      if (!protected.contains(i) &&
+          RegExp(r'^[A-Za-z0-9]{1,8}$').hasMatch(blocks[i].text.trim()) &&
+          ((blocks[i].confidence < .8 &&
+                  math.min(blocks[i].width, blocks[i].height) >= minimum) ||
+              (blocks[i].width > width * .05 &&
+                  blocks[i].height > height * .12)))
+        i,
+  };
+}
+
+/// A failed second detector or missing source is not proof of empty artwork.
+/// Remove only independently disproved OCR blocks; preserve other dialogue.
 ImageTranslationResult reconcileOversizedOcrPage(
   ImageTranslationResult result,
-  DetectionResult? detection,
-) {
+  DetectionResult? detection, {
+  RgbaRaster? source,
+}) {
   if (result.status != ImageTranslationStatus.success ||
-      result.ocrArtifactCheckVersion >= 1 ||
-      detection == null ||
-      !needsOversizedOcrPageCheck(
-        result.blocks,
-        result.imageWidth ?? 0,
-        result.imageHeight ?? 0,
-      )) {
+      result.ocrArtifactCheckVersion >= currentOcrArtifactCheckVersion ||
+      detection == null) {
     return result;
   }
-  if (detection.polygonMasks.isEmpty) {
+  final candidates = _suspiciousOcrBlocks(
+    result.blocks,
+    result.imageWidth ?? 0,
+    result.imageHeight ?? 0,
+    result.containers,
+  );
+  if (candidates.isEmpty) {
+    return result;
+  }
+  final removed = <int>{};
+  for (final index in candidates) {
+    final block = result.blocks[index];
+    final supported =
+        detection.polygonMasks.where((mask) {
+          if (!mask.isValid) {
+            return false;
+          }
+          final area = (mask.right - mask.left) * (mask.bottom - mask.top);
+          final width = math.max(
+            0.0,
+            math.min(mask.right, block.left + block.width) -
+                math.max(mask.left, block.left),
+          );
+          final height = math.max(
+            0.0,
+            math.min(mask.bottom, block.top + block.height) -
+                math.max(mask.top, block.top),
+          );
+          return area > 0 && width * height / area >= .15;
+        }).toList();
+    if (supported.isEmpty) {
+      removed.add(index);
+      continue;
+    }
+    if (source == null) {
+      return result;
+    }
+    final coarse = rasterizeInpaintingMask(
+      source.width,
+      source.height,
+      supported.map((m) => m.points.map((p) => math.Point(p.x, p.y)).toList()),
+    );
+    if (!refineInpaintingMask(source.toImage(), coarse).contains(0)) {
+      removed.add(index);
+    }
+  }
+  if (removed.isEmpty) {
+    return result.copyWith(
+      ocrArtifactCheckVersion: currentOcrArtifactCheckVersion,
+    );
+  }
+  if (removed.length == result.blocks.length) {
     return ImageTranslationResult(
       status: ImageTranslationStatus.noText,
       errorMessage: 'NO_TEXT',
       imageWidth: result.imageWidth,
       imageHeight: result.imageHeight,
-      ocrArtifactCheckVersion: 1,
+      ocrArtifactCheckVersion: currentOcrArtifactCheckVersion,
     );
   }
-  return result.copyWith(ocrArtifactCheckVersion: 1);
+  final kept = [
+    for (int i = 0; i < result.blocks.length; i++)
+      if (!removed.contains(i)) i,
+  ];
+  final remap = {for (int i = 0; i < kept.length; i++) kept[i]: i};
+  final blocks = kept.map((i) => result.blocks[i]).toList();
+  final containers = [
+    for (final c in result.containers)
+      if (c.blockIndices.any(remap.containsKey))
+        RecognizedTextContainer.fromJson({
+          ...c.toJson(),
+          'blockIndices': [
+            for (final i in c.blockIndices)
+              if (remap.containsKey(i)) remap[i],
+          ],
+        }),
+  ];
+  final oldGroups = translationTextGroups(
+    result.blocks,
+    merge: result.mergeTextBlocks,
+    containers: result.containers,
+  );
+  final groupText = {
+    for (
+      int i = 0;
+      i < oldGroups.length && i < result.translatedGroups.length;
+      i++
+    )
+      oldGroups[i].blockIndices.join(','): result.translatedGroups[i],
+  };
+  final groups = translationTextGroups(
+    blocks,
+    merge: result.mergeTextBlocks,
+    containers: containers,
+  );
+  final lines = result.translatedText.split('\n');
+  return result.copyWith(
+    blocks: blocks,
+    containers: containers,
+    sourceText: blocks.map((b) => b.text).join('\n'),
+    translatedText: [
+      for (final i in kept) i < lines.length ? lines[i] : '',
+    ].join('\n'),
+    translatedGroups: [
+      for (final g in groups)
+        groupText[g.blockIndices.map((i) => kept[i]).join(',')] ?? '',
+    ],
+    ocrArtifactCheckVersion: currentOcrArtifactCheckVersion,
+  );
 }
+
+/// Isolate entry point: component scans must not block the reader.
+ImageTranslationResult reconcileOversizedOcrPageWithPixels(
+  (ImageTranslationResult, DetectionResult, RgbaRaster?) input,
+) => reconcileOversizedOcrPage(input.$1, input.$2, source: input.$3);
 
 /// Fold a low-confidence Latin OCR ghost into the CJK glyph it overlaps.
 /// Keeping the union box lets inpainting still cover the complete source glyph.

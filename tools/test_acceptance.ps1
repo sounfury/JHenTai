@@ -35,6 +35,39 @@ try {
         if ($annotation.id -ne $case.Directory.Name) { throw "Case ID does not match directory: $($case.FullName)" }
         $outputDir = Join-Path $projectRoot ".dart_tool/acceptance/$($case.Directory.Name)"
         New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        if ($annotation.soundEffectAudit) {
+            foreach ($sample in $annotation.cases) {
+                $reportPath = Join-Path $outputDir "$($sample.id).pipeline.json"
+                if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath }
+                $nativeArguments = @(
+                    (Join-Path $case.Directory.FullName $sample.source),
+                    $ModelRoot, $reportPath, 'directml', '1'
+                ) | ForEach-Object { '"' + $_ + '"' }
+                $runner = Start-Process -FilePath (Join-Path $projectRoot 'build/windows/x64/runner/Debug/jhentai.exe') `
+                    -ArgumentList $nativeArguments -WindowStyle Hidden -PassThru
+                if (-not $runner.WaitForExit(180000)) {
+                    Stop-Process -Id $runner.Id
+                    throw "Native sound-effect acceptance timed out: $($sample.id)"
+                }
+                if ($runner.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $reportPath)) {
+                    throw "Native sound-effect acceptance failed: $($sample.id)"
+                }
+                $report = Get-Content -LiteralPath $reportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($report.error) { throw "Native sound-effect acceptance failed: $($report.error)" }
+                $retainedText = @($report.runs[-1].result.blocks | ForEach-Object { $_.text })
+                $allText = @($report.runs[-1].result.allOcrBlocks | ForEach-Object { $_.text })
+                foreach ($text in $sample.preserve) {
+                    if ($text -notin $allText -or $text -in $retainedText) {
+                        throw "Sound effect was not preserved: $($sample.id) / $text; inspect $reportPath"
+                    }
+                }
+                foreach ($text in $sample.translate) {
+                    if ($text -notin $retainedText) { throw "Dialogue was removed: $($sample.id) / $text" }
+                }
+                Write-Output "PASS $($annotation.id)/$($sample.id): $reportPath"
+            }
+            continue
+        }
         $reportPath = Join-Path $outputDir 'pipeline.json'
         # Prevent an aborted native run from being mistaken for a previous pass.
         if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath }

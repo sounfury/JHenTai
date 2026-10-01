@@ -1066,7 +1066,7 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
     await GalleryPreTranslatePreference.setEnabled(gid, next);
     updateSafely([preTranslateButtonId]);
     if (next) {
-      _schedulePreTranslate();
+      await _schedulePreTranslate();
     } else {
       galleryPreTranslateRunner.cancelForGallery(gid);
     }
@@ -1079,10 +1079,35 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
     }
     await GalleryPreTranslatePreference.setEnabled(state.galleryUrl.gid, true);
     updateSafely([preTranslateButtonId]);
-    _schedulePreTranslate();
+    await _schedulePreTranslate();
   }
 
-  void _schedulePreTranslate() {
+  Future<void> inspectPreTranslate() async {
+    if (isGalleryAlreadyInTargetLanguage()) {
+      return;
+    }
+    final int gid = state.galleryUrl.gid;
+    if (galleryPreTranslateRunner.isRunningFor(gid)) {
+      return;
+    }
+    await galleryPreTranslateRunner.waitForInspection(gid);
+    final GalleryPreTranslateOptions options =
+        await GalleryPreTranslatePreference.optionsFor(gid);
+    galleryPreTranslateRunner.inspectForGallery(
+      galleryUrl: state.galleryUrl,
+      pageCount: state.galleryDetails?.pageCount ??
+          state.gallery?.pageCount ??
+          state.galleryMetadata?.pageCount ??
+          0,
+      requestedPageCount: options.pageCount,
+      requestedConcurrency: options.concurrency,
+      seedThumbnails: state.galleryDetails?.thumbnails,
+    );
+  }
+
+  Future<void> _schedulePreTranslate() async {
+    final GalleryPreTranslateOptions options =
+        await GalleryPreTranslatePreference.optionsFor(state.galleryUrl.gid);
     final int pageCount = state.galleryDetails?.pageCount ??
         state.gallery?.pageCount ??
         state.galleryMetadata?.pageCount ??
@@ -1090,6 +1115,8 @@ class DetailsPageLogic extends GetxController with LoginRequiredMixin, Scroll2To
     galleryPreTranslateRunner.startForGallery(
       galleryUrl: state.galleryUrl,
       pageCount: pageCount,
+      requestedPageCount: options.pageCount,
+      requestedConcurrency: options.concurrency,
       seedThumbnails: state.galleryDetails?.thumbnails,
       galleryLanguage: galleryLanguageForTranslation,
       galleryTagsCsv: galleryTagsCsvForTranslation,

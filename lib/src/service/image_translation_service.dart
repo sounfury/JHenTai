@@ -311,11 +311,12 @@ class ImageTranslationService extends GetxController
   bool needsCachedArtifactCheck(String cacheKey) {
     final result = resultFor(cacheKey);
     return result.status == ImageTranslationStatus.success &&
-        result.ocrArtifactCheckVersion < 1 &&
+        result.ocrArtifactCheckVersion < currentOcrArtifactCheckVersion &&
         needsOversizedOcrPageCheck(
           result.blocks,
           result.imageWidth ?? 0,
           result.imageHeight ?? 0,
+          containers: result.containers,
         );
   }
 
@@ -631,6 +632,12 @@ class ImageTranslationService extends GetxController
         ImageTranslationResult(
           status: ImageTranslationStatus.success,
           blocks: blocks,
+          containers: containersFromBubbleDetection(
+            blocks,
+            bubbleDetection,
+            imageWidth: imageWidth,
+            imageHeight: imageHeight,
+          ),
           imageWidth: imageWidth,
           imageHeight: imageHeight,
         ),
@@ -647,6 +654,7 @@ class ImageTranslationService extends GetxController
         );
         return null;
       }
+      blocks = checked.blocks;
       if (bubbleDetection != null && page != null && !_cancelRequested) {
         bubbleDetection = await refineBubbleDetection(
           source: page,
@@ -664,6 +672,14 @@ class ImageTranslationService extends GetxController
           page == null || bubbleDetection == null
               ? <int>{}
               : styleMatchedSoundEffects(page, blocks, bubbleDetection.regions);
+      final outlinedEffects =
+          page == null
+              ? <int>{}
+              : outlinedArtworkSoundEffects(
+                page,
+                blocks,
+                bubbleDetection?.regions,
+              );
       for (int index = 0; index < blocks.length; index++) {
         final RecognizedTextBlock block = blocks[index];
         final bool? insideBubble =
@@ -677,6 +693,7 @@ class ImageTranslationService extends GetxController
           width: block.width,
           height: block.height,
           matchesSoundEffectStyle: styledEffects.contains(index),
+          matchesSoundEffectOutline: outlinedEffects.contains(index),
         );
         if (!preserve) {
           retainedBlocks.add(block);
@@ -689,6 +706,7 @@ class ImageTranslationService extends GetxController
               ? 'inside'
               : 'outside'} '
           'sfx=${isOnomatopoeia(block.text, insideBubble: insideBubble)} '
+          'style=${styledEffects.contains(index)} outline=${outlinedEffects.contains(index)} '
           'confidence=${block.confidence.toStringAsFixed(2)} '
           'box=(${block.left.toStringAsFixed(0)},${block.top.toStringAsFixed(0)},'
           '${block.width.toStringAsFixed(0)},${block.height.toStringAsFixed(0)}) '
@@ -1075,11 +1093,12 @@ class ImageTranslationService extends GetxController
     final cached = await _readPersistentResult(key);
     if (cached == null ||
         request.imagePath == null ||
-        cached.ocrArtifactCheckVersion >= 1 ||
+        cached.ocrArtifactCheckVersion >= currentOcrArtifactCheckVersion ||
         !needsOversizedOcrPageCheck(
           cached.blocks,
           cached.imageWidth ?? 0,
           cached.imageHeight ?? 0,
+          containers: cached.containers,
         )) {
       return cached;
     }
@@ -1437,11 +1456,12 @@ class ImageTranslationService extends GetxController
     String imagePath,
     RgbaRaster? page,
   ) async {
-    if (result.ocrArtifactCheckVersion >= 1 ||
+    if (result.ocrArtifactCheckVersion >= currentOcrArtifactCheckVersion ||
         !needsOversizedOcrPageCheck(
           result.blocks,
           result.imageWidth ?? 0,
           result.imageHeight ?? 0,
+          containers: result.containers,
         ))
       return result;
     final detector = engineRegistry.findDetection('ctd-detection');
@@ -1452,11 +1472,25 @@ class ImageTranslationService extends GetxController
     _activeBubbleTasks.add(task);
     try {
       final detection = await task.future.timeout(const Duration(minutes: 2));
-      final checked = reconcileOversizedOcrPage(result, detection);
+      final source =
+          page ?? await _decodePage(await File(imagePath).readAsBytes());
+      final checked = await compute(reconcileOversizedOcrPageWithPixels, (
+        result,
+        detection,
+        source,
+      ));
+      final retained =
+          checked.blocks
+              .map((b) => (b.text, b.left, b.top, b.width, b.height))
+              .toSet();
+      final removed = result.blocks.where(
+        (b) => !retained.contains((b.text, b.left, b.top, b.width, b.height)),
+      );
       _logSoundEffectDecision(
         '[OCR 画面误识别复核] image=$imagePath '
         'blocks=${result.blocks.length} ctd=${detection.polygonMasks.length} '
-        'status=${checked.status.name}',
+        'status=${checked.status.name} retained=${checked.blocks.length} '
+        'removed=${removed.map((b) => b.text).join(" | ")}',
       );
       return checked;
     } catch (error) {

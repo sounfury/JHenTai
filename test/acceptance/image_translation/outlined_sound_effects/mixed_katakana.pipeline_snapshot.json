@@ -1,0 +1,163 @@
+{
+  "initialRegions": 1,
+  "allOcrBlocks": [
+    {
+      "text": "ほれっ",
+      "confidence": 0.9750496745109558,
+      "left": 1153.7920849614502,
+      "top": 109.57432244246334,
+      "width": 34.85031059653011,
+      "height": 67.70458097064989,
+      "backgroundColor": 4290495188,
+      "sourceGlyphWidth": 16.0,
+      "sourceGlyphHeight": 14.0
+    },
+    {
+      "text": "Le3hs",
+      "confidence": 0.5451210021972657,
+      "left": 981.2647662521624,
+      "top": 256.80275124476645,
+      "width": 186.6055089693241,
+      "height": 584.0810145505075,
+      "backgroundColor": 4294769404,
+      "sourceGlyphWidth": 187.0,
+      "sourceGlyphHeight": 375.0
+    },
+    {
+      "text": "CWST",
+      "confidence": 0.5373516157269478,
+      "left": 610.0338389563649,
+      "top": -2.4193242261682144,
+      "width": 178.67875557257048,
+      "height": 318.51836184844376,
+      "backgroundColor": 4290947470,
+      "sourceGlyphWidth": 179.0,
+      "sourceGlyphHeight": 290.0
+    },
+    {
+      "text": "出クン",
+      "confidence": 0.5750245054562887,
+      "left": 498.3481180155749,
+      "top": 63.802805421063916,
+      "width": 100.64336098669747,
+      "height": 194.99658068989072,
+      "backgroundColor": 4290947214,
+      "sourceGlyphWidth": 80.0,
+      "sourceGlyphHeight": 50.0
+    },
+    {
+      "text": "V",
+      "confidence": 0.7112266421318054,
+      "left": 298.3009610082821,
+      "top": 739.0957476845981,
+      "width": 291.2061057611269,
+      "height": 248.6790828616313,
+      "backgroundColor": 4293448386,
+      "sourceGlyphWidth": 292.0,
+      "sourceGlyphHeight": 174.0
+    },
+    {
+      "text": "21997",
+      "confidence": 0.6586833119392395,
+      "left": 144.10246013353486,
+      "top": 249.3078951601518,
+      "width": 135.1230519498646,
+      "height": 304.6997067669464,
+      "backgroundColor": 4294560980,
+      "sourceGlyphWidth": 93.0,
+      "sourceGlyphHeight": 306.0
+    }
+  ],
+  "regions": [
+    {
+      "box": [
+        1137.984814453125,
+        81.1521728515625,
+        76.37490234375014,
+        134.51694335937498
+      ],
+      "confidence": 0.9204801321029663,
+      "maskWidth": 25,
+      "maskHeight": 43,
+      "maskPixels": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAQAAAAAAAAAAAAAAAAEBAQEBAQEBAQEBAQEAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAAAAAEBAQEBAQEBAQEBAQEBAQEAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEAAAAAAA=="
+    }
+  ],
+  "blocks": [
+    {
+      "text": "ほれっ",
+      "confidence": 0.9750496745109558,
+      "left": 1153.7920849614502,
+      "top": 109.57432244246334,
+      "width": 34.85031059653011,
+      "height": 67.70458097064989,
+      "backgroundColor": 4290495188,
+      "sourceGlyphWidth": 16.0,
+      "sourceGlyphHeight": 14.0
+    },
+    {
+      "text": "CWST",
+      "confidence": 0.5373516157269478,
+      "left": 610.0338389563649,
+      "top": -2.4193242261682144,
+      "width": 178.67875557257048,
+      "height": 318.51836184844376,
+      "backgroundColor": 4290947470,
+      "sourceGlyphWidth": 179.0,
+      "sourceGlyphHeight": 290.0
+    },
+    {
+      "text": "出クン",
+      "confidence": 0.5750245054562887,
+      "left": 498.3481180155749,
+      "top": 63.802805421063916,
+      "width": 100.64336098669747,
+      "height": 194.99658068989072,
+      "backgroundColor": 4290947214,
+      "sourceGlyphWidth": 80.0,
+      "sourceGlyphHeight": 50.0
+    },
+    {
+      "text": "V",
+      "confidence": 0.7112266421318054,
+      "left": 298.3009610082821,
+      "top": 739.0957476845981,
+      "width": 291.2061057611269,
+      "height": 248.6790828616313,
+      "backgroundColor": 4293448386,
+      "sourceGlyphWidth": 292.0,
+      "sourceGlyphHeight": 174.0
+    },
+    {
+      "text": "21997",
+      "confidence": 0.6586833119392395,
+      "left": 144.10246013353486,
+      "top": 249.3078951601518,
+      "width": 135.1230519498646,
+      "height": 304.6997067669464,
+      "backgroundColor": 4294560980,
+      "sourceGlyphWidth": 93.0,
+      "sourceGlyphHeight": 306.0
+    }
+  ],
+  "containers": [
+    {
+      "blockIndices": [
+        0
+      ],
+      "left": 1137.984814453125,
+      "top": 81.1521728515625,
+      "width": 76.37490234375014,
+      "height": 134.51694335937498,
+      "confidence": 0.9204801321029663,
+      "layoutAnalysisVersion": 2,
+      "layoutRegions": [
+        {
+          "left": 1152.204798828125,
+          "top": 92.53707587663517,
+          "width": 44.87993750000009,
+          "height": 111.74713730922963
+        }
+      ]
+    }
+  ]
+}
