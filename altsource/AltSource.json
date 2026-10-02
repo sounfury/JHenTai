@@ -61,11 +61,11 @@
       "versions": [
         {
           "version": "8.0.16",
-          "buildVersion": "334",
-          "date": "2026-09-09T13:55:26Z",
-          "localizedDescription": "- 优化在RTL阅读方向下对点击区域动作的语义处理\\n- 修复恢复部分长标题画廊任务时标题读取错误的bug\\n- 降低详情页预载图片的数量\\n\\n--------------------\\n\\n- Fix the bug where modifying network settings did not update the UI\\n",
-          "downloadURL": "https://github.com/jiangtian616/JHenTai/releases/download/v8.0.16+334/JHenTai_8.0.16+334.ipa",
-          "size": 13025015
+          "buildVersion": "337",
+          "date": "2026-10-02T18:00:51Z",
+          "localizedDescription": "- 新增图片翻译：OCR 识别、气泡排版、背景修复、预翻译与自动翻译\n- 新增 OCR 模型\n- 拟声词默认不进入翻译，并收紧过滤规则\n- 画廊语言与目标语言相同时跳过翻译\n- 移除 Apple 风格界面，保留图片翻译能力\n- 合并上游：修复下载任务重解析、优化滚动手势、支持 Archive Bot 重新采样压缩包\n\n--------------------\n\n- Add image translation: OCR, bubble layout, inpainting, pre-translate and auto-translate\n- Add a new OCR model\n- Skip onomatopoeia during translation and tighten filter rules\n- Skip translation when the gallery language matches the target language\n- Remove the Apple visual style while keeping image translation\n- Merge upstream: fix download reparse, optimize scroll gestures, support Archive Bot resample\n",
+          "downloadURL": "https://github.com/sounfury/JHenTai/releases/download/v8.0.16+337/JHenTai_8.0.16+337.ipa",
+          "size": 23970578
         }
       ]
     }
