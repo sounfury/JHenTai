@@ -68,27 +68,6 @@ void main() {
     }
   });
 
-  test('Real-ESRGAN manifest advertises its reachable hosts only', () {
-    final OnnxModelManifest manifest = OnnxModelStore.manifests.singleWhere(
-      (OnnxModelManifest item) =>
-          item.id == OnnxModelStore.superResolutionManifestId,
-    );
-
-    // ModelScope is the default download source (first in the enum); the
-    // byte-identical HuggingFace copy stays as a fallback.
-    expect(manifest.availableSources, <OnnxModelSource>[
-      OnnxModelSource.modelScope,
-      OnnxModelSource.huggingFace,
-    ]);
-    expect(manifest.files, hasLength(1));
-    expect(manifest.files.single.sizeBytes, 17906556);
-    expect(manifest.files.single.sha256, hasLength(64));
-    expect(
-      manifest.files.single.urls[OnnxModelSource.modelScope],
-      startsWith('https://www.modelscope.cn/'),
-    );
-  });
-
   test('Manga109 bubble model is pinned to the NeuronCState artifact', () {
     final OnnxModelManifest manifest = OnnxModelStore.manifests.singleWhere(
       (OnnxModelManifest item) =>
@@ -109,38 +88,6 @@ void main() {
       startsWith(
         'https://huggingface.co/NeuronCState/manga109-segmentation-bubble-onnx/',
       ),
-    );
-  });
-
-  test('lighter 4B32F super-resolution manifest is a verified drop-in', () {
-    final OnnxModelManifest manifest = OnnxModelStore.manifests.singleWhere(
-      (OnnxModelManifest item) =>
-          item.id == OnnxModelStore.superResolutionFastManifestId,
-    );
-
-    expect(manifest.kind, 'superResolution');
-    expect(manifest.availableSources, <OnnxModelSource>[
-      OnnxModelSource.modelScope,
-      OnnxModelSource.huggingFace,
-    ]);
-    expect(manifest.files, hasLength(1));
-    // Verified by download + SHA-256 (identical bytes on ModelScope and HF).
-    expect(manifest.files.single.sizeBytes, 5156099);
-    expect(
-      manifest.files.single.sha256,
-      '2208c7ae8db793330abf1248fbce15585ad317e921c456265572836b92926c9a',
-    );
-
-    // Both SR manifests are the same x4 contract, so a picker listing
-    // manifestsOfKind('superResolution') offers exactly the two models.
-    expect(
-      OnnxModelStore.instance
-          .manifestsOfKind('superResolution')
-          .map((OnnxModelManifest item) => item.id),
-      containsAll(<String>[
-        OnnxModelStore.superResolutionManifestId,
-        OnnxModelStore.superResolutionFastManifestId,
-      ]),
     );
   });
 }

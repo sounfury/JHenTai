@@ -38,7 +38,7 @@ String normalizedImageCacheKey(String url) {
 
 /// Finds an image written before stable fileindex cache keys were introduced.
 /// When possible it copies that legacy raw-URL entry to the stable key so all
-/// later readers, downloads and LAN peers can reuse it.
+/// later readers and downloads can reuse it.
 Future<File?> findCompatibleImageCacheFile({
   required String directory,
   required String url,

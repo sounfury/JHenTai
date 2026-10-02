@@ -63,8 +63,7 @@ class UserSetting
     String? avatarImgUrl,
     String? nickName,
   }) async {
-    // Never put the credential-bearing pass hash in logs. LAN login-state
-    // import calls this method after an encrypted, revalidated transfer.
+    // Never put the credential-bearing pass hash in logs.
     log.debug(
       'saveUserInfo: $userName, $ipbMemberId, $avatarImgUrl, $nickName',
     );

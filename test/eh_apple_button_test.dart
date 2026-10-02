@@ -107,7 +107,7 @@ void main() {
             // Regression: previously the glass branch skipped Material's
             // 64x40 minimum and applied no padding, so a filled label button
             // rendered at the raw text size (e.g. a ~28x20 "view" pill in a
-            // LAN sharing row).
+            // settings row).
             EHAppleFilledButton(
               onPressed: () {},
               child: const Text('查看'),

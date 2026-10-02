@@ -170,7 +170,6 @@ class pt_BR {
       'ratingFailed': 'Falha na avaliação',
       'voteTagFailed': 'Falha na tag de votação',
       'beginToDownload': 'Começar a baixar',
-      'downloadFromRemoteDevice': 'Download remoto de {device}',
       'resumeDownload': 'Retomar',
       'pauseDownload': 'Pausar',
       'addNewTagSetSuccess': 'Novo conjunto de tags adicionado com sucesso',
@@ -454,16 +453,6 @@ class pt_BR {
       'ineffectiveInGalleryPage': 'Ineficaz na página da galeria agora.',
 
       /// advanced setting page
-      'readerPerformanceExperiments': 'Experimentos de desempenho de leitura',
-      'readerEngine2': 'Reader Engine 2.0',
-      'readerEngine2Hint':
-          'Prioriza páginas próximas com base na área visível e na direção da leitura.',
-      'performanceGovernor': 'Performance Governor',
-      'performanceGovernorHint':
-          'Monitora o tempo dos quadros e reduz a pré-carga e a concorrência quando há travamentos contínuos.',
-      'progressiveImagePipeline': 'Pipeline progressivo de imagens',
-      'progressiveImagePipelineHint':
-          'Mostra primeiro a miniatura e depois a substitui pela imagem original.',
       'enableDomainFronting': 'Ativar frente de Domínio',
       'bypassSNIBlocking': 'Ignorar bloqueio de SNI',
       'hostMapping': 'Mapeamento de host',
@@ -483,11 +472,6 @@ class pt_BR {
       'smartCacheRetentionHint':
           "Caches mais antigos que isso são limpos automaticamente",
       'smartCacheMaxSize': "Limite de espaço do cache",
-      'moveCacheToServer': 'Mover cache para o servidor',
-      'moveCacheToServerHint':
-          'Enviar o cache deste dispositivo a um servidor LAN conectado',
-      'moveCacheToServerDisabledHint': 'Conecte-se a um servidor LAN primeiro',
-      'moveCacheToServerDone': '{count} arquivos de cache enviados ao servidor',
       'smartCacheMaxSizeHint':
           "O cache é limpo automaticamente ao exceder este limite",
       'smartCacheEvictPolicy': "Política de limpeza",
@@ -526,7 +510,6 @@ class pt_BR {
       'inferenceDeviceNotDetected':
           'Não detectado (preenchido após integrar modelos)',
       'inferenceDomainOcr': 'Tradução de imagem (OCR)',
-      'inferenceDomainSuperResolution': 'Super resolução',
       'inferenceEnableNnapi': 'Ativar aceleração NNAPI',
       'inferenceEnableNnapiHint':
           'Usa NPU/GPU/DSP em aparelhos Android compatíveis; volta para CPU automaticamente.',
@@ -534,15 +517,12 @@ class pt_BR {
       'inferenceEnableCpuFallbackHint':
           'Usa CPU quando o backend selecionado não estiver disponível.',
       'inferenceEngineOcr': 'Tradução de imagem/texto',
-      'inferenceEngineSuperResolution': 'Upscaling de imagem',
       'inferenceModelReady': 'Pronto',
       'inferenceModelNotIntegrated':
           'A inferência não está pronta; veja os detalhes nas configurações',
       'inferenceOcrModel': 'OCR multilíngue PP-OCRv6 small',
       'inferenceOcrLanguageAuto':
           'Reconhece automaticamente chinês, japonês, inglês e 50 idiomas',
-      'inferenceSuperResolutionModel':
-          'Modelo de super resolução (Real-ESRGAN)',
       'inferenceModelNotDownloaded': 'Não baixado',
       'inferenceModelValidating': 'Validando a integridade do modelo',
       'inferenceModelVerified': 'Baixado e com integridade verificada',
@@ -571,19 +551,10 @@ class pt_BR {
       'imageTranslationOcrEngineOnnx': 'ONNX (no dispositivo)',
       'imageTranslationOcrNotConfigured':
           'O motor OCR ONNX ainda não está configurado. Integre modelos no backend de inferência.',
-      'superResolutionEngine': 'Motor',
-      'superResolutionEngineNcnnVulkan': 'ncnn-vulkan (externo)',
-      'superResolutionEngineOnnx': 'ONNX (no aplicativo)',
       'onnxModelDescRapidOcrSmall':
           'Dicionário multilíngue completo do PP-OCRv6 com alta precisão de reconhecimento em tamanho e velocidade moderados. Bom para a maioria dos quadrinhos e imagens.',
       'onnxModelDescRapidOcrTiny':
           'Dicionário reduzido e redes leves: a camada mais rápida e menor, mas com um conjunto de caracteres menor e precisão ligeiramente menor em glifos complexos. Ideal para dispositivos fracos ou uso focado em velocidade.',
-      'onnxModelDescRealEsrgan6B':
-          'Camada de alta qualidade: mais detalhes e melhor qualidade, mais lenta.',
-      'onnxModelDescRealEsrgan4B32F':
-          'Camada rápida: cerca de 3-4x mais rápida com um pouco menos de detalhes; ideal para processamento em lote.',
-      'superResolutionModelPickerHint':
-          'Trocar de modelo reprocessa páginas ampliadas',
       'stopSuperResolution': 'Stop Super Resolution',
       'deleteSuperResolvedImage': 'Delete Super Resolved Image',
       'superResolveOriginalImageHint':
@@ -1004,14 +975,6 @@ class pt_BR {
       'blockRules': 'Block Rules',
       'searchHistory': 'Search History',
       'galleryHistory': 'Gallery History',
-      'lanPermission_loginState': 'Estado de login',
-      'lanPermission_applicationHistory': 'Histórico do aplicativo',
-      'lanPermission_applicationSettings': 'Configurações do aplicativo',
-      'lanDownloadToDevice': 'Baixar neste dispositivo',
-      'lanDownloadToDeviceSent': 'Pedido de download enviado ao dispositivo',
-      'lanDownloadToDeviceFailed': 'Falha no pedido de download',
-
-      /// block rule page
       'configureBlockRuleFailed': 'Configure block rule failed',
       'removeBlockRuleFailed': 'Remove block rule failed',
       'inputNumberHint': 'Please input a correct number',
@@ -1085,7 +1048,6 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// image text translation
       'imageTextTranslation': 'Tradução de texto da imagem',
       'translateImageText': 'Reconhecer e traduzir esta página',
-      'currentPageSuperResolution': 'Super-resolução desta página',
       'addBookmark': 'Adicionar marcador',
       'removeBookmark': 'Remover marcador',
       'recognizingImageText': 'Reconhecendo texto da imagem…',

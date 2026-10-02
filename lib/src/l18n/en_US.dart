@@ -167,7 +167,6 @@ class en_US {
       'ratingFailed': 'Rating Failed',
       'voteTagFailed': 'Vote Tag Failed',
       'beginToDownload': 'Begin To Download',
-      'downloadFromRemoteDevice': 'Remote download from {device}',
       'resumeDownload': 'Resume Download',
       'pauseDownload': 'Pause Download',
       'addNewTagSetSuccess': 'Add New Tag Set Success',
@@ -445,16 +444,6 @@ class en_US {
       'ineffectiveInGalleryPage': 'Ineffective in gallery page now.',
 
       /// advanced setting page
-      'readerPerformanceExperiments': 'Reader Performance Experiments',
-      'readerEngine2': 'Reader Engine 2.0',
-      'readerEngine2Hint':
-          'Prioritize nearby page parsing from the visible viewport and reading direction.',
-      'performanceGovernor': 'Performance Governor',
-      'performanceGovernorHint':
-          'Monitor frame time and reduce prefetch and parsing concurrency during sustained jank.',
-      'progressiveImagePipeline': 'Progressive Image Pipeline',
-      'progressiveImagePipelineHint':
-          'Show the gallery thumbnail first, then replace it with the original image.',
       'enableDomainFronting': 'Enable Domain Fronting',
       'bypassSNIBlocking': 'Bypass SNI blocking',
       'hostMapping': 'Host Mapping',
@@ -474,11 +463,6 @@ class en_US {
       'smartCacheRetentionHint':
           "Cache older than this is cleared automatically",
       'smartCacheMaxSize': "Max Cache Size",
-      'moveCacheToServer': 'Move cache to server',
-      'moveCacheToServerHint':
-          'Upload this device\'s cache to a connected LAN server',
-      'moveCacheToServerDisabledHint': 'Connect to a LAN server first',
-      'moveCacheToServerDone': 'Uploaded {count} cache files to the server',
       'smartCacheMaxSizeHint':
           "Cache is automatically trimmed when it exceeds this limit",
       'smartCacheEvictPolicy': "Eviction Policy",
@@ -488,118 +472,6 @@ class en_US {
       'smartCacheEvictByUsageFrequency': "By usage frequency",
       'unlimited': "Unlimited",
       'cacheSize': "Current Cache Size",
-      'lanSharing': 'LAN Sharing',
-      'lanGalleryList': 'LAN Gallery',
-      'lanLocalTabAsLan': 'Download page “Local” tab shows the LAN gallery',
-      'lanLocalTabAsLanHint':
-          'When on, the download page’s Local tab lists galleries on connected trusted devices',
-      'lanStayResident': 'Stay resident in background (mac/Linux/Windows)',
-      'lanStayResidentHint':
-          'When on, closing the window keeps the app running in the background (LAN sharing stays online); restore from the system tray',
-      'lanActAsServer': 'Act as a LAN server',
-      'lanActAsServerHint':
-          'Desktop only: publish this device as a LAN server. Mobile stays a foreground client.',
-      'lanServerMode': 'Server mode',
-      'lanActiveBroadcast': 'Active broadcast',
-      'lanActiveBroadcastHint':
-          'Auto-send a pairing request when a new device is discovered; the peer decides whether to accept',
-      'lanServerModeHint':
-          'This device is the storage/cache: images peers browse are downloaded and cached here, so peers keep almost no cache of their own',
-      'lanPreferredServer': 'Preferred server',
-      'lanNoPreferredServer': 'Automatic: use any connected trusted server',
-      'lanResidentShow': 'Show main window',
-      'lanResidentQuit': 'Quit',
-      'lanGalleryListFailed': 'Failed to load LAN galleries',
-      'lanGalleryListEmpty': 'No galleries available',
-      'lanGalleryListEmptyHint':
-          'Connected devices must grant you the Downloads permission to appear here',
-      'lanGalleryPageCount': '@count pages',
-      'lanGalleryOpenFailed': 'Unable to open this gallery',
-      'lanDownloadToDevice': 'Download to this device',
-      'lanDownloadToDeviceSent': 'Download request sent to the device',
-      'lanDownloadToDeviceFailed': 'Download request failed',
-      'lanUnknownDevice': 'Unknown device',
-      'lanSharingHint': 'Pair and automatically reconnect to trusted devices',
-      'experimentalFeatures': 'Experimental Features',
-      'lanSharingExperimentalHint':
-          'Find, pair, and connect to devices on the same local network',
-      'lanFindAndPairDevices': 'Find and Pair Devices',
-      'lanFindAndPairDevicesHint':
-          'Review nearby devices and decide whether to trust them',
-      'lanSharingDisabled': 'LAN sharing is disabled',
-      'lanSharingDisabledHint':
-          'Enable it under Experimental Features in Advanced settings first.',
-      'lanSharingStartFailed':
-          'The LAN service could not start, so sharing remains disabled. Check system network permissions or logs.',
-      'lanLocalDevice': 'This Device',
-      'lanTrafficStats': 'Transfer Traffic',
-      'lanTrafficTotal': 'Total',
-      'lanTrafficSent': 'Sent',
-      'lanTrafficReceived': 'Received',
-      'lanTrafficCurrentRunHint':
-          'LAN sharing data transferred during this run',
-      'lanDeviceId': 'Device ID',
-      'lanEditDeviceName': 'Edit device name',
-      'lanDeviceNameRequired': 'Device name cannot be empty',
-      'lanDeviceNameTooLong': 'Device name must be 128 characters or fewer',
-      'lanTrustReady': 'Trusted-device identity is ready',
-      'lanTrustReadyHint':
-          'Reconnect credentials are stored in the system secure storage.',
-      'lanTrustedDevices': 'Trusted Devices',
-      'lanNoTrustedDevices': 'No trusted devices',
-      'lanNoTrustedDevicesHint':
-          'A device will appear here after the first verified pairing.',
-      'lanNearbyDevices': 'Nearby Devices',
-      'lanIncomingPairingRequests': 'Pairing Requests',
-      'lanNoIncomingPairingRequests': 'No pending pairing requests',
-      'lanIncomingPairingRequestHint':
-          'This device wants to pair. Verify its identity before trusting it.',
-      'lanSearchingDevices': 'Searching for devices…',
-      'lanSearchingDevicesHint': 'Keep LAN sharing enabled on the other device',
-      'lanReviewDevice': 'Review',
-      'lanPairingWaiting': 'Waiting for approval…',
-      'lanTrustDeviceQuestion': 'Trust @name?',
-      'lanTrustDeviceWarning':
-          'Only trust devices you recognize. The device can access the selected content after pairing.',
-      'lanDoNotTrust': 'Do Not Trust',
-      'lanTrustAndPair': 'Trust and Pair',
-      'lanTrustGranted': 'Device trusted',
-      'lanPairingFailed':
-          'The request was declined or pairing failed. Make sure the other device is still available.',
-      'lanAutoConnect': 'Automatically reconnect',
-      'lanAutoConnectHint':
-          'Connect directly when this trusted device is discovered again',
-      'lanFingerprint': 'Identity fingerprint',
-      'lanLastSeen': 'Last seen',
-      'lanPermissions': 'Granted access',
-      'lanRevokeTrust': 'Revoke trust',
-      'lanRevokeTrustHint':
-          'Revoke trust for @name? Both devices must pair again before reconnecting.',
-      'lanConnection_offline': 'Offline',
-      'lanConnection_discovered': 'Discovered',
-      'lanConnection_connecting': 'Connecting…',
-      'lanConnection_connected': 'Connected',
-      'lanConnection_failed': 'Connection failed',
-      'lanConnection_identityMismatch': 'Device identity changed',
-      'lanPermission_downloads': 'Downloads',
-      'lanPermission_imageCache': 'Image cache',
-      'lanPermission_translationResults': 'Translation results',
-      'lanPermission_translationCompute': 'Translation compute',
-      'lanPermission_ocrCompute': 'OCR compute',
-      'lanPermission_loginState': 'Login state',
-      'lanPermission_applicationHistory': 'Application history',
-      'lanPermission_applicationSettings': 'Application settings',
-      'lanUnifiedState': 'State sync',
-      'lanUnifiedStateEmpty': 'Login state or history not synced yet',
-      'lanUnifiedStateHint':
-          'Syncs login state and app history after connecting to a trusted device',
-      'lanUnifiedStateLogin': 'Login state',
-      'lanUnifiedStateHistory': 'App history',
-      'lanUnifiedStateSynced': 'Synced',
-      'lanUnifiedStateNotSynced': 'Not synced',
-      'lanUnifiedStateFailed': 'Failed',
-      'lanUnifiedStateRecords': 'records',
-      'lanPermissionRevokeHint': 'Revoking stops new sync requests.',
       'oneMinute': '1 Minute',
       'tenMinute': '10 Minute',
       'oneHour': '1 Hour',
@@ -628,7 +500,6 @@ class en_US {
       'inferenceDeviceNotDetected':
           'Not detected (filled after model integration)',
       'inferenceDomainOcr': 'Image translation (OCR)',
-      'inferenceDomainSuperResolution': 'Super resolution',
       'inferenceEnableNnapi': 'Enable NNAPI acceleration',
       'inferenceEnableNnapiHint':
           'Route to NPU/GPU/DSP on supported Android devices; falls back to CPU automatically.',
@@ -636,14 +507,12 @@ class en_US {
       'inferenceEnableCpuFallbackHint':
           'Fall back to CPU when the selected backend is unavailable.',
       'inferenceEngineOcr': 'Image/Text Translation',
-      'inferenceEngineSuperResolution': 'Image Upscaling',
       'inferenceModelReady': 'Ready',
       'inferenceModelNotIntegrated':
           'Inference is not ready; see Inference Settings for details',
       'inferenceOcrModel': 'PP-OCRv6 small multilingual OCR',
       'inferenceOcrLanguageAuto':
           'Automatically recognizes Chinese, Japanese, English, and 50 languages',
-      'inferenceSuperResolutionModel': 'Super resolution model (Real-ESRGAN)',
       'inferenceModelNotDownloaded': 'Not downloaded',
       'inferenceModelValidating': 'Validating model integrity',
       'inferenceModelVerified': 'Downloaded and integrity verified',
@@ -674,19 +543,10 @@ class en_US {
       'imageTranslationOcrEngineMangaOcr': 'manga-OCR (to be implemented)',
       'imageTranslationOcrNotConfigured':
           'ONNX OCR engine is not configured yet. Integrate models in the inference backend.',
-      'superResolutionEngine': 'Engine',
-      'superResolutionEngineNcnnVulkan': 'ncnn-vulkan (external)',
-      'superResolutionEngineOnnx': 'ONNX (in-app)',
       'onnxModelDescRapidOcrSmall':
           'Full PP-OCRv6 multilingual dictionary with high recognition accuracy at moderate size and speed. Good for most comics and images.',
       'onnxModelDescRapidOcrTiny':
           'Reduced dictionary and lightweight networks: the fastest and smallest tier, but with a smaller character set and slightly lower accuracy on complex glyphs. Best for low-end devices or speed-first use.',
-      'onnxModelDescRealEsrgan6B':
-          'High-quality tier: the most detail and best quality, slower on large images.',
-      'onnxModelDescRealEsrgan4B32F':
-          'Fast tier: roughly 3-4x faster with slightly less detail; ideal for batch processing.',
-      'superResolutionModelPickerHint':
-          'Switching models re-processes upscaled pages',
       'stopSuperResolution': 'Stop Super Resolution',
       'deleteSuperResolvedImage': 'Delete Super Resolved Image',
       'superResolveOriginalImageHint':
@@ -1173,7 +1033,6 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// image text translation
       'imageTextTranslation': 'Image Text Translation',
       'translateImageText': 'Recognize and Translate This Page',
-      'currentPageSuperResolution': 'Super-resolve This Page',
       'addBookmark': 'Add bookmark',
       'removeBookmark': 'Remove bookmark',
       'enableTranslationFloatingBall': 'Show translation floating ball',

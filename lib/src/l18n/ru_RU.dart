@@ -171,7 +171,6 @@ class ru_RU {
       'ratingFailed': 'Не удалось выставить рейтинг',
       'voteTagFailed': 'Не удалось проголосовать за тег',
       'beginToDownload': 'Начать загрузку',
-      'downloadFromRemoteDevice': 'Удалённая загрузка с {device}',
       'resumeDownload': 'Возобновить загрузку',
       'pauseDownload': 'Приостановить загрузку',
       'addNewTagSetSuccess': 'Новый набор тегов успешно добавлен',
@@ -458,17 +457,6 @@ class ru_RU {
       'ineffectiveInGalleryPage': 'Сейчас не действует на странице галереи.',
 
       /// advanced setting page
-      'readerPerformanceExperiments':
-          'Экспериментальная производительность чтения',
-      'readerEngine2': 'Reader Engine 2.0',
-      'readerEngine2Hint':
-          'Приоритетный разбор соседних страниц с учетом видимой области и направления чтения.',
-      'performanceGovernor': 'Performance Governor',
-      'performanceGovernorHint':
-          'Отслеживает время кадров и снижает предзагрузку и параллелизм при постоянных задержках.',
-      'progressiveImagePipeline': 'Прогрессивный конвейер изображений',
-      'progressiveImagePipelineHint':
-          'Сначала показывает миниатюру, затем заменяет ее исходным изображением.',
       'enableDomainFronting': 'Включить Domain Fronting',
       'bypassSNIBlocking': 'Обход блокировки SNI',
       'hostMapping': 'Сопоставление хостов',
@@ -488,11 +476,6 @@ class ru_RU {
       'smartCacheRetentionHint':
           "Кэш старше этого срока очищается автоматически",
       'smartCacheMaxSize': "Максимальный размер кэша",
-      'moveCacheToServer': 'Перенести кэш на сервер',
-      'moveCacheToServerHint':
-          'Загрузить кэш этого устройства на подключённый LAN-сервер',
-      'moveCacheToServerDisabledHint': 'Сначала подключитесь к LAN-серверу',
-      'moveCacheToServerDone': 'Загружено {count} файлов кэша на сервер',
       'smartCacheMaxSizeHint':
           "Превышение лимита приводит к автоматической очистке кэша",
       'smartCacheEvictPolicy': "Политика очистки",
@@ -530,7 +513,6 @@ class ru_RU {
       'inferenceDeviceNotDetected':
           'Не обнаружено (заполняется после интеграции моделей)',
       'inferenceDomainOcr': 'Перевод изображений (OCR)',
-      'inferenceDomainSuperResolution': 'Суперразрешение',
       'inferenceEnableNnapi': 'Аппаратное ускорение NNAPI',
       'inferenceEnableNnapiHint':
           'Использует NPU/GPU/DSP на поддерживаемых Android-устройствах; автоматически откатывается на CPU.',
@@ -538,14 +520,12 @@ class ru_RU {
       'inferenceEnableCpuFallbackHint':
           'Использовать CPU, если выбранный бэкенд недоступен.',
       'inferenceEngineOcr': 'Перевод изображений/текста',
-      'inferenceEngineSuperResolution': 'Апскейлинг изображений',
       'inferenceModelReady': 'Готов',
       'inferenceModelNotIntegrated':
           'Инференс не готов; подробности доступны в настройках инференса',
       'inferenceOcrModel': 'Многоязычная OCR PP-OCRv6 small',
       'inferenceOcrLanguageAuto':
           'Автоматически распознаёт китайский, японский, английский и 50 языков',
-      'inferenceSuperResolutionModel': 'Модель суперразрешения (Real-ESRGAN)',
       'inferenceModelNotDownloaded': 'Не загружено',
       'inferenceModelValidating': 'Проверка целостности модели',
       'inferenceModelVerified': 'Загружено, целостность подтверждена',
@@ -575,19 +555,10 @@ class ru_RU {
       'imageTranslationOcrEngineOnnx': 'ONNX (на устройстве)',
       'imageTranslationOcrNotConfigured':
           'ONNX OCR-движок ещё не настроен. Интегрируйте модели в инференс-бэкенде.',
-      'superResolutionEngine': 'Движок',
-      'superResolutionEngineNcnnVulkan': 'ncnn-vulkan (внешний)',
-      'superResolutionEngineOnnx': 'ONNX (в приложении)',
       'onnxModelDescRapidOcrSmall':
           'Полный многоязычный словарь PP-OCRv6 с высокой точностью распознавания при умеренных размере и скорости. Подходит для большинства комиксов и изображений.',
       'onnxModelDescRapidOcrTiny':
           'Сокращённый словарь и лёгкие сети: самый быстрый и компактный вариант, но с меньшим набором символов и чуть меньшей точностью на сложных глифах. Лучше всего подходит для слабых устройств или максимальной скорости.',
-      'onnxModelDescRealEsrgan6B':
-          'Высокое качество: больше всего деталей и лучшее качество, медленнее.',
-      'onnxModelDescRealEsrgan4B32F':
-          'Быстрый вариант: примерно в 3-4 раза быстрее с чуть меньшим количеством деталей; идеально для пакетной обработки.',
-      'superResolutionModelPickerHint':
-          'Смена модели требует повторной обработки страниц',
       'stopSuperResolution': 'Остановить супер-разрешение',
       'deleteSuperResolvedImage': 'Удалить обработанное изображение',
       'superResolveOriginalImageHint':
@@ -1024,14 +995,6 @@ class ru_RU {
       'blockRules': 'Правила блокировки',
       'searchHistory': 'История поиска',
       'galleryHistory': 'История галерей',
-      'lanPermission_loginState': 'Состояние входа',
-      'lanPermission_applicationHistory': 'История приложения',
-      'lanPermission_applicationSettings': 'Настройки приложения',
-      'lanDownloadToDevice': 'Скачать на это устройство',
-      'lanDownloadToDeviceSent': 'Запрос на скачивание отправлен устройству',
-      'lanDownloadToDeviceFailed': 'Ошибка запроса на скачивание',
-
-      /// block rule page / Страница правил блокировки
       'configureBlockRuleFailed': 'Не удалось настроить правило блокировки',
       'removeBlockRuleFailed': 'Не удалось удалить правило блокировки',
       'inputNumberHint': 'Пожалуйста, введите корректное число',
@@ -1107,7 +1070,6 @@ class ru_RU {
       /// image text translation
       'imageTextTranslation': 'Перевод текста на изображении',
       'translateImageText': 'Распознать и перевести страницу',
-      'currentPageSuperResolution': 'Повысить разрешение страницы',
       'addBookmark': 'Добавить закладку',
       'removeBookmark': 'Удалить закладку',
       'recognizingImageText': 'Распознавание текста…',

@@ -4,7 +4,6 @@ import 'package:jhentai/src/service/inference/inference_exception.dart';
 import 'package:jhentai/src/service/inference/inference_task.dart';
 import 'package:jhentai/src/service/inference/ocr_inference_engine.dart';
 import 'package:jhentai/src/service/inference/onnx_model_store.dart';
-import 'package:jhentai/src/service/inference/super_resolution_inference_engine.dart';
 
 import 'engine_contract.dart';
 import 'model_catalog.dart';
@@ -73,66 +72,6 @@ class OnnxOcrEngineAdapter implements OcrEngine {
       );
 }
 
-class OnnxSuperResolutionEngineAdapter implements SuperResolutionEngine {
-  OnnxSuperResolutionEngineAdapter({
-    required SuperResolutionInferenceEngine Function() resolver,
-  }) : _resolver = resolver;
-
-  final SuperResolutionInferenceEngine Function() _resolver;
-
-  @override
-  final EngineDescriptor descriptor = const EngineDescriptor(
-    id: 'onnx-super-resolution',
-    kind: EngineKind.superResolution,
-    displayName: 'ONNX Super Resolution',
-    platforms: <EnginePlatform>{
-      EnginePlatform.android,
-      EnginePlatform.ios,
-      EnginePlatform.linux,
-      EnginePlatform.macos,
-      EnginePlatform.windows,
-    },
-    modelId: OnnxModelStore.superResolutionManifestId,
-  );
-
-  @override
-  bool get isReady => _resolver().isReady;
-
-  @override
-  EngineTask<String> upscale(ImageProcessingRequest request, {int scale = 4}) =>
-      EngineTask<String>.start(
-        operation: (EngineTaskContext context) async {
-          final InferenceCancellationToken token = InferenceCancellationToken();
-          final subscription = context.cancellation.onCancel.listen(
-            token.cancel,
-          );
-          try {
-            context.report(EngineTaskStage.processing, 0);
-            await _resolver().upscale(
-              inputPath: request.imagePath,
-              outputPath: request.outputPath,
-              scale: scale,
-              cancellationToken: token,
-              onProgress: (double progress) =>
-                  context.report(EngineTaskStage.processing, progress),
-            );
-            return request.outputPath;
-          } on InferenceCancelledException catch (error) {
-            throw EngineTaskCancelledException(error.reason);
-          } on InferenceNotReadyException catch (error) {
-            throw EngineException(
-              code: 'not_ready',
-              message: error.toString(),
-              engineId: descriptor.id,
-              cause: error,
-            );
-          } finally {
-            await subscription.cancel();
-          }
-        },
-      );
-}
-
 class OnnxModelCatalog extends ModelCatalog {
   OnnxModelCatalog({List<OnnxModelManifest>? manifests})
     : _manifests = manifests ?? OnnxModelStore.manifests;
@@ -154,7 +93,6 @@ class OnnxModelCatalog extends ModelCatalog {
           engineIds: <String>[
             switch (manifest.kind) {
               'ocr' => 'onnx-ocr',
-              'superResolution' => 'onnx-super-resolution',
               'inpaint' => 'onnx-lama-inpaint',
               'detection' => manifest.id ==
                       OnnxModelStore.bubbleSegmentationManifestId

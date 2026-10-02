@@ -13,7 +13,6 @@ enum EngineKind {
   ocr,
   translation,
   inpaint,
-  superResolution,
   modelCatalog,
   modelDownload,
 }
@@ -525,12 +524,6 @@ abstract class InpaintEngine {
   EngineDescriptor get descriptor;
   bool get isReady;
   EngineTask<String> inpaint(ImageProcessingRequest request);
-}
-
-abstract class SuperResolutionEngine {
-  EngineDescriptor get descriptor;
-  bool get isReady;
-  EngineTask<String> upscale(ImageProcessingRequest request, {int scale = 4});
 }
 
 /// A deterministic key for every persisted translation/image-processing result.

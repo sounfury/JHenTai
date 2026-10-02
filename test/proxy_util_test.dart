@@ -19,7 +19,7 @@ void main() {
       expect(shouldBypassProxy(Uri.parse('https://172.66.132.196')), isFalse);
     });
 
-    test('returns DIRECT for LAN and the proxy for public requests', () async {
+    test('returns DIRECT for local endpoints and the proxy for public requests', () async {
       final JProxyType previousType = networkSetting.proxyType.value;
       networkSetting.proxyType.value = JProxyType.system;
       try {

@@ -144,11 +144,6 @@ class EngineRegistry {
     );
     registerTranslation(llamaFfi);
     registerContextTranslation(llamaFfi);
-    registerSuperResolution(
-      OnnxSuperResolutionEngineAdapter(
-        resolver: () => _inferenceResolver().superResolutionEngine,
-      ),
-    );
     final CtdOnnxInferenceEngine ctdInference = CtdOnnxInferenceEngine(
       runtime: OnnxRuntime.instance,
       providerResolver: _visionModelProviders,
@@ -300,8 +295,6 @@ class EngineRegistry {
       <String, ContextTranslationEngine>{};
   final Map<String, DetectionEngine> _detection = <String, DetectionEngine>{};
   final Map<String, InpaintEngine> _inpaint = <String, InpaintEngine>{};
-  final Map<String, SuperResolutionEngine> _superResolution =
-      <String, SuperResolutionEngine>{};
   late final ModelCatalog _modelCatalog;
   late final ModelDownloadManager _modelDownloadManager;
 
@@ -315,8 +308,6 @@ class EngineRegistry {
       _put(_detection, engine.descriptor.id, engine);
   void registerInpaint(InpaintEngine engine) =>
       _put(_inpaint, engine.descriptor.id, engine);
-  void registerSuperResolution(SuperResolutionEngine engine) =>
-      _put(_superResolution, engine.descriptor.id, engine);
 
   void _put<T>(Map<String, T> target, String id, T engine) {
     if (target.containsKey(id)) {
@@ -331,7 +322,6 @@ class EngineRegistry {
       _contextTranslations[id];
   DetectionEngine? findDetection(String id) => _detection[id];
   InpaintEngine? findInpaint(String id) => _inpaint[id];
-  SuperResolutionEngine? findSuperResolution(String id) => _superResolution[id];
   ModelCatalog get modelCatalog => _modelCatalog;
   ModelDownloadManager get modelDownloadManager => _modelDownloadManager;
 

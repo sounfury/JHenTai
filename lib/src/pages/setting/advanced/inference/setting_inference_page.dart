@@ -5,13 +5,12 @@ import 'package:jhentai/src/service/inference/onnx_model_store.dart';
 import 'package:jhentai/src/service/inference_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/setting/inference_setting.dart';
-import 'package:jhentai/src/setting/super_resolution_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:jhentai/src/widget/eh_apple_settings_list_view.dart';
 import 'package:jhentai/src/widget/eh_codex_style_dropdown.dart';
 
-/// OCR 与图像超分共用的 AI Core 运行后端入口。
+/// OCR 与图像翻译共用的 AI Core 运行后端入口。
 class SettingInferencePage extends StatelessWidget {
   const SettingInferencePage({Key? key}) : super(key: key);
 
@@ -49,7 +48,6 @@ class SettingInferencePage extends StatelessWidget {
               children: [
                 _buildDetectedDevice(),
                 _buildResolvedBackend(InferenceDomain.ocr),
-                _buildResolvedBackend(InferenceDomain.superResolution),
                 if (GetPlatform.isAndroid) _buildEnableNnapi(),
                 _buildEnableCpuFallback(),
               ],
@@ -62,12 +60,6 @@ class SettingInferencePage extends StatelessWidget {
                   imageTranslationSetting.onnxModelId.value,
                   InferenceDomain.ocr,
                   () => toRoute(Routes.imageTranslation),
-                ),
-                _buildModelStatus(
-                  'inferenceEngineSuperResolution'.tr,
-                  superResolutionSetting.onnxModelId.value,
-                  InferenceDomain.superResolution,
-                  () => toRoute(Routes.superResolution),
                 ),
                 if (inferenceSetting.benchmarkSummary.value != null)
                   _buildBenchmark(),
@@ -157,10 +149,7 @@ class SettingInferencePage extends StatelessWidget {
   }
 
   Widget _buildResolvedBackend(InferenceDomain domain) {
-    final String domainLabel =
-        domain == InferenceDomain.ocr
-            ? 'inferenceDomainOcr'.tr
-            : 'inferenceDomainSuperResolution'.tr;
+    final String domainLabel = 'inferenceDomainOcr'.tr;
     return Obx(
       () => ListTile(
         title: Text(domainLabel),

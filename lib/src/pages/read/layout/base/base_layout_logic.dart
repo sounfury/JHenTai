@@ -210,10 +210,6 @@ abstract class BaseLayoutLogic extends GetxController
           child: Text('translateImageText'.tr),
         ),
         PopupMenuItem(
-          value: 'current_page_super_resolution',
-          child: Text('currentPageSuperResolution'.tr),
-        ),
-        PopupMenuItem(
           value: 'toggle_bookmark',
           child: Text(_bookmarkActionLabel(index)),
         ),
@@ -243,9 +239,6 @@ abstract class BaseLayoutLogic extends GetxController
         break;
       case 'translate_image':
         translateImage(index, context);
-        break;
-      case 'current_page_super_resolution':
-        readPageLogic.superResolveCurrentImage(index);
         break;
       case 'toggle_bookmark':
         await _toggleBookmark(index);
@@ -302,13 +295,6 @@ abstract class BaseLayoutLogic extends GetxController
                 onPressed: () {
                   _dismissMobileContextMenu(sheetContext);
                   translateImage(index, context);
-                },
-              ),
-              CupertinoActionSheetAction(
-                child: ehActionSheetText('currentPageSuperResolution'.tr),
-                onPressed: () {
-                  _dismissMobileContextMenu(sheetContext);
-                  readPageLogic.superResolveCurrentImage(index);
                 },
               ),
               CupertinoActionSheetAction(
@@ -718,13 +704,6 @@ abstract class BaseLayoutLogic extends GetxController
                   await _toggleBookmark(index);
                 },
               ),
-              CupertinoActionSheetAction(
-                child: ehActionSheetText('currentPageSuperResolution'.tr),
-                onPressed: () {
-                  _dismissMobileContextMenu(sheetContext);
-                  readPageLogic.superResolveCurrentImage(index);
-                },
-              ),
             ],
             cancelButton: CupertinoActionSheetAction(
               child: ehActionSheetText('cancel'.tr),
@@ -753,18 +732,11 @@ abstract class BaseLayoutLogic extends GetxController
           value: 'toggle_bookmark',
           child: Text(_bookmarkActionLabel(index)),
         ),
-        PopupMenuItem(
-          value: 'current_page_super_resolution',
-          child: Text('currentPageSuperResolution'.tr),
-        ),
       ],
     );
     switch (selected) {
       case 'toggle_bookmark':
         await _toggleBookmark(index);
-        break;
-      case 'current_page_super_resolution':
-        readPageLogic.superResolveCurrentImage(index);
         break;
     }
   }
@@ -813,13 +785,6 @@ abstract class BaseLayoutLogic extends GetxController
                 onPressed: () {
                   _dismissMobileContextMenu(sheetContext);
                   translateImage(index, context);
-                },
-              ),
-              CupertinoActionSheetAction(
-                child: ehActionSheetText('currentPageSuperResolution'.tr),
-                onPressed: () {
-                  _dismissMobileContextMenu(sheetContext);
-                  readPageLogic.superResolveCurrentImage(index);
                 },
               ),
               CupertinoActionSheetAction(
@@ -933,10 +898,6 @@ abstract class BaseLayoutLogic extends GetxController
           child: Text('translateImageText'.tr),
         ),
         PopupMenuItem(
-          value: 'current_page_super_resolution',
-          child: Text('currentPageSuperResolution'.tr),
-        ),
-        PopupMenuItem(
           value: 'toggle_bookmark',
           child: Text(_bookmarkActionLabel(index)),
         ),
@@ -955,9 +916,6 @@ abstract class BaseLayoutLogic extends GetxController
         break;
       case 'translate_image':
         translateImage(index, context);
-        break;
-      case 'current_page_super_resolution':
-        readPageLogic.superResolveCurrentImage(index);
         break;
       case 'toggle_bookmark':
         await _toggleBookmark(index);
@@ -1003,10 +961,6 @@ abstract class BaseLayoutLogic extends GetxController
           child: Text('translateImageText'.tr),
         ),
         PopupMenuItem(
-          value: 'current_page_super_resolution',
-          child: Text('currentPageSuperResolution'.tr),
-        ),
-        PopupMenuItem(
           value: 'toggle_bookmark',
           child: Text(_bookmarkActionLabel(index)),
         ),
@@ -1021,9 +975,6 @@ abstract class BaseLayoutLogic extends GetxController
         break;
       case 'translate_image':
         translateImage(index, context);
-        break;
-      case 'current_page_super_resolution':
-        readPageLogic.superResolveCurrentImage(index);
         break;
       case 'toggle_bookmark':
         await _toggleBookmark(index);

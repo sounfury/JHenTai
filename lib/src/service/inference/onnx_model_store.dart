@@ -42,13 +42,6 @@ class OnnxModelStore extends GetxController {
   /// complex glyphs.
   static const String ocrTinyManifestId = 'rapidocr-ppocrv6-tiny-multilingual';
 
-  static const String superResolutionManifestId = 'realesrgan-x4plus-anime-6b';
-
-  /// Lighter tier of the same anime model family (4 blocks x 32 features vs
-  /// 6 x 64), x4, identical [0,1] RGB contract — a fast/light anime preset.
-  static const String superResolutionFastManifestId =
-      'realesrgan-x4plus-anime-4b32f';
-
   static const String lamaInpaintManifestId = 'lama-large-512px';
   static const String ctdDetectionManifestId = 'comic-text-detector-beta-0.3';
   static const String bubbleSegmentationManifestId =
@@ -168,60 +161,6 @@ class OnnxModelStore extends GetxController {
       ],
     ),
     OnnxModelManifest(
-      id: superResolutionManifestId,
-      kind: 'superResolution',
-      version: 'Real-ESRGAN-v0.2.2.4-onnx-deepghs-35e0ed8',
-      displayName: 'Real-ESRGAN x4plus-anime-6B',
-      description: 'onnxModelDescRealEsrgan6B',
-      licenseName: 'BSD-3-Clause',
-      licenseUrl: 'https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE',
-      sourceProjectUrl: 'https://github.com/xinntao/Real-ESRGAN',
-      files: [
-        OnnxModelFile(
-          id: 'model',
-          fileName: 'RealESRGAN_x4plus_anime_6B.onnx',
-          sha256:
-              '2648cab4c4343541c1aa291c6754e9e8edbe7a813fffc2a677423dd12cb6b7f7',
-          sizeBytes: 17906556,
-          urls: {
-            // ModelScope first so domestic downloads work out of the box; the
-            // byte-identical HuggingFace copy stays as a fallback source.
-            OnnxModelSource.modelScope:
-                'https://www.modelscope.cn/models/deepghs/imgutils-models/resolve/master/real_esrgan/RealESRGAN_x4plus_anime_6B.onnx',
-            OnnxModelSource.huggingFace:
-                'https://huggingface.co/deepghs/imgutils-models/resolve/main/real_esrgan/RealESRGAN_x4plus_anime_6B.onnx?download=true',
-          },
-        ),
-      ],
-    ),
-    OnnxModelManifest(
-      id: superResolutionFastManifestId,
-      kind: 'superResolution',
-      version: 'Real-ESRGAN-v0.2.5.0-anime-4B32F',
-      displayName: 'Real-ESRGAN anime 4B32F（快速档）',
-      description: 'onnxModelDescRealEsrgan4B32F',
-      licenseName: 'BSD-3-Clause',
-      licenseUrl: 'https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE',
-      sourceProjectUrl: 'https://github.com/xinntao/Real-ESRGAN',
-      files: [
-        OnnxModelFile(
-          id: 'model',
-          fileName: 'RealESRGAN_x4plus_anime_4B32F.onnx',
-          sha256:
-              '2208c7ae8db793330abf1248fbce15585ad317e921c456265572836b92926c9a',
-          sizeBytes: 5156099,
-          urls: {
-            // ModelScope first so domestic downloads work out of the box; the
-            // byte-identical HuggingFace copy stays as a fallback source.
-            OnnxModelSource.modelScope:
-                'https://www.modelscope.cn/models/deepghs/imgutils-models/resolve/master/real_esrgan/RealESRGAN_x4plus_anime_4B32F.onnx',
-            OnnxModelSource.huggingFace:
-                'https://huggingface.co/deepghs/imgutils-models/resolve/main/real_esrgan/RealESRGAN_x4plus_anime_4B32F.onnx?download=true',
-          },
-        ),
-      ],
-    ),
-    OnnxModelManifest(
       id: bubbleSegmentationManifestId,
       kind: 'detection',
       version: 'NeuronCState-2026-08-12',
@@ -332,7 +271,7 @@ class OnnxModelStore extends GetxController {
     return null;
   }
 
-  /// All manifests of [kind] (e.g. 'superResolution'), in catalog order — the
+  /// All manifests of [kind] (e.g. 'ocr'), in catalog order — the
   /// list a model picker offers.
   List<OnnxModelManifest> manifestsOfKind(String kind) => manifests
       .where((OnnxModelManifest manifest) => manifest.kind == kind)

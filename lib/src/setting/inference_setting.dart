@@ -7,7 +7,7 @@ import '../service/jh_service.dart';
 import '../service/inference/inference_safety.dart';
 import '../service/log.dart';
 
-/// 全局"推理后端"设置：OCR 与图像超分共用一个入口。
+/// 全局"推理后端"设置：OCR 与图像翻译共用一个入口。
 InferenceSetting inferenceSetting = InferenceSetting();
 
 /// 后端选择模式。
@@ -56,8 +56,6 @@ enum InferenceDomain {
   /// 图片文字识别（图片翻译的 OCR 阶段）。
   ocr,
 
-  /// 图像超分（Real-ESRGAN / CUGAN）。
-  superResolution,
 }
 
 class InferenceSetting

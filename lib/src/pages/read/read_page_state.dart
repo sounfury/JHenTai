@@ -61,9 +61,8 @@ class ReadPageState with ScrollStatusListerState {
   /// retry feature to know which images actually need reloading.
   final Set<int> failedOnlineImageIndices = <int>{};
 
-  /// Online images whose full-resolution bytes have completed loading. The
-  /// progressive pipeline drops its thumbnail layer for these indices.
-  final Set<int> loadedOnlineImageIndices = <int>{};
+  /// Completed online images, used to hydrate translation once per image load.
+  final Set<int> completedOnlineImageIndices = <int>{};
 
   /// Image indices whose translation overlay is active in this reading session.
   final Map<int, ImageTranslationRequest> imageTranslationRequests = {};
@@ -77,8 +76,6 @@ class ReadPageState with ScrollStatusListerState {
   Battery battery = Battery();
   int batteryLevel = 100;
   bool useSuperResolution = false;
-  final Map<int, String> readerSuperResolutionPaths = <int, String>{};
-  bool showReaderSuperResolution = true;
   List<ReaderBookmark> readerBookmarks = <ReaderBookmark>[];
   bool displayFirstPageAlone = readSetting.displayFirstPageAlone.value;
   FocusNode focusNode = FocusNode();

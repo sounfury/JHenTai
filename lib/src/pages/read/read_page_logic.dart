@@ -29,13 +29,10 @@ import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/context_translation_service.dart';
 import 'package:jhentai/src/service/image_translation/translation_configuration.dart';
 import 'package:jhentai/src/service/engine/context_translation_contract.dart';
-import 'package:jhentai/src/service/reader_image_prefetch_queue.dart';
-import 'package:jhentai/src/service/reader_pipeline_scheduler.dart';
-import 'package:jhentai/src/service/reader_performance_governor.dart';
 import 'package:jhentai/src/service/super_resolution_service.dart';
 import 'package:jhentai/src/service/reader_action_persistence.dart';
 import 'package:jhentai/src/service/reader_bookmark_service.dart';
-import 'package:jhentai/src/service/reader_page_super_resolution_service.dart';
+import 'package:jhentai/src/service/reader_translation_hydration.dart';
 import 'package:jhentai/src/service/volume_service.dart';
 import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/eh_executor.dart';
@@ -53,7 +50,6 @@ import '../../model/read_page_info.dart';
 import '../../network/eh_request.dart';
 import '../../routes/routes.dart';
 import '../../service/log.dart';
-import '../../service/lan_sharing_runtime.dart';
 import '../../service/gallery_download/gallery_download_service.dart';
 import '../../service/gallery_download/gallery_images_retainer.dart';
 import '../../service/read_progress_service.dart';
@@ -61,7 +57,6 @@ import '../../service/gallery_pre_translate_preference.dart';
 import '../../service/gallery_pre_translate_runner.dart';
 import '../../setting/image_translation_setting.dart';
 import '../../setting/preference_setting.dart';
-import '../../setting/performance_setting.dart';
 import '../../setting/read_setting.dart';
 import '../../utils/eh_spider_parser.dart';
 import '../../utils/gallery_image_translation_language.dart';
@@ -128,9 +123,6 @@ class ReadPageLogic extends GetxController
   late Worker enableCustomBrightnessListener;
   late Worker customBrightnessListener;
   late Worker preloadListener;
-  late Worker readerEngine2Listener;
-  late Worker performanceGovernorListener;
-  late Worker progressiveImagePipelineListener;
   late Worker enableBottomMenuListener;
   late Worker orientationSpecificReadDirectionLister;
   late Worker portraitReadDirectionLister;
@@ -184,9 +176,6 @@ class ReadPageLogic extends GetxController
 
   final int normalPriority = 10000;
 
-  late final ReaderPipelineScheduler readerPipelineScheduler;
-  late final ReaderPerformanceGovernor readerPerformanceGovernor;
-  late final ReaderImagePrefetchQueue readerImagePrefetchQueue;
   late final ReaderFloatingBallPositionStore readerFloatingBallPositionStore;
   late final ReaderFloatingBallPositionStore
   readerBookmarkFloatingBallPositionStore;
@@ -197,36 +186,12 @@ class ReadPageLogic extends GetxController
   @override
   void onInit() {
     super.onInit();
-    readerPipelineScheduler = ReaderPipelineScheduler(
-      pageCount: state.readPageInfo.pageCount,
-      onPageRequested: _advanceReaderPipeline,
-    );
-    readerImagePrefetchQueue = ReaderImagePrefetchQueue();
     readerFloatingBallPositionStore = ReaderFloatingBallPositionStore();
     readerBookmarkFloatingBallPositionStore = ReaderFloatingBallPositionStore(
       storagePrefix: 'bookmark',
     );
-    readerPerformanceGovernor = ReaderPerformanceGovernor(
-      onPolicyChanged: _applyReaderPerformancePolicy,
-    );
     _restoreSessionCache();
     unawaited(_loadReaderBookmarks());
-  }
-
-  void _advanceReaderPipeline(int index, ReaderPagePriority priority) {
-    if (state.readPageInfo.mode != ReadMode.online) {
-      return;
-    }
-    if (state.thumbnails[index] == null) {
-      if (state.parseImageHrefsStates[index] == LoadingState.idle) {
-        beginToParseImageHref(index, priority: priority.executorPriority);
-      }
-      return;
-    }
-    if (state.images[index] == null &&
-        state.parseImageUrlStates[index] == LoadingState.idle) {
-      beginToParseImageUrl(index, false, priority: priority.executorPriority);
-    }
   }
 
   void updateReaderViewport(
@@ -261,12 +226,6 @@ class ReadPageLogic extends GetxController
         }
       });
     }
-
-    if (performanceSetting.enableReaderEngine2.isFalse) {
-      return;
-    }
-    readerPipelineScheduler.updateViewport(nextVisible);
-    _syncImagePrefetchPlan();
   }
 
   void _scheduleTranslationHydration(
@@ -288,39 +247,6 @@ class ReadPageLogic extends GetxController
         log.trace(stackTrace);
       },
     );
-  }
-
-  void _applyReaderPerformancePolicy(ReaderPerformancePolicy policy) {
-    executor.concurrency = policy.parseConcurrency;
-    cacheExecutor.concurrency = policy.cacheConcurrency;
-    readerImagePrefetchQueue.configure(
-      concurrency: policy.imagePrefetchConcurrency,
-    );
-    readerPipelineScheduler.configure(
-      lookAhead: policy.lookAhead,
-      lookBehind: policy.lookBehind,
-    );
-    _syncImagePrefetchPlan();
-  }
-
-  void _syncImagePrefetchPlan() {
-    if (performanceSetting.enableReaderEngine2.isFalse ||
-        state.readPageInfo.mode != ReadMode.online) {
-      readerImagePrefetchQueue.clear();
-      return;
-    }
-    readerImagePrefetchQueue.updatePlan(
-      readerPipelineScheduler.plan,
-      (int index) => state.images[index]?.url,
-    );
-  }
-
-  void _syncPerformanceGovernor() {
-    if (performanceSetting.enablePerformanceGovernor.isTrue) {
-      readerPerformanceGovernor.start();
-    } else {
-      readerPerformanceGovernor.stop();
-    }
   }
 
   void _restoreSessionCache() {
@@ -539,28 +465,6 @@ class ReadPageLogic extends GetxController
       readSetting.preloadDistanceLocal,
       readSetting.preloadDistance,
     ], (_) => updateSafely([layoutId]));
-    readerEngine2Listener = ever(performanceSetting.enableReaderEngine2, (_) {
-      if (performanceSetting.enableReaderEngine2.isFalse) {
-        readerPipelineScheduler.clear();
-        readerImagePrefetchQueue.clear();
-      } else {
-        readerPipelineScheduler.updateViewport([
-          state.readPageInfo.currentImageIndex,
-        ]);
-        _syncImagePrefetchPlan();
-      }
-      updateSafely([layoutId]);
-    });
-    performanceGovernorListener = ever(
-      performanceSetting.enablePerformanceGovernor,
-      (_) => _syncPerformanceGovernor(),
-    );
-    progressiveImagePipelineListener = ever(
-      performanceSetting.enableProgressiveImagePipeline,
-      (_) => updateSafely([layoutId]),
-    );
-    _syncPerformanceGovernor();
-
     _syncDisplayFirstPageAloneToState();
 
     inited = true;
@@ -581,11 +485,6 @@ class ReadPageLogic extends GetxController
     super.onClose();
 
     _cancelAllOnlineImageProgressWatchdogs();
-
-    readerPipelineScheduler.dispose();
-    readerImagePrefetchQueue.dispose();
-    readerPerformanceGovernor.stop();
-
     // Leaving the gallery must stop any in-flight translation batch so the
     // OCR/API work is not carried on in the background.
     imageTranslationService.cancelBatch();
@@ -613,9 +512,6 @@ class ReadPageLogic extends GetxController
     enableCustomBrightnessListener.dispose();
     customBrightnessListener.dispose();
     preloadListener.dispose();
-    readerEngine2Listener.dispose();
-    performanceGovernorListener.dispose();
-    progressiveImagePipelineListener.dispose();
     enableBottomMenuListener.dispose();
     orientationSpecificReadDirectionLister.dispose();
     portraitReadDirectionLister.dispose();
@@ -704,15 +600,6 @@ class ReadPageLogic extends GetxController
 
     Future<void> task() async {
       try {
-        if (priority < normalPriority &&
-            !readerPipelineScheduler.isDetailPagePlanned(
-              requestPageIndex,
-              imagesPerDetailPage,
-            )) {
-          state.parseImageHrefsStates[index] = LoadingState.idle;
-          updateSafely(['$parseImageHrefsStateId::$index']);
-          return;
-        }
         await parseImageHref(index, alreadyProbed: probed && !cached);
       } finally {
         _parsingHrefPages.remove(requestPageIndex);
@@ -877,9 +764,6 @@ class ReadPageLogic extends GetxController
       ) ...['$onlineImageId::$i', thumbnailItemId(i)],
     ]);
     _saveSessionCache();
-    if (performanceSetting.enableReaderEngine2.isTrue) {
-      readerPipelineScheduler.refresh();
-    }
   }
 
   void _markHrefPageError(int requestPageIndex, String message) {
@@ -940,21 +824,6 @@ class ReadPageLogic extends GetxController
       bool probed = false;
       final String? href = state.thumbnails[index]?.replacedMPVHref(index + 1);
       if (href != null) {
-        final GalleryImage? lanImage = await lanSharingRuntime.fetchCachedImage(
-          href,
-          // The gallery context lets a trusted host serve the page from its
-          // DOWNLOADED copy, not just the online image cache.
-          galleryUrl: state.readPageInfo.galleryUrl,
-          pageIndex: index,
-          sourceDeviceId: state.readPageInfo.sourceDeviceId,
-        );
-        if (lanImage != null) {
-          state.images[index] = lanImage;
-          state.parseImageUrlStates[index] = LoadingState.success;
-          updateSafely(['$onlineImageId::$index']);
-          _syncImagePrefetchPlan();
-          return;
-        }
         try {
           cached = await ehRequest.hasCachedImagePage(
             href,
@@ -971,12 +840,6 @@ class ReadPageLogic extends GetxController
       }
 
       Future<void> task() {
-        if (priority < normalPriority &&
-            !readerPipelineScheduler.isPlanned(index)) {
-          state.parseImageUrlStates[index] = LoadingState.idle;
-          updateSafely(['$parseImageUrlStateId::$index']);
-          return Future.value();
-        }
         return parseImageUrl(
           index,
           reParse,
@@ -1045,13 +908,8 @@ class ReadPageLogic extends GetxController
     }
 
     state.images[index] = image;
-    final String? href = state.thumbnails[index]?.replacedMPVHref(index + 1);
-    if (href != null) {
-      unawaited(lanSharingRuntime.recordImagePage(href, image));
-    }
     state.parseImageUrlStates[index] = LoadingState.success;
     updateSafely(['$onlineImageId::$index']);
-    _syncImagePrefetchPlan();
   }
 
   Future<GalleryImage> requestImage(
@@ -1084,7 +942,7 @@ class ReadPageLogic extends GetxController
       imageTranslationService.removeResult(oldRequest.cacheKey);
     }
     state.images[index] = null;
-    state.loadedOnlineImageIndices.remove(index);
+    state.completedOnlineImageIndices.remove(index);
     state.failedOnlineImageIndices.remove(index);
     beginToParseImageUrl(index, true, reloadKey: reloadKey);
     updateSafely(['$onlineImageId::$index']);
@@ -1171,7 +1029,7 @@ class ReadPageLogic extends GetxController
   }) {
     _cancelOnlineImageProgressWatchdog(index);
     _autoRetryCounts.remove(index);
-    if (!state.loadedOnlineImageIndices.add(index)) {
+    if (!state.completedOnlineImageIndices.add(index)) {
       return;
     }
 
@@ -1647,34 +1505,6 @@ class ReadPageLogic extends GetxController
     if (pageIndexes.isNotEmpty) {
       jumpToBookmark(pageIndexes.first);
     }
-  }
-
-  void toggleReaderSuperResolutionDisplay() {
-    state.showReaderSuperResolution = !state.showReaderSuperResolution;
-    updateSafely([readerBookmarkId]);
-    layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
-  }
-
-  Future<void> superResolveCurrentImage([int? requestedPageIndex]) async {
-    final int pageIndex =
-        requestedPageIndex ?? state.readPageInfo.currentImageIndex;
-    final GalleryImage? image = state.images[pageIndex];
-    if (image == null) {
-      return;
-    }
-    final String? outputPath = await readerPageSuperResolutionService.upscale(
-      galleryKey: readerBookmarkGalleryKey,
-      pageIndex: pageIndex,
-      mode: state.readPageInfo.mode,
-      image: image,
-    );
-    if (outputPath == null || isClosed) {
-      return;
-    }
-    state.readerSuperResolutionPaths[pageIndex] = outputPath;
-    state.showReaderSuperResolution = true;
-    layoutLogic.updateSafely([BaseLayoutLogic.pageId]);
-    updateSafely([readerBookmarkId]);
   }
 
   ImageTranslationResult get currentPageTranslationResult {

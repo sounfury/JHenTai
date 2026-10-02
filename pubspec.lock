@@ -113,54 +113,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.0"
-  bonsoir:
-    dependency: "direct main"
-    description:
-      name: bonsoir
-      sha256: "86a8f55539d29c17ac2cb8a16698978aaa9e7c5d14139fb2234dad33b6ecfc33"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.4"
-  bonsoir_android:
-    dependency: transitive
-    description:
-      name: bonsoir_android
-      sha256: c6413e82150074d56e71ffe2e54bb1dfe66a59310affc4486d33e9eee6b362e6
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.2"
-  bonsoir_darwin:
-    dependency: transitive
-    description:
-      name: bonsoir_darwin
-      sha256: "04425a8657e3131683c7966689d4e65e114cb5181de94aac89d2fba84cfaaca4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.0"
-  bonsoir_linux:
-    dependency: transitive
-    description:
-      name: bonsoir_linux
-      sha256: "9afae7bb9509c5bd20a0ea2ca02a0f2b1ef09cca1ceb2ea288ed58a0f03d1e11"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.1.0"
-  bonsoir_platform_interface:
-    dependency: transitive
-    description:
-      name: bonsoir_platform_interface
-      sha256: "6c55c786b01ad279f675ae72cea3a885aa746e416d2e8c1f0c46e9d2c06420b0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.0"
-  bonsoir_windows:
-    dependency: transitive
-    description:
-      name: bonsoir_windows
-      sha256: aaabbb652fe68d3eb26a9b2cddefaae26cd9ca6ebe737d476ab9ed535c7c2516
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.3.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -361,14 +313,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
-  cryptography:
-    dependency: "direct main"
-    description:
-      name: cryptography
-      sha256: "3eda3029d34ec9095a27a198ac9785630fe525c0eb6a49f3d575272f8e792ef0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.9.0"
   csslib:
     dependency: transitive
     description:
@@ -1212,14 +1156,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.3"
-  menu_base:
-    dependency: transitive
-    description:
-      name: menu_base
-      sha256: "820368014a171bd1241030278e6c2617354f492f5c703d7b7d4570a6b8b84405"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.1"
   meta:
     dependency: transitive
     description:
@@ -1663,14 +1599,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.4"
-  shortid:
-    dependency: transitive
-    description:
-      name: shortid
-      sha256: d0b40e3dbb50497dad107e19c54ca7de0d1a274eb9b4404991e443dadb9ebedb
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.2"
   simple_animations:
     dependency: "direct main"
     description:
@@ -1968,14 +1896,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
-  tray_manager:
-    dependency: "direct main"
-    description:
-      name: tray_manager
-      sha256: "1a659b08baa6e9b91ef8ce16eda37740de398be1c4cf322b8a1ddfef25c68c5a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.3"
   typed_data:
     dependency: transitive
     description:

@@ -9,15 +9,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/setting/inference_setting.dart';
-import 'package:jhentai/src/setting/super_resolution_setting.dart';
 
 import 'inference/ocr_inference_engine.dart';
 import 'inference/inference_safety.dart';
 import 'inference/onnx_model_store.dart';
 import 'inference/onnx_ocr_worker.dart';
 import 'inference/onnx_runtime.dart';
-import 'inference/onnx_super_resolution_worker.dart';
-import 'inference/super_resolution_inference_engine.dart';
 import 'jh_service.dart';
 
 InferenceService inferenceService = InferenceService();
@@ -87,7 +84,7 @@ InferenceBackend? selectResolvedInferenceBackend({
   return detected.isEmpty ? null : detected.first;
 }
 
-/// Unified AI Core for OCR and image super-resolution.
+/// AI runtime and provider policy for OCR and image translation.
 ///
 /// The service owns native runtime detection, provider policy, model/session
 /// lifecycle, and the domain engines. UI reads the same resolved providers that
@@ -96,19 +93,16 @@ class InferenceService extends GetxController
     with JHLifeCircleBeanErrorCatch
     implements JHLifeCircleBean {
   OcrInferenceEngine? _ocrEngine;
-  SuperResolutionInferenceEngine? _superResolutionEngine;
   final RxList<InferenceBackend> availableBackends = <InferenceBackend>[].obs;
   final RxBool runtimeReady = false.obs;
   final List<Worker> _settingWorkers = <Worker>[];
 
-  /// OCR and super-resolution sessions live inside worker isolates, so the
+  /// OCR sessions live inside worker isolates, so the
   /// main-isolate session registry never sees them. These reactive flags mirror
   /// the worker's session state so the Obx-based inference settings page
   /// live-updates when the workers report readiness.
   final RxBool _ocrSessionsVerified = false.obs;
   final RxnString _ocrSessionError = RxnString();
-  final RxBool _srSessionsVerified = false.obs;
-  final RxnString _srSessionError = RxnString();
   _InferenceCanaryEnvironment _canaryEnvironment =
       const _InferenceCanaryEnvironment(
         deviceModel: 'unknown',
@@ -150,36 +144,6 @@ class InferenceService extends GetxController
         updateSafely();
       },
     );
-    _superResolutionEngine = OnnxSuperResolutionIsolateEngine(
-      providerResolver: () => providersFor(InferenceDomain.superResolution),
-      modelIdResolver: () => superResolutionSetting.onnxModelId.value,
-      safetyConfigResolver:
-          (String hash) =>
-              sessionConfigFor(InferenceDomain.superResolution, hash),
-      onCanaryStarted:
-          (String hash, List<ort.OrtProvider> providers) =>
-              _canaryStarted(InferenceDomain.superResolution, hash, providers),
-      onCanarySucceeded:
-          (String hash, List<ort.OrtProvider> providers) => _canarySucceeded(
-            InferenceDomain.superResolution,
-            hash,
-            providers,
-          ),
-      onCanaryFailed:
-          (String hash, List<ort.OrtProvider> providers, Object error) =>
-              _canaryFailed(
-                InferenceDomain.superResolution,
-                hash,
-                providers,
-                error,
-              ),
-      onSessionStateChanged: ({required bool verified, String? error}) {
-        _srSessionsVerified.value = verified;
-        _srSessionError.value = error;
-        updateSafely();
-      },
-    );
-
     _settingWorkers.addAll(<Worker>[
       ever<InferenceBackendMode>(
         inferenceSetting.mode,
@@ -194,15 +158,6 @@ class InferenceService extends GetxController
         (_) => _backendPolicyChanged(),
       ),
       ever<bool>(inferenceSetting.enableNnapi, (_) => _backendPolicyChanged()),
-      // Switching the active ONNX super-resolution model must drop the old
-      // model's native session; the new manifest resolves lazily on the next
-      // upscale. In-flight tasks finish (they hold a session lease), so a tap
-      // mid-batch cannot close a session out from under a running tile.
-      ever<String>(
-        superResolutionSetting.onnxModelId,
-        (_) => _superResolutionModelChanged(),
-      ),
-      // Same for the active ONNX OCR model (e.g. PP-OCRv6 small vs tiny).
       ever<String>(
         imageTranslationSetting.onnxModelId,
         (_) => _ocrModelChanged(),
@@ -224,10 +179,6 @@ class InferenceService extends GetxController
     if (ocrEngine is OnnxOcrIsolateEngine) {
       unawaited(ocrEngine.dispose());
     }
-    final SuperResolutionInferenceEngine? srEngine = _superResolutionEngine;
-    if (srEngine is OnnxSuperResolutionIsolateEngine) {
-      unawaited(srEngine.dispose());
-    }
     super.onClose();
   }
 
@@ -236,17 +187,8 @@ class InferenceService extends GetxController
   OcrInferenceEngine get ocrEngine =>
       _ocrEngine ?? const NotConfiguredOcrInferenceEngine();
 
-  SuperResolutionInferenceEngine get superResolutionEngine =>
-      _superResolutionEngine ??
-      const NotConfiguredSuperResolutionInferenceEngine();
-
   void registerOcrEngine(OcrInferenceEngine engine) {
     _ocrEngine = engine;
-    updateSafely();
-  }
-
-  void registerSuperResolutionEngine(SuperResolutionInferenceEngine engine) {
-    _superResolutionEngine = engine;
     updateSafely();
   }
 
@@ -298,15 +240,6 @@ class InferenceService extends GetxController
   Set<InferenceBackend> _supportedBy(InferenceDomain domain) =>
       switch (domain) {
         InferenceDomain.ocr => const <InferenceBackend>{
-          InferenceBackend.directml,
-          InferenceBackend.cuda,
-          InferenceBackend.openvino,
-          InferenceBackend.nnapi,
-          InferenceBackend.coreml,
-          InferenceBackend.xnnpack,
-          InferenceBackend.cpu,
-        },
-        InferenceDomain.superResolution => const <InferenceBackend>{
           InferenceBackend.directml,
           InferenceBackend.cuda,
           InferenceBackend.openvino,
@@ -386,13 +319,9 @@ class InferenceService extends GetxController
     return InferenceProviderPolicy.sessionConfig(
       backend: backend,
       maxInputPixels:
-          domain == InferenceDomain.ocr
-              ? (mobile ? 4 * 1024 * 1024 : 6 * 1024 * 1024)
-              : (mobile ? 12 * 1024 * 1024 : 24 * 1024 * 1024),
+          mobile ? 4 * 1024 * 1024 : 6 * 1024 * 1024,
       memoryBudgetBytes:
-          domain == InferenceDomain.ocr
-              ? (mobile ? 128 : 256) * 1024 * 1024
-              : (mobile ? 192 : 512) * 1024 * 1024,
+          (mobile ? 128 : 256) * 1024 * 1024,
     );
   }
 
@@ -498,27 +427,22 @@ class InferenceService extends GetxController
         OnnxModelInstallState.notInstalled;
     final List<String> paths = _modelPathsFor(domain);
     final bool isOcr = domain == InferenceDomain.ocr;
-    final bool isSr = domain == InferenceDomain.superResolution;
     return classifyInferenceSessionState(
       backendAvailable: runtimeReady.value && resolveBackendFor(domain) != null,
       modelState: modelState,
-      // OCR and super-resolution sessions are owned by worker isolates; mirror
-      // their state.
+      // OCR sessions are owned by worker isolates; mirror their state.
       hasReadySessions:
           OnnxRuntime.instance.hasReadySessions(paths) ||
-          (isOcr && _ocrSessionsVerified.value) ||
-          (isSr && _srSessionsVerified.value),
+          (isOcr && _ocrSessionsVerified.value),
       hasSessionError:
           OnnxRuntime.instance.sessionErrorFor(paths) != null ||
-          (isOcr && _ocrSessionError.value != null) ||
-          (isSr && _srSessionError.value != null),
+          (isOcr && _ocrSessionError.value != null),
     );
   }
 
   String _manifestIdFor(InferenceDomain domain) => switch (domain) {
     // Follow the active ONNX model the user selected.
     InferenceDomain.ocr => imageTranslationSetting.onnxModelId.value,
-    InferenceDomain.superResolution => superResolutionSetting.onnxModelId.value,
   };
 
   List<String> _modelPathsFor(InferenceDomain domain) {
@@ -533,9 +457,6 @@ class InferenceService extends GetxController
         if (files['det'] case final String path) path,
         if (files['cls'] case final String path) path,
         if (files['rec'] case final String path) path,
-      ],
-      InferenceDomain.superResolution => <String>[
-        if (files['model'] case final String path) path,
       ],
     };
   }
@@ -578,10 +499,6 @@ class InferenceService extends GetxController
     if (ocrEngine is OnnxOcrIsolateEngine) {
       closes.add(ocrEngine.closeSessions());
     }
-    final SuperResolutionInferenceEngine? srEngine = _superResolutionEngine;
-    if (srEngine is OnnxSuperResolutionIsolateEngine) {
-      closes.add(srEngine.closeSessions());
-    }
     // Re-arm the mirrors only after the workers acknowledge the close, so a
     // racing in-flight success cannot leave the mirror stale once the sessions
     // are gone.
@@ -591,12 +508,10 @@ class InferenceService extends GetxController
     });
   }
 
-  /// Clears both session mirrors back to the "not verified / no error" state.
+  /// Clears the OCR session mirror back to the "not verified / no error" state.
   void _resetSessionMirrors() {
     _ocrSessionsVerified.value = false;
     _ocrSessionError.value = null;
-    _srSessionsVerified.value = false;
-    _srSessionError.value = null;
   }
 
   /// Asks each spawned worker isolate to re-run its ONNX runtime
@@ -613,31 +528,6 @@ class InferenceService extends GetxController
             ok ? null : 'ONNX runtime reinitialization failed';
         updateSafely();
       }
-    }
-    final SuperResolutionInferenceEngine? srEngine = _superResolutionEngine;
-    if (srEngine is OnnxSuperResolutionIsolateEngine) {
-      final bool? ok = await srEngine.reinitialize();
-      if (ok != null) {
-        _srSessionsVerified.value = ok;
-        _srSessionError.value =
-            ok ? null : 'ONNX runtime reinitialization failed';
-        updateSafely();
-      }
-    }
-  }
-
-  /// The active ONNX super-resolution model changed: re-validate the session
-  /// state (the new manifest resolves lazily on the next upscale) and drop the
-  /// old model's cached native sessions.
-  void _superResolutionModelChanged() {
-    _resetSessionMirrors();
-    updateSafely();
-    final SuperResolutionInferenceEngine? srEngine = _superResolutionEngine;
-    if (srEngine is OnnxSuperResolutionIsolateEngine) {
-      srEngine.closeSessions().whenComplete(() {
-        _resetSessionMirrors();
-        updateSafely();
-      });
     }
   }
 

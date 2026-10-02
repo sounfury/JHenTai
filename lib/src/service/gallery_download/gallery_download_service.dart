@@ -81,10 +81,6 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
   List<String> allGroups = [];
   Map<int, GalleryDownloadInfo> galleryDownloadInfos = {};
 
-  /// gid -> trusted LAN device that initiated a remote download. This is
-  /// presentation-only runtime state and is intentionally not persisted.
-  final Map<int, String> remoteDownloadSources = {};
-
   /// Cached sorted snapshot of [galleryDownloadInfos]. Invalidated on any
   /// mutation that affects order (add / delete / group rename / group change
   /// / priority change). Re-sorted on next read. Avoids O(N log N) per UI
@@ -505,7 +501,6 @@ class GalleryDownloadService extends GetxController with GridBasePageServiceMixi
       _clearDownloadedImageInDisk(gallery);
     }
     _clearGalleryInfoInMemory(gallery);
-    remoteDownloadSources.remove(gallery.gid);
   }
 
   /// Update local downloaded gallery if there's a new version.

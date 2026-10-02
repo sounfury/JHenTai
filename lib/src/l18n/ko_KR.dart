@@ -166,7 +166,6 @@ class ko_KR {
       'ratingFailed': '평가 실패',
       'voteTagFailed': '태그 투표 실패',
       'beginToDownload': '다운로드 시작',
-      'downloadFromRemoteDevice': '{device} 기기에서 원격 다운로드',
       'resumeDownload': '계속 다운로드',
       'pauseDownload': '다운로드 일시 정지',
       'addNewTagSetSuccess': '태그 추가 성공',
@@ -437,14 +436,6 @@ class ko_KR {
       'ineffectiveInGalleryPage': '현재 갤러리 페이지에서 유효하지 않습니다.',
 
       /// advanced setting page
-      'readerPerformanceExperiments': '실험적 읽기 성능',
-      'readerEngine2': 'Reader Engine 2.0',
-      'readerEngine2Hint': '현재 보이는 페이지와 스크롤 방향을 기준으로 주변 페이지를 우선 분석합니다.',
-      'performanceGovernor': 'Performance Governor',
-      'performanceGovernorHint':
-          '프레임 시간을 감지하고 지속적인 끊김이 발생하면 미리 불러오기와 분석 동시 실행 수를 줄입니다.',
-      'progressiveImagePipeline': '점진적 이미지 파이프라인',
-      'progressiveImagePipelineHint': '갤러리 썸네일을 먼저 표시한 뒤 원본 이미지로 교체합니다.',
       'enableDomainFronting': '도메인 우회 활성화',
       'bypassSNIBlocking': 'SNI 우회 차단',
       'hostMapping': '호스트 매핑',
@@ -462,10 +453,6 @@ class ko_KR {
       'smartCacheRetention': "캐시 보존 기간",
       'smartCacheRetentionHint': "이 기간보다 오래된 캐시는 자동으로 삭제됩니다",
       'smartCacheMaxSize': "캐시 공간 상한",
-      'moveCacheToServer': '캐시를 서버로 이동',
-      'moveCacheToServerHint': '연결된 LAN 서버에 이 기기의 캐시 업로드',
-      'moveCacheToServerDisabledHint': '먼저 LAN 서버에 연결하세요',
-      'moveCacheToServerDone': '서버에 {count}개 캐시 파일 업로드됨',
       'smartCacheMaxSizeHint': "상한을 초과하면 캐시가 자동으로 정리됩니다",
       'smartCacheEvictPolicy': "정리 정책",
       'smartCacheEvictPolicyHint': "상한 도달 시 먼저 삭제할 캐시",
@@ -500,18 +487,15 @@ class ko_KR {
       'inferenceDetectedDevice': '감지된 장치',
       'inferenceDeviceNotDetected': '감지 안 됨 (모델 연동 후 표시)',
       'inferenceDomainOcr': '이미지 번역 (OCR)',
-      'inferenceDomainSuperResolution': '이미지 초고해상도',
       'inferenceEnableNnapi': 'NNAPI 가속 활성화',
       'inferenceEnableNnapiHint': '지원 기기에서 NPU/GPU/DSP로 실행하며, 불가 시 CPU로 자동 대체.',
       'inferenceEnableCpuFallback': 'CPU 대체 허용',
       'inferenceEnableCpuFallbackHint': '선택한 백엔드를 사용할 수 없으면 CPU로 대체.',
       'inferenceEngineOcr': '이미지/텍스트 번역',
-      'inferenceEngineSuperResolution': '이미지 업스케일링',
       'inferenceModelReady': '준비됨',
       'inferenceModelNotIntegrated': '추론이 준비되지 않았습니다. 추론 설정에서 상태를 확인하세요',
       'inferenceOcrModel': 'PP-OCRv6 small 다국어 OCR',
       'inferenceOcrLanguageAuto': '중국어, 일본어, 영어 등 50개 언어를 자동 인식',
-      'inferenceSuperResolutionModel': '초고해상도 모델 (Real-ESRGAN)',
       'inferenceModelNotDownloaded': '다운로드 안 됨',
       'inferenceModelValidating': '모델 무결성 확인 중',
       'inferenceModelVerified': '다운로드 및 무결성 확인 완료',
@@ -535,17 +519,10 @@ class ko_KR {
       'imageTranslationOcrEngineOnnx': 'ONNX (기기 내)',
       'imageTranslationOcrNotConfigured':
           'ONNX OCR 엔진이 아직 구성되지 않았습니다. 추론 백엔드에서 모델을 연동하세요.',
-      'superResolutionEngine': '엔진',
-      'superResolutionEngineNcnnVulkan': 'ncnn-vulkan (외부)',
-      'superResolutionEngineOnnx': 'ONNX (앱 내장)',
       'onnxModelDescRapidOcrSmall':
           '완전한 PP-OCRv6 다국어 사전, 인식 정확도가 높고 크기와 속도가 적절합니다. 대부분의 만화와 이미지에 적합합니다.',
       'onnxModelDescRapidOcrTiny':
           '축소 사전과 경량 네트워크: 가장 빠르고 용량이 작지만 문자 세트가 작고 복잡한 글자의 인식률이 약간 낮습니다. 저사양 기기 또는 속도 우선 사용에 적합합니다.',
-      'onnxModelDescRealEsrgan6B': '고품질 옵션: 디테일이 가장 풍부하고 화질이 가장 좋지만 속도가 느립니다.',
-      'onnxModelDescRealEsrgan4B32F':
-          '빠른 옵션: 약 3-4배 빠르며 디테일이 약간 적습니다. 일괄 처리에 적합합니다.',
-      'superResolutionModelPickerHint': '모델을 전환하면 완료된 초고해상도 페이지를 다시 처리합니다',
       'stopSuperResolution': '초고해상도 이미지 생성 취소',
       'deleteSuperResolvedImage': '초고해상도 이미지 삭제',
       'superResolveOriginalImageHint':
@@ -946,14 +923,6 @@ class ko_KR {
       'blockRules': 'Block Rules',
       'searchHistory': 'Search History',
       'galleryHistory': 'Gallery History',
-      'lanPermission_loginState': '로그인 상태',
-      'lanPermission_applicationHistory': '앱 기록',
-      'lanPermission_applicationSettings': '앱 설정',
-      'lanDownloadToDevice': '이 기기에 다운로드',
-      'lanDownloadToDeviceSent': '기기에 다운로드 요청 전송됨',
-      'lanDownloadToDeviceFailed': '다운로드 요청 실패',
-
-      /// block rule page
       'configureBlockRuleFailed': 'Configure block rule failed',
       'removeBlockRuleFailed': 'Remove block rule failed',
       'inputNumberHint': 'Please input a correct number',
@@ -1027,7 +996,6 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// image text translation
       'imageTextTranslation': '이미지 텍스트 번역',
       'translateImageText': '이 페이지 인식 및 번역',
-      'currentPageSuperResolution': '현재 페이지 초해상도',
       'addBookmark': '북마크 추가',
       'removeBookmark': '북마크 제거',
       'recognizingImageText': '이미지 텍스트 인식 중…',

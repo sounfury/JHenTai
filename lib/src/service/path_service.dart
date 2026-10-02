@@ -35,13 +35,6 @@ class PathService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
   /// Gallery download directory: Documents/JHTData/download.
   late Directory jhDownloadDir;
 
-  /// Non-secret LAN identity and trusted-device metadata.
-  late Directory jhLanDir;
-
-  /// Encrypted LAN identity and pairing credentials. Kept outside the visible
-  /// data directory to reduce accidental copying and synchronization.
-  late Directory jhLanSecretDir;
-
   /// visible on ios&windows&macos
   Directory? appDocDir;
 
@@ -92,10 +85,6 @@ class PathService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
     jhOcrModelDir = Directory(join(jhDataDir.path, 'OCRmodel'));
     jhTranslationModelDir = Directory(join(jhDataDir.path, 'TranslationModel'));
     jhDownloadDir = Directory(join(jhDataDir.path, 'download'));
-    jhLanDir = Directory(join(jhDataDir.path, 'lan'));
-    jhLanSecretDir = Directory(
-      join((appSupportDir ?? baseDir).path, 'JHenTai', 'lan-secrets'),
-    );
 
     await Future.wait([
       jhDataDir.create(recursive: true),
@@ -107,8 +96,6 @@ class PathService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
       jhOcrModelDir.create(recursive: true),
       jhTranslationModelDir.create(recursive: true),
       jhDownloadDir.create(recursive: true),
-      jhLanDir.create(recursive: true),
-      jhLanSecretDir.create(recursive: true),
     ]);
 
     extendedImageDiskCacheDirectory = join(tempDir.path, smartCacheFolderName);

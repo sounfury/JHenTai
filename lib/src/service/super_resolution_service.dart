@@ -17,10 +17,7 @@ import 'package:retry/retry.dart';
 
 import '../database/dao/super_resolution_info_dao.dart';
 import '../model/gallery_image.dart';
-import 'inference/inference_exception.dart';
 import 'inference/inference_task.dart';
-import 'inference_service.dart';
-import 'engine/engine.dart' as engine_lib;
 import 'jh_service.dart';
 import 'path_service.dart';
 import '../utils/archive_util.dart';
@@ -49,8 +46,6 @@ class SuperResolutionService extends GetxController
   EHExecutor executor = EHExecutor(concurrency: 1);
   final Map<String, InferenceCancellationToken> _taskTokens =
       <String, InferenceCancellationToken>{};
-  final SuperResolutionPreemptionTracker _preemptionTracker =
-      SuperResolutionPreemptionTracker();
 
   util.Table<int, SuperResolutionType, SuperResolutionInfo>
   superResolutionInfoTable = util.Table();
@@ -60,8 +55,7 @@ class SuperResolutionService extends GetxController
   @override
   List<JHLifeCircleBean> get initDependencies => super.initDependencies
     ..add(galleryDownloadService)
-    ..add(archiveDownloadService)
-    ..add(inferenceService);
+    ..add(archiveDownloadService);
 
   @override
   Future<void> doInitBean() async {
@@ -215,7 +209,6 @@ class SuperResolutionService extends GetxController
   }
 
   Future<bool> superResolve(int gid, SuperResolutionType type) async {
-    _preemptionTracker.recordUserAction(gid, type);
     if (type == SuperResolutionType.gallery) {
       GalleryDownloadInfo? galleryDownloadInfo =
           galleryDownloadService.galleryDownloadInfos[gid];
@@ -293,11 +286,6 @@ class SuperResolutionService extends GetxController
   }
 
   Future<void> pauseSuperResolve(int gid, SuperResolutionType type) async {
-    _preemptionTracker.recordUserAction(gid, type);
-    await _pauseSuperResolve(gid, type);
-  }
-
-  Future<void> _pauseSuperResolve(int gid, SuperResolutionType type) async {
     SuperResolutionInfo? superResolutionInfo = get(gid, type);
 
     if (superResolutionInfo == null || superResolutionInfo.status == SuperResolutionStatus.success || superResolutionInfo.status == SuperResolutionStatus.paused) {
@@ -323,40 +311,7 @@ class SuperResolutionService extends GetxController
     updateSafely(['$superResolutionId::$gid']);
   }
 
-  /// Reader actions must be able to put a visible single-page request ahead
-  /// of queued whole-gallery work. This only pauses existing tasks; it does
-  /// not change any model/runtime implementation or delete their checkpoints.
-  Future<SuperResolutionPauseLease> pauseAllForReaderPage() async {
-    final entries = superResolutionInfoTable
-        .entries()
-        .where((entry) => entry.value.status == SuperResolutionStatus.running)
-        .toList();
-    final List<_ReaderPagePausedTask> pausedTasks = <_ReaderPagePausedTask>[];
-    try {
-      for (final entry in entries) {
-        pausedTasks.add(
-          _ReaderPagePausedTask(
-            gid: entry.key1,
-            type: entry.key2,
-            userActionRevision: _preemptionTracker.capture(
-              entry.key1,
-              entry.key2,
-            ),
-          ),
-        );
-        await _pauseSuperResolve(entry.key1, entry.key2);
-      }
-    } on Object {
-      await _resumeAfterReaderPage(pausedTasks);
-      rethrow;
-    }
-    return SuperResolutionPauseLease(
-      () => _resumeAfterReaderPage(pausedTasks),
-    );
-  }
-
   Future<void> deleteSuperResolve(int gid, SuperResolutionType type) async {
-    _preemptionTracker.recordUserAction(gid, type);
     SuperResolutionInfo? superResolutionInfo = get(gid, type);
     if (superResolutionInfo == null) {
       return;
@@ -457,14 +412,12 @@ class SuperResolutionService extends GetxController
       updateSafely(['$superResolutionId::$gid']);
     }
 
-    if (superResolutionSetting.engine.value ==
-            SuperResolutionEngine.ncnnVulkan &&
-        !await _ensureExecutableRunnable()) {
+    if (!await _ensureExecutableRunnable()) {
       toast(
         '${'internalError'.tr}: super resolution executable unavailable',
         isShort: false,
       );
-      _pauseSuperResolve(gid, type);
+      pauseSuperResolve(gid, type);
       return;
     }
 
@@ -492,9 +445,7 @@ class SuperResolutionService extends GetxController
         continue;
       }
 
-      if (superResolutionSetting.engine.value ==
-              SuperResolutionEngine.ncnnVulkan &&
-          superResolutionSetting.modelDirectoryPath.value == null) {
+      if (superResolutionSetting.modelDirectoryPath.value == null) {
         return;
       }
 
@@ -513,7 +464,6 @@ class SuperResolutionService extends GetxController
       bool success = await _handleImage(
         rawImages[i],
         superResolutionInfo,
-        token,
       );
       if (token.isCancelled ||
           _taskTokens[taskKey] != token ||
@@ -523,7 +473,7 @@ class SuperResolutionService extends GetxController
       }
       if (!success) {
         /// pauseSuperResolve flushes the accumulated statuses to the DB
-        await _pauseSuperResolve(gid, type);
+        await pauseSuperResolve(gid, type);
         return;
       }
 
@@ -558,7 +508,6 @@ class SuperResolutionService extends GetxController
   Future<bool> _handleImage(
     GalleryImage rawImage,
     SuperResolutionInfo superResolutionInfo,
-    InferenceCancellationToken token,
   ) async {
     if (extension(rawImage.path!) == '.gif') {
       String inputAbsolutePath = DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(rawImage.path!);
@@ -570,10 +519,6 @@ class SuperResolutionService extends GetxController
         return false;
       }
       return true;
-    }
-
-    if (superResolutionSetting.engine.value == SuperResolutionEngine.onnx) {
-      return _handleOnnx(rawImage, token);
     }
 
     Process? process;
@@ -618,60 +563,6 @@ class SuperResolutionService extends GetxController
     }
 
     return true;
-  }
-
-  /// ONNX 超分：通过稳定 engine contract 执行。适配器仍由 [InferenceService] 提供；
-  /// 未接入模型时（[SuperResolutionEngine.isReady] 为 false）给出友好
-  /// 提示并让任务保持可暂停/重试状态，而不是崩溃。
-  Future<bool> _handleOnnx(
-    GalleryImage rawImage,
-    InferenceCancellationToken token,
-  ) async {
-    final engine_lib.SuperResolutionEngine? engine = engine_lib.engineRegistry
-        .findSuperResolution('onnx-super-resolution');
-    if (engine == null || !engine.isReady) {
-      toast('inferenceModelNotIntegrated'.tr, isShort: false);
-      return false;
-    }
-    final String inputAbsolutePath =
-        DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(
-          rawImage.path!,
-        );
-    final String outputAbsolutePath = computeImageOutputAbsolutePath(
-      rawImage.path!,
-    );
-    try {
-      final engine_lib.EngineTask<String> task = engine.upscale(
-        engine_lib.ImageProcessingRequest(
-          imagePath: inputAbsolutePath,
-          outputPath: outputAbsolutePath,
-        ),
-        scale: 4,
-      );
-      token.addListener(task.cancel);
-      await task.future;
-      return true;
-    } on engine_lib.EngineTaskCancelledException {
-      return false;
-    } on engine_lib.EngineException catch (error) {
-      if (error.code == 'not_ready') {
-        toast('inferenceModelNotIntegrated'.tr, isShort: false);
-        return false;
-      }
-      log.error('ONNX super resolution failed', error);
-      toast('internalError'.tr, isShort: false);
-      return false;
-    } on InferenceNotReadyException {
-      toast('inferenceModelNotIntegrated'.tr, isShort: false);
-      return false;
-    } catch (e, s) {
-      log.error('ONNX super resolution failed', e, s);
-      if (e is Exception || e is Error) {
-        log.uploadError(e, extraInfos: {'rawImage': rawImage});
-      }
-      toast('internalError'.tr, isShort: false);
-      return false;
-    }
   }
 
   String _taskKey(int gid, SuperResolutionType type) => '$gid:${type.index}';
@@ -930,91 +821,6 @@ class SuperResolutionService extends GetxController
   String computeImageOutputDirPath(String rawImagePath) {
     return join(dirname(rawImagePath), imageDirName);
   }
-
-  Future<void> _resumeAfterReaderPage(
-    List<_ReaderPagePausedTask> pausedTasks,
-  ) async {
-    Object? firstError;
-    StackTrace? firstStack;
-    for (final _ReaderPagePausedTask pausedTask in pausedTasks) {
-      if (!_preemptionTracker.isCurrent(
-        pausedTask.gid,
-        pausedTask.type,
-        pausedTask.userActionRevision,
-      )) {
-        continue;
-      }
-      final SuperResolutionInfo? info = get(pausedTask.gid, pausedTask.type);
-      if (info == null || info.status != SuperResolutionStatus.paused) {
-        continue;
-      }
-
-      try {
-        info.status = SuperResolutionStatus.running;
-        await _updateSuperResolutionInfoStatus(pausedTask.gid, info);
-        updateSafely(['$superResolutionId::${pausedTask.gid}']);
-        final String taskKey = _taskKey(pausedTask.gid, pausedTask.type);
-        _taskTokens[taskKey] = InferenceCancellationToken();
-        executor.scheduleTask(
-          0,
-          () => _doSuperResolve(pausedTask.gid, pausedTask.type),
-        );
-      } on Object catch (error, stack) {
-        info.status = SuperResolutionStatus.paused;
-        firstError ??= error;
-        firstStack ??= stack;
-      }
-    }
-    if (firstError != null) {
-      Error.throwWithStackTrace(firstError, firstStack!);
-    }
-  }
-}
-
-/// Tracks explicit user actions so a reader preemption lease cannot revive a
-/// task that the user paused, resumed or deleted while the page job was active.
-class SuperResolutionPreemptionTracker {
-  final Map<String, int> _revisions = <String, int>{};
-
-  int capture(int gid, SuperResolutionType type) =>
-      _revisions[_key(gid, type)] ?? 0;
-
-  void recordUserAction(int gid, SuperResolutionType type) {
-    final String key = _key(gid, type);
-    _revisions[key] = (_revisions[key] ?? 0) + 1;
-  }
-
-  bool isCurrent(int gid, SuperResolutionType type, int revision) =>
-      capture(gid, type) == revision;
-
-  String _key(int gid, SuperResolutionType type) => '$gid::${type.index}';
-}
-
-class SuperResolutionPauseLease {
-  SuperResolutionPauseLease(this._resumeCallback);
-
-  final Future<void> Function() _resumeCallback;
-  bool _resumed = false;
-
-  Future<void> resume() async {
-    if (_resumed) {
-      return;
-    }
-    _resumed = true;
-    await _resumeCallback();
-  }
-}
-
-class _ReaderPagePausedTask {
-  const _ReaderPagePausedTask({
-    required this.gid,
-    required this.type,
-    required this.userActionRevision,
-  });
-
-  final int gid;
-  final SuperResolutionType type;
-  final int userActionRevision;
 }
 
 class SuperResolutionInfo {

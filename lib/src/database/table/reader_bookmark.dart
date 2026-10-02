@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
-/// Tombstone-capable page bookmarks for the future unified LAN history
-/// payload. Composite identity permits multiple bookmarks per gallery.
+/// Page bookmarks retain deletion markers and legacy metadata for existing
+/// databases. Composite identity permits multiple bookmarks per gallery.
 @TableIndex(
   name: 'idx_reader_bookmark_gallery_page',
   columns: {#galleryKey, #pageIndex},

@@ -64,9 +64,8 @@ Future<String Function(Uri)> findProxySettingFunc(
   };
 }
 
-/// LAN pairing and WebSocket sessions must not be routed through the system
-/// proxy. The proxy is commonly unable to reach private addresses, and even
-/// when it can, the extra hop breaks peer discovery/pairing timeouts.
+/// Local API endpoints and loopback services bypass the system proxy, which
+/// may be unable to reach private addresses.
 bool shouldBypassProxy(Uri uri) {
   final String host = uri.host.toLowerCase().replaceFirst(RegExp(r'\.$'), '');
   if (host == 'localhost' || host.endsWith('.local')) {

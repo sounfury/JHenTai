@@ -9,8 +9,6 @@ import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/database/dao/dio_cache_dao.dart';
 import 'package:jhentai/src/network/eh_request.dart';
-import 'package:jhentai/src/service/lan_device_trust_service.dart';
-import 'package:jhentai/src/service/lan_sharing_runtime.dart';
 import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/service/path_service.dart';
 import 'package:jhentai/src/setting/network_setting.dart';
@@ -62,7 +60,6 @@ class SettingNetworkPage extends StatelessWidget {
                     _buildSmartCacheMaxSize(),
                     _buildSmartCacheEvictPolicy(),
                     const _CacheSizeTile(),
-                    _buildMoveCacheToServer(context),
                   ],
                 ),
                 _buildConnectTimeout(context),
@@ -174,35 +171,6 @@ class SettingNetworkPage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget _buildMoveCacheToServer(BuildContext context) {
-    return GetBuilder<LanDeviceTrustService>(
-      id: LanDeviceTrustService.devicesChangedId,
-      builder: (service) {
-        final bool connected = service.hasConnectedDevice;
-        return ListTile(
-          enabled: connected,
-          leading: Icon(
-            Icons.cloud_upload_outlined,
-            color: connected ? null : Theme.of(context).disabledColor,
-          ),
-          title: Text('moveCacheToServer'.tr),
-          subtitle: Text(
-            connected
-                ? 'moveCacheToServerHint'.tr
-                : 'moveCacheToServerDisabledHint'.tr,
-          ),
-          onTap: connected ? () => unawaited(_moveCacheToServer()) : null,
-        );
-      },
-    );
-  }
-
-  Future<void> _moveCacheToServer() async {
-    final int uploaded = await lanSharingRuntime
-        .pushIndexedImageCacheToServer();
-    toast('moveCacheToServerDone'.trParams({'count': '$uploaded'}));
   }
 
   Widget _buildConnectTimeout(BuildContext context) {

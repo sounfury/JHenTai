@@ -33,7 +33,7 @@ const LiquidShape _glassLabelButtonShape =
 /// not carry an explicit [ButtonStyle.minimumSize]. Material label buttons
 /// ship with a 64x40 minimum + padding; the glass branch skips the minimum so
 /// *text* buttons size to their content, but without this padding a filled
-/// label would then hug its text (e.g. a ~28x20 "view" pill in a LAN row).
+/// label would then hug its text (e.g. a ~28x20 "view" pill in a settings row).
 const EdgeInsets _glassLabelButtonPadding =
     EdgeInsets.symmetric(horizontal: 16, vertical: 10);
 

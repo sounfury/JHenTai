@@ -34,7 +34,6 @@ enum ConfigEnum {
 
   /// config
   ehCookie('eh_cookies'),
-  lanUnifiedState('lanUnifiedState'),
   searchConfig('searchConfig'),
   dismissVersion('dismissVersion'),
   readIndexRecord('readIndexRecord'),

@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/model/config.dart';
 import 'package:jhentai/src/service/cloud_service.dart';
-import 'package:jhentai/src/service/lan_sharing_runtime.dart';
 import 'package:jhentai/src/setting/advanced_setting.dart';
 import 'package:jhentai/src/setting/performance_setting.dart';
 import 'package:jhentai/src/service/log.dart';
@@ -68,15 +67,7 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
         () => EHAppleSettingsListView(
           groups: [
             EHAppleSettingsGroup(
-              title: 'experimentalFeatures'.tr,
-              children: [_buildLanSharingExperiment()],
-            ),
-            EHAppleSettingsGroup(
-              title: 'readerPerformanceExperiments'.tr,
               children: [
-                _buildReaderEngine2(),
-                _buildPerformanceGovernor(),
-                _buildProgressiveImagePipeline(),
                 _buildCoverDecodeOptimization(),
               ],
             ),
@@ -103,88 +94,6 @@ class _SettingAdvancedPageState extends State<SettingAdvancedPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildReaderEngine2() {
-    return EHAppleSwitchListTile(
-      title: Text('readerEngine2'.tr),
-      subtitle: Text('readerEngine2Hint'.tr),
-      value: performanceSetting.enableReaderEngine2.value,
-      onChanged: (value) async {
-        await performanceSetting.setEnableReaderEngine2(value);
-        toast('saveSuccess'.tr);
-      },
-    );
-  }
-
-  Widget _buildLanSharingExperiment() {
-    return EHAppleExpandableSwitchListTile(
-      title: Text('lanSharing'.tr),
-      subtitle: Text('lanSharingExperimentalHint'.tr),
-      value: advancedSetting.enableLanSharing.value,
-      onChanged: (value) async {
-        try {
-          await advancedSetting.saveEnableLanSharing(value);
-        } on Object catch (error, stack) {
-          log.warning('Failed to save LAN sharing setting', error, true);
-          log.trace(stack);
-          toast('saveFailed'.tr);
-          return;
-        }
-
-        try {
-          await lanSharingRuntime.setEnabled(value);
-        } on Object catch (error, stack) {
-          log.warning('Failed to update LAN sharing runtime', error, true);
-          log.trace(stack);
-          if (value) {
-            try {
-              await advancedSetting.saveEnableLanSharing(false);
-            } on Object catch (rollbackError, rollbackStack) {
-              log.warning(
-                'Failed to roll back LAN sharing setting',
-                rollbackError,
-                true,
-              );
-              log.trace(rollbackStack);
-            }
-          }
-          toast('lanSharingStartFailed'.tr);
-        }
-      },
-      children: [
-        ListTile(
-          title: Text('lanFindAndPairDevices'.tr),
-          subtitle: Text('lanFindAndPairDevicesHint'.tr),
-          trailing: Icon(AppIcons.chevronRight).marginOnly(right: 4),
-          onTap: () => toRoute(Routes.lanSharing),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPerformanceGovernor() {
-    return EHAppleSwitchListTile(
-      title: Text('performanceGovernor'.tr),
-      subtitle: Text('performanceGovernorHint'.tr),
-      value: performanceSetting.enablePerformanceGovernor.value,
-      onChanged: (value) async {
-        await performanceSetting.setEnablePerformanceGovernor(value);
-        toast('saveSuccess'.tr);
-      },
-    );
-  }
-
-  Widget _buildProgressiveImagePipeline() {
-    return EHAppleSwitchListTile(
-      title: Text('progressiveImagePipeline'.tr),
-      subtitle: Text('progressiveImagePipelineHint'.tr),
-      value: performanceSetting.enableProgressiveImagePipeline.value,
-      onChanged: (value) async {
-        await performanceSetting.setEnableProgressiveImagePipeline(value);
-        toast('saveSuccess'.tr);
-      },
     );
   }
 

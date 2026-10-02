@@ -15,9 +15,6 @@ class ReadPageInfo {
 
   String? galleryUrl;
 
-  /// The trusted LAN device that supplied this remote gallery, when applicable.
-  String? sourceDeviceId;
-
   int initialIndex;
 
   int currentImageIndex;
@@ -49,7 +46,6 @@ class ReadPageInfo {
     this.token,
     required this.galleryTitle,
     this.galleryUrl,
-    this.sourceDeviceId,
     required this.initialIndex,
     required this.pageCount,
     this.isOriginal = false,

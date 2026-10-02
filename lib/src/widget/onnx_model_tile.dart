@@ -117,7 +117,7 @@ class OnnxModelTile extends StatelessWidget {
   }
 }
 
-/// Lists every model of [kind] (e.g. 'ocr', 'superResolution') with its
+/// Lists every model of [kind] (e.g. 'ocr') with its
 /// description — how that tier differs in speed / size / accuracy — below the
 /// name, and a radio marking the currently active one. Tapping a row selects it
 /// via [onSelect].

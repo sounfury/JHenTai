@@ -7,19 +7,13 @@ import 'package:jhentai/src/utils/toast_util.dart';
 import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-import '../../../../routes/routes.dart';
 import '../../../../service/super_resolution_service.dart';
-import '../../../../service/inference/onnx_model_store.dart';
-import '../../../../service/inference_service.dart';
 import '../../../../setting/super_resolution_setting.dart';
-import '../../../../setting/inference_setting.dart';
 import '../../../../service/log.dart';
 import '../../../../utils/app_icons.dart';
-import '../../../../utils/route_util.dart';
 import '../../../../widget/eh_apple_settings_list_view.dart';
 import '../../../../widget/eh_codex_style_dropdown.dart';
 import '../../../../widget/loading_state_indicator.dart';
-import '../../../../widget/onnx_model_tile.dart';
 
 class SettingSuperResolutionPage extends StatelessWidget {
   const SettingSuperResolutionPage({Key? key}) : super(key: key);
@@ -49,101 +43,14 @@ class SettingSuperResolutionPage extends StatelessWidget {
           groups: [
             EHAppleSettingsGroup(
               children: [
-                _buildEngine(),
-                if (superResolutionSetting.engine.value ==
-                    SuperResolutionEngine.onnx) ...[
-                  _buildOnnxModelPicker(),
-                  _buildOnnxModelTile(),
-                  _buildInferenceBackend(),
-                ],
-                if (superResolutionSetting.engine.value ==
-                    SuperResolutionEngine.ncnnVulkan) ...[
-                  _buildModelDirectoryPath(),
-                  _buildModelType(),
-                  _buildGpuId(),
-                ],
+                _buildModelDirectoryPath(),
+                _buildModelType(),
+                _buildGpuId(),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildEngine() {
-    return ListTile(
-      title: Text('superResolutionEngine'.tr),
-      trailing: EHCodexStyleDropdown<SuperResolutionEngine>(
-        value: superResolutionSetting.engine.value,
-        elevation: 4,
-        alignment: AlignmentDirectional.centerEnd,
-        onChanged: (value) {
-          if (value != null) {
-            superResolutionSetting.saveEngine(value);
-          }
-        },
-        items: [
-          DropdownMenuItem(
-            value: SuperResolutionEngine.ncnnVulkan,
-            child: Text('superResolutionEngineNcnnVulkan'.tr),
-          ),
-          DropdownMenuItem(
-            value: SuperResolutionEngine.onnx,
-            child: Text('superResolutionEngineOnnx'.tr),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// ONNX 超分模型选择器：列出所有 superResolution manifest，名字下方标注
-  /// 速度/体积/精度差异，单选切换活动模型。
-  Widget _buildOnnxModelPicker() {
-    return Obx(() {
-      final String active = superResolutionSetting.onnxModelId.value;
-      final List<OnnxModelManifest> models =
-          OnnxModelStore.instance.manifestsOfKind('superResolution');
-      final bool activeKnown = models.any(
-        (OnnxModelManifest model) => model.id == active,
-      );
-      return OnnxModelPicker(
-        kind: 'superResolution',
-        activeId: activeKnown || models.isEmpty ? active : models.first.id,
-        onSelect: superResolutionSetting.saveOnnxModelId,
-      );
-    });
-  }
-
-  /// 活动 ONNX 超分模型（Real-ESRGAN anime）的下载/删除/状态。
-  Widget _buildOnnxModelTile() {
-    return Obx(() {
-      final List<OnnxModelManifest> models =
-          OnnxModelStore.instance.manifestsOfKind('superResolution');
-      final String active = superResolutionSetting.onnxModelId.value;
-      final bool activeKnown = models.any(
-        (OnnxModelManifest model) => model.id == active,
-      );
-      final String manifestId =
-          activeKnown || models.isEmpty ? active : models.first.id;
-      return OnnxModelTile(
-        manifestId: manifestId,
-        title: 'inferenceSuperResolutionModel'.tr,
-      );
-    });
-  }
-
-  Widget _buildInferenceBackend() {
-    return ListTile(
-      title: Text('inferenceBackend'.tr),
-      subtitle: Obx(
-        () => Text(
-          '${inferenceService.resolveBackendFor(InferenceDomain.superResolution)?.label ?? 'inferenceDeviceNotDetected'.tr} · '
-          '${inferenceService.superResolutionEngine.isReady ? 'inferenceModelReady'.tr : 'inferenceModelNotIntegrated'.tr}',
-          style: const TextStyle(fontSize: 12),
-        ),
-      ),
-      trailing: Icon(AppIcons.chevronRight).marginOnly(right: 4),
-      onTap: () => toRoute(Routes.inference),
     );
   }
 

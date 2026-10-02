@@ -2,9 +2,8 @@ import 'dart:convert';
 
 /// A page-level reader bookmark.
 ///
-/// The optional fields are deliberately part of the first wire shape so the
-/// LAN history synchronizer can merge records without a schema rewrite. The
-/// first UI does not expose notes, but it must preserve them on round-trip.
+/// Optional legacy metadata and deletion markers are preserved when reading
+/// existing bookmarks. The UI does not expose notes, but round-trips keep them.
 class ReaderBookmark {
   const ReaderBookmark({
     required this.galleryKey,
