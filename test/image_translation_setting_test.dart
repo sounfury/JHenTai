@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jhentai/src/service/engine/context_translation_contract.dart';
 import 'package:jhentai/src/service/engine/engine_contract.dart';
+import 'package:jhentai/src/service/inference/onnx_model_store.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 
 class _MemoryImageTranslationSetting extends ImageTranslationSetting {
@@ -50,6 +51,21 @@ void main() {
     final ImageTranslationSetting setting = ImageTranslationSetting();
     setting.applyBeanConfig('{"ocrEngine": "unknownEngine"}');
     expect(setting.ocrEngine.value, ImageOcrEngine.onnx);
+    expect(setting.onnxModelId.value, OnnxModelStore.ocrManifestId);
+    setting.applyBeanConfig(
+      jsonEncode({'onnxModelId': OnnxModelStore.ocrLegacyManifestId}),
+    );
+    expect(setting.onnxModelId.value, OnnxModelStore.ocrManifestId);
+
+    // 迁移后用户主动切回通用版，重新加载配置仍应尊重该选择。
+    setting.onnxModelId.value = OnnxModelStore.ocrLegacyManifestId;
+    final restored = ImageTranslationSetting();
+    restored.applyBeanConfig(setting.toConfigString());
+    expect(restored.onnxModelId.value, OnnxModelStore.ocrLegacyManifestId);
+    restored.applyBeanConfig(
+      jsonEncode({'onnxModelId': OnnxModelStore.ocrTinyManifestId}),
+    );
+    expect(restored.onnxModelId.value, OnnxModelStore.ocrTinyManifestId);
   });
 
   test('auto-translate-gallery-text setting survives a config round-trip', () {

@@ -134,7 +134,13 @@ class ImageTranslationSetting
       (engine) => engine.name == config['ocrEngine'],
       orElse: () => ocrEngine.value,
     );
-    onnxModelId.value = config['onnxModelId'] ?? onnxModelId.value;
+    final String? savedOnnxModelId = config['onnxModelId'] as String?;
+    // 本分支将原通用版升级为漫画版；迁移后手动选回通用版不会再次被覆盖。
+    onnxModelId.value =
+        savedOnnxModelId == OnnxModelStore.ocrLegacyManifestId &&
+                config['onnxMangaDefaultApplied'] != true
+            ? OnnxModelStore.ocrManifestId
+            : savedOnnxModelId ?? onnxModelId.value;
     mangaOcrAutoSuggest.value =
         config['mangaOcrAutoSuggest'] ?? mangaOcrAutoSuggest.value;
     appleLiveTextLanguage.value =
@@ -233,6 +239,7 @@ class ImageTranslationSetting
   String toConfigString() => jsonEncode({
     'ocrEngine': ocrEngine.value.name,
     'onnxModelId': onnxModelId.value,
+    'onnxMangaDefaultApplied': true,
     'mangaOcrAutoSuggest': mangaOcrAutoSuggest.value,
     'appleLiveTextLanguage': appleLiveTextLanguage.value,
     'appleLiveTextAutoSelected': appleLiveTextAutoSelected.value,

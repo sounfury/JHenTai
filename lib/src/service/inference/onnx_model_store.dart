@@ -35,7 +35,10 @@ class OnnxModelStore extends GetxController {
 
   static final OnnxModelStore instance = OnnxModelStore._();
 
-  static const String ocrManifestId = 'rapidocr-ppocrv6-small-multilingual';
+  static const String ocrManifestId = 'ppocrv6-manga-v0.2';
+  // 保留通用版的独立目录与选择项，便于对照和回退，不覆盖旧模型文件。
+  static const String ocrLegacyManifestId =
+      'rapidocr-ppocrv6-small-multilingual';
 
   /// Lighter OCR tier of the same PP-OCRv6 family: a reduced dictionary and
   /// smaller det/rec networks — fastest and smallest, lower accuracy on
@@ -50,6 +53,52 @@ class OnnxModelStore extends GetxController {
   static const List<OnnxModelManifest> manifests = [
     OnnxModelManifest(
       id: ocrManifestId,
+      kind: 'ocr',
+      version: 'Kellenok-PP-OCRv6-manga-v0.2-ba1d479',
+      displayName: 'PP-OCRv6 manga v0.2（日文／中文漫画）',
+      description: 'onnxModelDescPpOcrManga',
+      licenseName: 'Apache-2.0',
+      licenseUrl:
+          'https://huggingface.co/Kellenok/PP-OCRv6_manga/tree/ba1d479e8a61a20e8318c9758c73fbbbd290b98d',
+      sourceProjectUrl: 'https://huggingface.co/Kellenok/PP-OCRv6_manga',
+      files: [
+        OnnxModelFile(
+          id: 'det',
+          fileName: 'manga_det_v0.2.onnx',
+          sha256:
+              'd132078c46e292b226fb5a2ca52a7612ad319262dfdf493e7d8e3be435295978',
+          sizeBytes: 1816954,
+          urls: {
+            OnnxModelSource.huggingFace:
+                'https://huggingface.co/Kellenok/PP-OCRv6_manga/resolve/ba1d479e8a61a20e8318c9758c73fbbbd290b98d/det/manga_det_v0.2.onnx?download=true',
+          },
+        ),
+        OnnxModelFile(
+          id: 'rec',
+          fileName: 'manga_rec_v0.2.onnx',
+          sha256:
+              'de12c84c63e62c80339e882e675983d886670dcb6f0147e1ed041afd6fa81888',
+          sizeBytes: 21167540,
+          urls: {
+            OnnxModelSource.huggingFace:
+                'https://huggingface.co/Kellenok/PP-OCRv6_manga/resolve/ba1d479e8a61a20e8318c9758c73fbbbd290b98d/rec/manga_rec_v0.2.onnx?download=true',
+          },
+        ),
+        OnnxModelFile(
+          id: 'dict',
+          fileName: 'ppocrv6_dict.txt',
+          sha256:
+              'b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d',
+          sizeBytes: 74947,
+          urls: {
+            OnnxModelSource.huggingFace:
+                'https://huggingface.co/Kellenok/PP-OCRv6_manga/resolve/ba1d479e8a61a20e8318c9758c73fbbbd290b98d/ppocrv6_dict.txt?download=true',
+          },
+        ),
+      ],
+    ),
+    OnnxModelManifest(
+      id: ocrLegacyManifestId,
       kind: 'ocr',
       version: 'RapidOCR-v3.9.2-PP-OCRv6-small',
       displayName: 'RapidOCR · PP-OCRv6 small（多语言）',

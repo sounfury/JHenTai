@@ -18,6 +18,8 @@ import '../../utils/perspective_crop.dart';
 
 typedef OnnxProviderResolver = List<ort.OrtProvider> Function();
 
+enum OnnxOcrDetectorNormalization { symmetric, imageNet }
+
 /// Immutable ONNX OCR model-file info. Resolved on the UI isolate and passed
 /// to the OCR worker isolate, which cannot touch [OnnxModelStore] (its
 /// [GetxController]/pathService wiring is only initialized on the UI isolate).
@@ -28,6 +30,7 @@ class OnnxOcrModelInfo {
     required this.recPath,
     required this.dictPath,
     required this.fingerprint,
+    this.detectorNormalization = OnnxOcrDetectorNormalization.symmetric,
   });
 
   final String detPath;
@@ -35,6 +38,7 @@ class OnnxOcrModelInfo {
   final String recPath;
   final String dictPath;
   final String fingerprint;
+  final OnnxOcrDetectorNormalization detectorNormalization;
 }
 
 /// End-to-end PP-OCRv6 small pipeline: DB detection and CTC recognition.
@@ -52,17 +56,30 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
     required this.model,
     this.safetyConfig,
     this.timings,
-  });
+    this.detectorRgbMean,
+    this.detectorRgbStd,
+    double detectorPixelThreshold = OcrScoringProtocol.detectorPixelThreshold,
+    double detectorBoxThreshold = OcrScoringProtocol.detectorBoxThreshold,
+    double detectorUnclipRatio = 1.6,
+  }) : assert((detectorRgbMean == null) == (detectorRgbStd == null)),
+       assert(detectorRgbMean == null || detectorRgbMean.length == 3),
+       assert(detectorRgbStd == null || detectorRgbStd.length == 3),
+       _detThreshold = detectorPixelThreshold,
+       _boxThreshold = detectorBoxThreshold,
+       _unclipRatio = detectorUnclipRatio;
 
   final OnnxRuntime runtime;
   final OnnxProviderResolver providerResolver;
   final OnnxOcrModelInfo model;
   final InferenceSessionSafetyConfig? safetyConfig;
   final InferenceTimings? timings;
+  // 比较入口可覆盖 RGB 归一化；默认按模型选择，漫画版使用 ImageNet 参数。
+  final List<double>? detectorRgbMean;
+  final List<double>? detectorRgbStd;
   final Map<String, String> _sessionRoles = {};
 
-  static const double _detThreshold = OcrScoringProtocol.detectorPixelThreshold;
-  static const double _boxThreshold = OcrScoringProtocol.detectorBoxThreshold;
+  final double _detThreshold;
+  final double _boxThreshold;
   static const double _textThreshold =
       OcrScoringProtocol.recognitionConfidenceThreshold;
   static const int _maxInputBytes = 80 * 1024 * 1024;
@@ -70,14 +87,17 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
 
   /// DB unclip ratio: expands each text box by `area * ratio / perimeter`
   /// along its own axes (matches RapidOCR's `unclip_ratio: 1.6`).
-  static const double _unclipRatio = 1.6;
+  final double _unclipRatio;
 
   /// Recognition crops are processed in width-sorted batches to amortize the
   /// ONNX call overhead; the rec model's dynamic-batch profile allows up to 6.
   static const int _recBatchSize = 6;
 
   @override
-  String get displayName => 'ONNX · PP-OCRv6 small';
+  String get displayName =>
+      model.detectorNormalization == OnnxOcrDetectorNormalization.imageNet
+          ? 'ONNX · PP-OCRv6 manga v0.2'
+          : 'ONNX · PP-OCRv6 small';
 
   @override
   bool get isReady => runtime.isAvailable && providerResolver().isNotEmpty;
@@ -523,7 +543,24 @@ class OnnxOcrInferenceEngine implements OcrInferenceEngine {
       scale: 2,
       offset: -1,
     );
-    timings?.record('det.normalize', prepStart!, {'width': mapWidth, 'height': mapHeight});
+    final bool imageNet =
+        model.detectorNormalization == OnnxOcrDetectorNormalization.imageNet;
+    final mean = detectorRgbMean ?? (imageNet ? const [.485, .456, .406] : null);
+    final std = detectorRgbStd ?? (imageNet ? const [.229, .224, .225] : null);
+    if (mean != null && std != null) {
+      final planeSize = mapWidth * mapHeight;
+      for (int channel = 0; channel < 3; channel++) {
+        final start = channel * planeSize;
+        final end = start + planeSize;
+        for (int i = start; i < end; i++) {
+          input[i] = ((input[i] + 1) * .5 - mean[channel]) / std[channel];
+        }
+      }
+    }
+    timings?.record('det.normalize', prepStart!, {
+      'width': mapWidth,
+      'height': mapHeight,
+    });
     final List<dynamic> output = await _runSingleOutput(
       session,
       input,

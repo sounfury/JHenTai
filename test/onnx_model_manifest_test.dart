@@ -10,12 +10,14 @@ void main() {
     expect(manifest.displayName, contains('PP-OCRv6'));
     expect(
       manifest.files.map((OnnxModelFile file) => file.id),
-      containsAll(<String>['det', 'rec', 'cls', 'dict']),
+      containsAll(<String>['det', 'rec', 'dict']),
     );
     expect(manifest.availableSources, <OnnxModelSource>[
-      OnnxModelSource.modelScope,
+      OnnxModelSource.huggingFace,
     ]);
-    expect(manifest.totalBytes, 31824456);
+    expect(manifest.totalBytes, 23059441);
+    expect(manifest.files, hasLength(3));
+    expect(manifest.displayName, contains('manga'));
     expect(manifest.fingerprint, contains(manifest.version));
 
     for (final OnnxModelFile file in manifest.files) {

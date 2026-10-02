@@ -507,8 +507,10 @@ class en_US {
       'imageTranslationOcrEngineOnnx': 'ONNX (on-device)',
       'imageTranslationOcrEngineMangaOcr': 'manga-OCR (to be implemented)',
       'imageTranslationOcrNotConfigured': 'ONNX OCR engine is not configured yet. Integrate models in the inference backend.',
+      'onnxModelDescPpOcrManga':
+          'Trained for Japanese and Chinese comics, including vertical text and sound effects. About 23 MB. Choose the general model for other languages.',
       'onnxModelDescRapidOcrSmall':
-          'Full PP-OCRv6 multilingual dictionary with high recognition accuracy at moderate size and speed. Good for most comics and images.',
+          'General multilingual PP-OCRv6 model for other languages or comparison with the manga model.',
       'onnxModelDescRapidOcrTiny':
           'Reduced dictionary and lightweight networks: the fastest and smallest tier, but with a smaller character set and slightly lower accuracy on complex glyphs. Best for low-end devices or speed-first use.',
       'stopSuperResolution': 'Stop Super Resolution',

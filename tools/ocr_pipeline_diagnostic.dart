@@ -21,6 +21,7 @@ import 'package:jhentai/src/service/inference/inference_safety.dart';
 import 'package:jhentai/src/service/inference/inference_task.dart';
 import 'package:jhentai/src/service/inference/inference_timings.dart';
 import 'package:jhentai/src/service/inference/onnx_ocr_engine.dart';
+import 'package:jhentai/src/service/inference/onnx_model_store.dart';
 import 'package:jhentai/src/service/inference/onnx_runtime.dart';
 import 'package:jhentai/src/utils/connected_bubble_layout.dart';
 import 'package:jhentai/src/utils/image_text_container_detection.dart';
@@ -91,7 +92,16 @@ Future<void> main(List<String> args) async {
         exit(evidence['passed'] == true ? 0 : 1);
       }
     }
-    final ocrRoot = '$root/rapidocr-ppocrv6-small-multilingual';
+    // 原有案例默认维持通用版；第七个参数可指定新漫画版进行整页验收。
+    final ocrManifestId = args.length > 6
+        ? args[6]
+        : OnnxModelStore.ocrLegacyManifestId;
+    final ocrManifest = OnnxModelStore.manifests.singleWhere(
+      (manifest) => manifest.id == ocrManifestId,
+    );
+    final ocrRoot = '$root/$ocrManifestId';
+    String ocrFile(String id) =>
+        '$ocrRoot/${ocrManifest.files.singleWhere((file) => file.id == id).fileName}';
     final iterations = args.length > 4 ? int.parse(args[4]) : 3;
     for (int run = 0; run < iterations; run++) {
       final timings = InferenceTimings();
@@ -136,11 +146,15 @@ Future<void> main(List<String> args) async {
           memoryBudgetBytes: 256 * 1024 * 1024,
         ),
         model: OnnxOcrModelInfo(
-          detPath: '$ocrRoot/PP-OCRv6_det_small.onnx',
-          clsPath: '$ocrRoot/ch_ppocr_mobile_v2.0_cls_mobile.onnx',
-          recPath: '$ocrRoot/PP-OCRv6_rec_small.onnx',
-          dictPath: '$ocrRoot/ppocrv6_dict.txt',
-          fingerprint: 'diagnostic-ocr',
+          detPath: ocrFile('det'),
+          clsPath: '',
+          recPath: ocrFile('rec'),
+          dictPath: ocrFile('dict'),
+          fingerprint: ocrManifest.fingerprint,
+          detectorNormalization:
+              ocrManifestId == OnnxModelStore.ocrManifestId
+                  ? OnnxOcrDetectorNormalization.imageNet
+                  : OnnxOcrDetectorNormalization.symmetric,
         ),
       );
       final ocrStart = timings.now;

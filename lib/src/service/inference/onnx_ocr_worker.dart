@@ -198,6 +198,7 @@ class OnnxOcrWorker {
         'rec': model.recPath,
         'dict': model.dictPath,
         'fingerprint': model.fingerprint,
+        'detectorNormalization': model.detectorNormalization.name,
       },
       'providers':
           providers.map((ort.OrtProvider provider) => provider.name).toList(),
@@ -405,10 +406,14 @@ class OnnxOcrIsolateEngine implements OcrInferenceEngine {
     OnnxOcrWorker? worker;
     final OnnxOcrModelInfo model = OnnxOcrModelInfo(
       detPath: files['det']!,
-      clsPath: files['cls']!,
+      clsPath: files['cls'] ?? '',
       recPath: files['rec']!,
       dictPath: files['dict']!,
       fingerprint: fingerprint,
+      detectorNormalization:
+          _activeManifestId == OnnxModelStore.ocrManifestId
+              ? OnnxOcrDetectorNormalization.imageNet
+              : OnnxOcrDetectorNormalization.symmetric,
     );
     try {
       final OcrInferenceResult result = await runOnnxOcrWithCpuFallback(
@@ -627,6 +632,9 @@ Future<void> _handleRecognize(
         recPath: model['rec'] as String,
         dictPath: model['dict'] as String,
         fingerprint: model['fingerprint'] as String,
+        detectorNormalization: OnnxOcrDetectorNormalization.values.byName(
+          model['detectorNormalization'] as String? ?? 'symmetric',
+        ),
       ),
     );
     final OcrInferenceResult result = await engine.recognize(
