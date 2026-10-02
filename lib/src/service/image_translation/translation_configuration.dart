@@ -49,7 +49,7 @@ ImageTranslationConfiguration captureImageTranslationConfiguration() {
                 OnnxModelStore.bubbleSegmentationManifestId,
               )
               : null,
-      'sfxFilter': 7,
+      'sfxFilter': 8,
       'bubbleMaskLayout': 1,
       'ocrArtifactFilter': 1,
     },

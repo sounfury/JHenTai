@@ -35,6 +35,7 @@ Windows 本机模型验收（真实 OCR、气泡检测、CTD、LaMa、生产成�
 | [connected_outline_text](image_translation/connected_outline_text/case.json) | 弯斜相连的竖排文字区域混入气泡外背景采样，修复后留下淡色原字 | 沿实际轮廓采样，恢复均匀灰底；无需 LaMa 会话；边框及拟声词不变 |
 | [no_text_status](reader/no_text_status/case.json) | 预翻译监控为“无文字”，阅读页却显示“翻译失败” | 缓存恢复后提示“未在图片中识别到文字”；保留手动重试；真实失败仍显示失败 |
 | [outlined_sound_effects](image_translation/outlined_sound_effects/case.json) | 花体拟声词误识别为 `るW`、`Naldls`、`LYOE.`，叠上异常大字 | 无需同页正确拟声词锚点，按原图描边证据过滤；气泡内对白完整；纯彩色画面不能触发过滤 |
+| [monochrome_sound_effects](image_translation/monochrome_sound_effects/case.json) | 黑白拟声词被识别为 `4833` 和小写 `n`，后者翻译成“嗯” | 两处误识别不进入翻译；其余字块判定不变；气泡内、位置未知、高置信度和横排变体仍翻译 |
 | [false_text_arm](image_translation/false_text_arm/case.json) | 无字原页中手臂轮廓被读成 `AR` 并译为“啊”，CTD 别处有输出使旧复核误通过 | CTD 必须与 OCR 框对应；版本 1 的错误缓存纠正为无文字并落盘；有效文字与检测不可用时保留原结果 |
 | [false_text_contours](image_translation/false_text_contours/case.json) | 无字轮廓被读成 `LET` 并译为“让”，CTD 误检框重叠却没有文字笔画 | 翻译前检查实际字形；版本 2 缓存自动纠正；真字和原图／模型缺失时保留结果 |
 | [mixed_ocr_artifacts](image_translation/mixed_ocr_artifacts/case.json) | 有正常对白的页面中，头发被读成小尺寸 `MM` 并译为“嗯嗯” | 逐块复核，只剔除 `MM`；其余14条对白、译文分组、气泡索引不变；旧缓存纠正并落盘 |

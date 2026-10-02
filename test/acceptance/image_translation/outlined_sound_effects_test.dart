@@ -94,11 +94,11 @@ void main() {
           prompt.groups.map((g) => g.textOf(retained)),
           isNot(contains(text)),
         );
-        // The previous text/style-only policy reproduces the reported defect.
+        // 位置未知时，单凭误识别文本仍不能保留，必须提供原图视觉证据。
         expect(
           shouldPreserveSoundEffect(
             text,
-            insideBubble: false,
+            insideBubble: null,
             confidence: blocks[index].confidence,
             width: blocks[index].width,
             height: blocks[index].height,

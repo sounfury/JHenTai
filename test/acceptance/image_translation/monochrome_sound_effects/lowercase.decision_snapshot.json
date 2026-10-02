@@ -1,0 +1,429 @@
+{
+  "provenance": "2026-10-02_19-02-46.log 的生产过滤日志；完整 OCR 几何与置信度来自同次翻译缓存，已过滤条目的几何取日志记录。",
+  "imageWidth": 1280,
+  "imageHeight": 1818,
+  "decisions": [
+    {
+      "block": {
+        "text": "あぐっ…!?",
+        "confidence": 0.8435158729553223,
+        "left": 1185.4665726429814,
+        "top": 701.400720493659,
+        "width": 36.5604876342868,
+        "height": 135.02978133437114,
+        "backgroundColor": 4294901502,
+        "sourceGlyphWidth": 20.0,
+        "sourceGlyphHeight": 17.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "left": 1193.0,
+        "top": 1171.0,
+        "width": 64.0,
+        "height": 116.0,
+        "text": "う",
+        "confidence": 0.53
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": true
+    },
+    {
+      "block": {
+        "text": "n",
+        "confidence": 0.5593923926353455,
+        "left": 1101.406256275179,
+        "top": 170.15786610593673,
+        "width": 93.54547026792761,
+        "height": 124.89570484403421,
+        "backgroundColor": 4294901502,
+        "sourceGlyphWidth": 52.0,
+        "sourceGlyphHeight": 63.0
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "そこは…！",
+        "confidence": 0.9737208008766174,
+        "left": 1156.976768983538,
+        "top": 702.5203567074893,
+        "width": 32.50109846797659,
+        "height": 134.79253504618327,
+        "backgroundColor": 4294901502,
+        "sourceGlyphWidth": 18.0,
+        "sourceGlyphHeight": 19.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "ちゃんと中まで",
+        "confidence": 0.9940667578152248,
+        "left": 722.1416746978775,
+        "top": 764.6160595665513,
+        "width": 34.04014871680374,
+        "height": 183.11338306013886,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 20.0,
+        "sourceGlyphHeight": 20.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "オイルを塗りこんで",
+        "confidence": 0.9996370871861776,
+        "left": 690.2253104900414,
+        "top": 764.3173931612524,
+        "width": 35.962459478030496,
+        "height": 234.52723147559323,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 19.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "高雄",
+        "confidence": 0.9999679923057556,
+        "left": 644.1991783783784,
+        "top": 10.133388904694163,
+        "width": 36.60164324324319,
+        "height": 63.45690640113798,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 22.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "綺麗にしないとな",
+        "confidence": 0.9999590963125229,
+        "left": 657.8764595646533,
+        "top": 763.3205385120217,
+        "width": 37.24708087069348,
+        "height": 212.61879139700932,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 20.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "……つと",
+        "confidence": 0.7859341353178024,
+        "left": 634.4494768586203,
+        "top": 771.9960730727154,
+        "width": 30.50984270675599,
+        "height": 102.67423293346542,
+        "backgroundColor": 4294901502,
+        "sourceGlyphWidth": 16.0,
+        "sourceGlyphHeight": 16.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "まだ修行は終わり",
+        "confidence": 0.9998987540602684,
+        "left": 614.3241758820028,
+        "top": 10.101886214490857,
+        "width": 37.75608532427623,
+        "height": 212.0468102961708,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "じゃないぞ",
+        "confidence": 0.9992997050285339,
+        "left": 586.2591649750865,
+        "top": 11.947685304596748,
+        "width": 34.79205615988053,
+        "height": 137.54041017900872,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "ちゃんと力抜いて",
+        "confidence": 0.9945282936096191,
+        "left": 577.8030040120835,
+        "top": 1090.8958673545824,
+        "width": 36.76691552568877,
+        "height": 212.32722833787602,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 20.0,
+        "sourceGlyphHeight": 19.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "ほら",
+        "confidence": 0.8748039305210114,
+        "left": 607.6795283071592,
+        "top": 1092.0446598861065,
+        "width": 34.64094338568157,
+        "height": 61.4994960172603,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 18.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "尻穴緩めろ",
+        "confidence": 0.998343312740326,
+        "left": 547.3250468400238,
+        "top": 1092.1597198300633,
+        "width": 35.72991244371633,
+        "height": 136.99987527583426,
+        "backgroundColor": 4294835708,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "尻穴の鍛錬だぞ",
+        "confidence": 0.9766081741877964,
+        "left": 516.9646459689369,
+        "top": 1092.6701306472937,
+        "width": 37.81061468199573,
+        "height": 185.8383239289542,
+        "backgroundColor": 4294770172,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 21.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "L",
+        "confidence": 0.8679078817367554,
+        "left": 509.66965461148743,
+        "top": 1631.6039113368784,
+        "width": 219.39292716668456,
+        "height": 206.18290161665573,
+        "backgroundColor": 4294112499,
+        "sourceGlyphWidth": 190.0,
+        "sourceGlyphHeight": 136.0
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "う…あ……♡",
+        "confidence": 0.927944282690684,
+        "left": 254.78557211633196,
+        "top": 1517.8613945637712,
+        "width": 28.334443022365207,
+        "height": 155.7512679217375,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 24.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "奥まで掻き",
+        "confidence": 0.987117874622345,
+        "left": 224.38002004160217,
+        "top": 1517.4364241381015,
+        "width": 33.159622574130026,
+        "height": 132.64440066921952,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "回されてっ……",
+        "confidence": 0.9837192637579781,
+        "left": 193.49639756315094,
+        "top": 1518.044343058404,
+        "width": 35.495320676710605,
+        "height": 183.23581692578819,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "本当にこれも",
+        "confidence": 0.999105324347814,
+        "left": 145.47148968012516,
+        "top": 696.7353693506118,
+        "width": 34.403766282773915,
+        "height": 157.38693086690773,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 19.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "変な熱が……",
+        "confidence": 0.9952506422996521,
+        "left": 145.2073938016315,
+        "top": 1546.3146626687599,
+        "width": 36.82974865609282,
+        "height": 159.6194431544227,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 21.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "なにっ？",
+        "confidence": 0.9431297332048416,
+        "left": 115.88853757233639,
+        "top": 473.2080944690521,
+        "width": 36.578988144505104,
+        "height": 110.0218556378083,
+        "backgroundColor": 4294901502,
+        "sourceGlyphWidth": 20.0,
+        "sourceGlyphHeight": 16.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "心法の修行か…？",
+        "confidence": 0.9847590699791908,
+        "left": 114.2472458548855,
+        "top": 697.6076306199858,
+        "width": 35.87065093781638,
+        "height": 206.5288363703869,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "広がってくる……♡",
+        "confidence": 0.9592774642838372,
+        "left": 115.79900849109588,
+        "top": 1547.9265422651108,
+        "width": 35.62416530400152,
+        "height": 230.13918656398482,
+        "backgroundColor": 4294901501,
+        "sourceGlyphWidth": 24.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "指が二本も……！",
+        "confidence": 0.9572195410728455,
+        "left": 83.73362160400067,
+        "top": 696.3455847994604,
+        "width": 36.90493328632479,
+        "height": 207.99510009182427,
+        "backgroundColor": 4294901501,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    }
+  ]
+}

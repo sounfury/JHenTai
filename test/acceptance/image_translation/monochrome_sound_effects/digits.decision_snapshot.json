@@ -1,0 +1,296 @@
+{
+  "provenance": "2026-10-02_19-02-46.log 的生产过滤日志；完整 OCR 几何与置信度来自同次翻译缓存，已过滤条目的几何取日志记录。",
+  "imageWidth": 1280,
+  "imageHeight": 1822,
+  "decisions": [
+    {
+      "block": {
+        "text": "-1l",
+        "confidence": 0.5189627905686697,
+        "left": 1118.1933597752018,
+        "top": 225.73766753310312,
+        "width": 105.72890545123573,
+        "height": 219.13322218224002,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 92.0,
+        "sourceGlyphHeight": 104.0
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "1-1",
+        "confidence": 0.7054646015167236,
+        "left": 1154.819509195742,
+        "top": 764.3539538472437,
+        "width": 115.9091680294755,
+        "height": 223.40576894659102,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 87.0,
+        "sourceGlyphHeight": 195.0
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "はっ",
+        "confidence": 0.5538362860679626,
+        "left": 1117.7497748939682,
+        "top": 1310.0326696308105,
+        "width": 27.771283545396727,
+        "height": 51.00264319451935,
+        "backgroundColor": 4294506999,
+        "sourceGlyphWidth": 18.0,
+        "sourceGlyphHeight": 40.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "はい",
+        "confidence": 0.8072517812252045,
+        "left": 1210.2643235110884,
+        "top": 1396.0218445499042,
+        "width": 52.47468975485117,
+        "height": 79.88035768097643,
+        "backgroundColor": 4294572794,
+        "sourceGlyphWidth": 31.0,
+        "sourceGlyphHeight": 29.5
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "抵抗する",
+        "confidence": 0.9999429881572723,
+        "left": 833.4428133853185,
+        "top": 21.35622453949569,
+        "width": 37.23801450425458,
+        "height": 113.05135099610035,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 21.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "フリして…",
+        "confidence": 0.995890212059021,
+        "left": 804.3911305006499,
+        "top": 21.99423355409817,
+        "width": 36.7435293026042,
+        "height": 160.77013005969536,
+        "backgroundColor": 4294901502,
+        "sourceGlyphWidth": 20.0,
+        "sourceGlyphHeight": 19.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "自分から腰を",
+        "confidence": 0.9998392860094706,
+        "left": 773.0401227052511,
+        "top": 21.585908295429963,
+        "width": 37.36137568676122,
+        "height": 163.59092819324434,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 20.0,
+        "sourceGlyphHeight": 21.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "動かしてるじゃ",
+        "confidence": 0.999309880392892,
+        "left": 740.655395128891,
+        "top": 20.311030327361,
+        "width": 42.932367105140884,
+        "height": 188.11883547656615,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "体が…言うことを",
+        "confidence": 0.9992423057556152,
+        "left": 738.8704504963094,
+        "top": 1062.691722426134,
+        "width": 37.25909900738111,
+        "height": 214.04857269159174,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 20.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "ないか高雄！",
+        "confidence": 0.9955954452355703,
+        "left": 712.5668615403242,
+        "top": 21.99019734526439,
+        "width": 38.463381793515964,
+        "height": 160.8008445686383,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "聞かない……",
+        "confidence": 0.9993765155474345,
+        "left": 708.7871506181702,
+        "top": 1064.6073260567666,
+        "width": 34.42569876365951,
+        "height": 165.26670753558938,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 20.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "頭の中が…真白に",
+        "confidence": 0.9985434338450432,
+        "left": 677.5678501280341,
+        "top": 1063.6475314438358,
+        "width": 39.33922537379908,
+        "height": 237.10359928856997,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 22.0,
+        "sourceGlyphHeight": 22.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "なっていく……♡",
+        "confidence": 0.9704262912273407,
+        "left": 648.9009137557281,
+        "top": 1064.7199927030965,
+        "width": 37.19817248854383,
+        "height": 206.99532161135085,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 24.0,
+        "sourceGlyphHeight": 20.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "4833",
+        "confidence": 0.8062300607562065,
+        "left": 218.42376110531382,
+        "top": 22.24070711365536,
+        "width": 64.91287260986064,
+        "height": 107.65989088636886,
+        "backgroundColor": 4294112500,
+        "sourceGlyphWidth": 39.0,
+        "sourceGlyphHeight": 89.0
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "10",
+        "confidence": 0.9800021052360535,
+        "left": 112.95986908171236,
+        "top": 36.894079608028136,
+        "width": 96.08026183657529,
+        "height": 114.00570043306652,
+        "backgroundColor": 4294046706,
+        "sourceGlyphWidth": 54.0,
+        "sourceGlyphHeight": 115.0
+      },
+      "insideBubble": false,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "ちっ…違う！",
+        "confidence": 0.9514909386634827,
+        "left": 118.52649835528163,
+        "top": 673.9623867254084,
+        "width": 32.38609061789032,
+        "height": 159.3572684769315,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 21.0,
+        "sourceGlyphHeight": 21.0
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    },
+    {
+      "block": {
+        "text": "これは…体が勝手に…っ♡",
+        "confidence": 0.9816476553678513,
+        "left": 85.7174674078242,
+        "top": 676.51471056656,
+        "width": 37.68602837875255,
+        "height": 306.1165924882232,
+        "backgroundColor": 4294835709,
+        "sourceGlyphWidth": 24.0,
+        "sourceGlyphHeight": 20.5
+      },
+      "insideBubble": true,
+      "matchesSoundEffectStyle": false,
+      "matchesSoundEffectOutline": false,
+      "wasPreserved": false
+    }
+  ]
+}

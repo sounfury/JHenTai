@@ -1,0 +1,28 @@
+{
+  "id": "monochrome_sound_effects",
+  "date": "2026-10-02",
+  "problem": "被检测流程判为气泡外的あん♡被识别成4833，コポッ…被识别成小写n并译成嗯；原有低置信度竖排兜底漏放，其中あん♡实际位于漏检的小气泡内。",
+  "acceptance": [
+    "4833与n不进入翻译提示词，原字保留且不授权擦除",
+    "两页气泡内对白与已保留拟声词保持原有判定",
+    "气泡内、位置未知、高置信度及横排的对照仍正常翻译"
+  ],
+  "cases": [
+    {
+      "id": "digits",
+      "source": "digits.source.webp",
+      "snapshot": "digits.decision_snapshot.json",
+      "sourceSha256": "c1b5a144440fe4c60f6e08369a1ac27bb6a8e83b371a3722ae553c155b458544",
+      "misrecognizedText": "4833",
+      "originalText": "あん♡"
+    },
+    {
+      "id": "lowercase",
+      "source": "lowercase.source.webp",
+      "snapshot": "lowercase.decision_snapshot.json",
+      "sourceSha256": "01f79ab8495fa41029d6480960aae9a16e370e5bc44a721739f6f2c111c1678c",
+      "misrecognizedText": "n",
+      "originalText": "コポッ…"
+    }
+  ]
+}
