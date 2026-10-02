@@ -118,10 +118,6 @@ class _GalleryMetadataStore {
   /// all compatibility back-fills (missing fields, sanitizedTitle, recomputed
   /// image paths after download-location change, and the downloaded-status
   /// sanity check).
-  ///
-  /// Static so it can run in a background isolate via [Isolate.run] — the
-  /// method has no instance state, only static deps (path/jsonDecode/
-  /// DownloadPathResolver/model fromJson).
   static ({GalleryDownloadedData gallery, List<GalleryImage?> images})? readForRestore(io.Directory galleryDir) {
     final Map<String, dynamic>? raw = read(galleryDir);
     if (raw == null) {
@@ -130,12 +126,18 @@ class _GalleryMetadataStore {
 
     GalleryDownloadedData gallery = GalleryDownloadedData.fromJson(raw['gallery']);
 
-    /// Back-fill sanitizedTitle for metadata files written before this field was introduced.
-    if (gallery.sanitizedTitle == null) {
-      final int reservedBytes = utf8.encode('${gallery.gid} - ').length;
-      gallery = gallery.copyWith(
-        sanitizedTitle: Value(DownloadPathResolver.computeSanitizedGalleryTitle(gallery.title, reservedBytes)),
-      );
+    /// The scanned directory is where the bytes actually live. Old metadata
+    /// has no sanitizedTitle, and metadata produced by an earlier buggy restore
+    /// may contain a title computed with the newer byte-based rule. Reconcile
+    /// both cases to the actual `{gid} - {title}` directory on disk.
+    final String restoredSanitizedTitle = DownloadPathResolver.resolveSanitizedGalleryTitleForRestore(
+      gid: gallery.gid,
+      rawTitle: gallery.title,
+      persistedSanitizedTitle: gallery.sanitizedTitle,
+      galleryDirectoryPath: galleryDir.path,
+    );
+    if (gallery.sanitizedTitle != restoredSanitizedTitle) {
+      gallery = gallery.copyWith(sanitizedTitle: Value(restoredSanitizedTitle));
     }
 
     List<GalleryImage?> images = (jsonDecode(raw['images']) as List).map((_map) => _map == null ? null : GalleryImage.fromJson(_map)).toList();
@@ -163,8 +165,6 @@ class _GalleryMetadataStore {
   /// Read + parse the metadata file in [galleryDir]. Returns null if the file
   /// is missing or unparseable. Compatibility back-fills (for fields added in
   /// later versions) are applied to the gallery map before returning.
-  ///
-  /// Static so it can run in a background isolate (see [readForRestore]).
   static Map<String, dynamic>? read(io.Directory galleryDir) {
     io.File metadataFile = io.File(path.join(galleryDir.path, metadataFileName));
     if (!metadataFile.existsSync()) {

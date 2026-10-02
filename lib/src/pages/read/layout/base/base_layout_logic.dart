@@ -14,7 +14,6 @@ import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_rx/get_rx.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:get/get_utils/get_utils.dart';
-import 'package:jhentai/src/widget/eh_action_sheet_text.dart';
 import 'package:jhentai/src/consts/eh_consts.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/network/eh_request.dart';
@@ -33,8 +32,10 @@ import 'package:jhentai/src/utils/image_cache_util.dart';
 import 'package:jhentai/src/utils/permission_util.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
+import 'package:jhentai/src/widget/eh_action_sheet_text.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:path/path.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:share_plus/share_plus.dart';
@@ -137,11 +138,7 @@ abstract class BaseLayoutLogic extends GetxController
   }
 
   void onPointerScroll(PointerScrollEvent value) {
-    final ctrlPressed = HardwareKeyboard.instance.logicalKeysPressed.any(
-      (key) =>
-          key == LogicalKeyboardKey.controlLeft ||
-          key == LogicalKeyboardKey.controlRight,
-    );
+    final ctrlPressed = HardwareKeyboard.instance.logicalKeysPressed.any((key) => key == LogicalKeyboardKey.controlLeft || key == LogicalKeyboardKey.controlRight);
     if (ctrlPressed) {
       return;
     }
@@ -1295,29 +1292,48 @@ abstract class BaseLayoutLogic extends GetxController
     );
   }
 
-  Future<bool> _saveImage2Album(Uint8List imageData, String fileName) async {
-    await requestAlbumPermission();
+  Future<bool> _ensureSave2AlbumPermission() async {
+    List<PermissionStatus> status = await checkAndRequestPermissions();
 
-    SaveResult saveResult = await SaverGallery.saveImage(
-      imageData,
-      name: fileName,
-      androidRelativePath: "Pictures/JHenTai",
-      androidExistNotSave: false,
+    if (status.every((e) => e.isGranted)) {
+      return true;
+    }
+
+    log.warning('Save image to album failed: permission denied, status: $status');
+
+    _showPermissionPermanentlyDeniedDialog();
+
+    return false;
+  }
+
+  Future<void> _showPermissionPermanentlyDeniedDialog() async {
+    bool? result = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('permissionPermanentlyDenied'.tr),
+        content: Text('permissionPermanentlyDeniedHint'.tr),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: Text('cancel'.tr)),
+          TextButton(onPressed: () => Get.back(result: true), child: Text('goToSetting'.tr)),
+        ],
+        actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 12),
+      ),
     );
 
-    log.info('Save image to album: $saveResult');
-
-    return saveResult.isSuccess;
+    if (result == true) {
+      await openAppSettings();
+    }
   }
 
   Future<bool> _saveFile2Album(String filePath, String fileName) async {
-    await requestAlbumPermission();
+    if (!await _ensureSave2AlbumPermission()) {
+      return false;
+    }
 
     SaveResult saveResult = await SaverGallery.saveFile(
-      file: filePath,
-      name: fileName,
-      androidRelativePath: "Pictures/JHenTai",
-      androidExistNotSave: false,
+      filePath: filePath,
+      fileName: fileName,
+      albumPath: "JHenTai",
+      skipIfExists: false,
     );
 
     log.info('Save image to album: $saveResult');

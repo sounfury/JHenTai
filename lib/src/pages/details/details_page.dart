@@ -9,6 +9,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/enum/eh_namespace.dart';
+import 'package:jhentai/src/extension/string_extension.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/mixin/scroll_to_top_page_mixin.dart';
 import 'package:jhentai/src/model/gallery_image.dart';
@@ -49,6 +50,7 @@ import 'pre_translate_monitor_dialog.dart';
 
 class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
   final String tag = newUUID();
+  final bool enableLocalTitleBlocking;
 
   late final DetailsPageLogic logic;
   late final DetailsPageState state;
@@ -59,12 +61,12 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
   @override
   Scroll2TopStateMixin get scroll2TopState => state;
 
-  DetailsPage({super.key}) {
+  DetailsPage({super.key}) : enableLocalTitleBlocking = true {
     logic = Get.put(DetailsPageLogic(), tag: tag);
     state = logic.state;
   }
 
-  DetailsPage.preview({super.key});
+  DetailsPage.preview({super.key}) : enableLocalTitleBlocking = false;
 
   @override
   Widget build(BuildContext context) {
@@ -73,23 +75,23 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
       init: logic,
       builder: (_) => Scaffold(
         appBar: buildAppBar(context),
-            body: Stack(children: [buildBody(context), const ImageTranslationBatchProgressBanner(topPadding: 8)]),
-            floatingActionButton: buildFloatingActionButton(),
-          ),
-        );
-      }
-
-      AppBar buildAppBar(BuildContext context) {
-        return AppBar(
-          title: GetBuilder<DetailsPageLogic>(
-            id: DetailsPageLogic.galleryId,
-            global: false,
-            init: logic,
-        builder:
-            (_) =>
-                EHTranslatedText(logic.mainTitleText, breakWord: true, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        body: Stack(children: [buildBody(context), const ImageTranslationBatchProgressBanner(topPadding: 8)]),
+        floatingActionButton: buildFloatingActionButton(),
       ),
-      actions: [_buildMenuButton(context)],
+    );
+  }
+
+  AppBar buildAppBar(BuildContext context) {
+    return AppBar(
+      title: GetBuilder<DetailsPageLogic>(
+        id: DetailsPageLogic.galleryId,
+        global: false,
+        init: logic,
+        builder: (_) => EHTranslatedText(logic.mainTitleText, breakWord: true, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+      ),
+      actions: [
+        _buildMenuButton(context),
+      ],
     );
   }
 
@@ -158,63 +160,63 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
                         value: 5,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [Text('block'.tr), const Icon(Icons.block)],
-                            ),
-                          ),
-                        PopupMenuItem(
-                          value: 6,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [Text('resetReadProgress'.tr), const Icon(Icons.restore)],
-                          ),
+                          children: [Text('blockThisGallery'.tr), const Icon(Icons.block)],
                         ),
-                      ];
-                    },
-                    onSelected: (value) {
-                      if (value == 0) {
-                        logic.handleTapJumpButton();
-                      }
-                      if (value == 1) {
-                        logic.shareGallery();
-                      }
-                      if (value == 2) {
-                        logic.handleAddTag(context);
-                      }
-                      if (value == 3) {
-                        logic.handleTapDeleteDownload(
-                          context,
-                          state.galleryUrl.gid,
-                          containGallery ? DownloadPageGalleryType.download : DownloadPageGalleryType.archive,
-                        );
-                      }
-                      if (value == 4) {
-                        logic.handleTapHistoryButton(context);
-                      }
-                      if (value == 5) {
-                        logic.blockGallery();
-                      }
-                      if (value == 6) {
-                        logic.handleResetReadProgress();
-                      }
-                    },
-                  );
+                      ),
+                    PopupMenuItem(
+                      value: 6,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [Text('resetReadProgress'.tr), const Icon(Icons.restore)],
+                      ),
+                    ),
+                  ];
                 },
-              ),
-            );
-          },
+                onSelected: (value) {
+                  if (value == 0) {
+                    logic.handleTapJumpButton();
+                  }
+                  if (value == 1) {
+                    logic.shareGallery();
+                  }
+                  if (value == 2) {
+                    logic.handleAddTag(context);
+                  }
+                  if (value == 3) {
+                    logic.handleTapDeleteDownload(
+                      context,
+                      state.galleryUrl.gid,
+                      containGallery ? DownloadPageGalleryType.download : DownloadPageGalleryType.archive,
+                    );
+                  }
+                  if (value == 4) {
+                    logic.handleTapHistoryButton(context);
+                  }
+                  if (value == 5) {
+                    logic.blockGallery();
+                  }
+                  if (value == 6) {
+                    logic.handleResetReadProgress();
+                  }
+                },
+              );
+            },
+          ),
         );
-      }
+      },
+    );
+  }
 
-      Widget buildBody(BuildContext context) {
-        return NotificationListener<UserScrollNotification>(
-          onNotification: logic.onUserScroll,
-          child: EHWheelSpeedController(
-            controller: state.scrollController,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              scrollBehavior: UIConfig.scrollBehaviourWithScrollBarWithMouse,
-              controller: state.scrollController,
-          scrollCacheExtent: ScrollCacheExtent.pixels(5000),
+  Widget buildBody(BuildContext context) {
+    return NotificationListener<UserScrollNotification>(
+      onNotification: logic.onUserScroll,
+      child: EHWheelSpeedController(
+        controller: state.scrollController,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          scrollBehavior: UIConfig.scrollBehaviourWithScrollBarWithMouse,
+          controller: state.scrollController,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(250),
           slivers: [
             CupertinoSliverRefreshControl(onRefresh: logic.handleRefresh),
             if (preferenceSetting.showAllGalleryTitles.isTrue) _buildSubTitle(context),
@@ -325,22 +327,7 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
               anchors: editableTextState.contextMenuAnchors,
             );
 
-            if (!editableTextState.currentTextEditingValue.selection.isCollapsed) {
-              toolbar.buttonItems?.add(
-                ContextMenuButtonItem(
-                  label: 'search'.tr,
-                  onPressed: () {
-                    ContextMenuController.removeAny();
-                    newSearch(
-                      keyword: editableTextState.currentTextEditingValue.selection.textInside(
-                        editableTextState.currentTextEditingValue.text,
-                      ),
-                      forceNewRoute: true,
-                    );
-                  },
-                ),
-              );
-            }
+            _appendTitleContextMenuItems(toolbar, editableTextState);
 
             return toolbar;
           },
@@ -393,22 +380,7 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
                     anchors: editableTextState.contextMenuAnchors,
                   );
 
-                  if (!editableTextState.currentTextEditingValue.selection.isCollapsed) {
-                    toolbar.buttonItems?.add(
-                      ContextMenuButtonItem(
-                        label: 'search'.tr,
-                        onPressed: () {
-                          ContextMenuController.removeAny();
-                          newSearch(
-                            keyword: editableTextState.currentTextEditingValue.selection.textInside(
-                              editableTextState.currentTextEditingValue.text,
-                            ),
-                            forceNewRoute: true,
-                          );
-                        },
-                      ),
-                    );
-                  }
+                  _appendTitleContextMenuItems(toolbar, editableTextState);
 
                   return toolbar;
                 },
@@ -416,6 +388,42 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
             );
           },
         ),
+      ),
+    );
+  }
+
+  void _appendTitleContextMenuItems(
+    AdaptiveTextSelectionToolbar toolbar,
+    EditableTextState editableTextState,
+  ) {
+    TextEditingValue editingValue = editableTextState.currentTextEditingValue;
+    if (editingValue.selection.isCollapsed) {
+      return;
+    }
+
+    String rawSelectedText = editingValue.selection.textInside(editingValue.text);
+    toolbar.buttonItems?.add(
+      ContextMenuButtonItem(
+        label: 'search'.tr,
+        onPressed: () {
+          ContextMenuController.removeAny();
+          newSearch(keyword: rawSelectedText, forceNewRoute: true);
+        },
+      ),
+    );
+
+    String selectedText = rawSelectedText.trim();
+    if (!enableLocalTitleBlocking || selectedText.isEmpty) {
+      return;
+    }
+
+    toolbar.buttonItems?.add(
+      ContextMenuButtonItem(
+        label: 'blockTitleLocally'.tr,
+        onPressed: () {
+          ContextMenuController.removeAny();
+          logic.blockTitle(selectedText);
+        },
       ),
     );
   }
@@ -876,57 +884,57 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
             padding: EdgeInsets.zero,
             children: [
               _buildReadButton(context),
-                  _buildPreTranslateButton(context),
-                  _buildDownloadButton(context),
-                  _buildFavoriteButton(context),
-                  _buildRatingButton(context),
-                  _buildArchiveButton(context),
-                  _buildHHButton(context),
-                  _buildSimilarButton(context),
-                  _buildTorrentButton(context),
-                  // _buildStatisticButton(context),
-                ],
-              ).enableMouseDrag(withScrollBar: false),
-            ),
-          ),
-        );
-      }
+              _buildPreTranslateButton(context),
+              _buildDownloadButton(context),
+              _buildFavoriteButton(context),
+              _buildRatingButton(context),
+              _buildArchiveButton(context),
+              _buildHHButton(context),
+              _buildSimilarButton(context),
+              _buildTorrentButton(context),
+              // _buildStatisticButton(context),
+            ],
+          ).enableMouseDrag(withScrollBar: false),
+        ),
+      ),
+    );
+  }
 
-      Widget _buildReadButton(BuildContext context) {
+  Widget _buildReadButton(BuildContext context) {
+    return GetBuilder<DetailsPageLogic>(
+      id: DetailsPageLogic.pageCountId,
+      global: false,
+      init: logic,
+      builder: (_) {
+        bool disabled = state.galleryDetails?.pageCount == null && state.gallery?.pageCount == null && state.galleryMetadata?.pageCount == null;
+
         return GetBuilder<DetailsPageLogic>(
-          id: DetailsPageLogic.pageCountId,
+          id: DetailsPageLogic.readButtonId,
           global: false,
           init: logic,
           builder: (_) {
-            bool disabled = state.galleryDetails?.pageCount == null && state.gallery?.pageCount == null && state.galleryMetadata?.pageCount == null;
+            Future<int> future = logic.getReadIndexRecord();
+            return FutureBuilder(
+              future: future,
+              initialData: 0,
+              builder: (_, AsyncSnapshot<int> snapshot) {
+                int readIndexRecord = snapshot.data ?? 0;
+                String text = (readIndexRecord == 0 ? 'read'.tr : 'P${readIndexRecord + 1}');
 
-            return GetBuilder<DetailsPageLogic>(
-              id: DetailsPageLogic.readButtonId,
-              global: false,
-              init: logic,
-              builder: (_) {
-                Future<int> future = logic.getReadIndexRecord();
-                return FutureBuilder(
-                  future: future,
-                  initialData: 0,
-                  builder: (_, AsyncSnapshot<int> snapshot) {
-                    int readIndexRecord = snapshot.data ?? 0;
-                    String text = (readIndexRecord == 0 ? 'read'.tr : 'P${readIndexRecord + 1}');
-
-                    return IconTextButton(
-                      width: UIConfig.detailsPageActionExtent,
-                      icon: Icon(
-                        Icons.visibility,
-                        color: disabled ? UIConfig.detailsPageActionDisabledIconColor(context) : UIConfig.detailsPageActionIconColor(context),
-                      ),
-                      text: Text(
-                        text,
-                        style: TextStyle(
-                          fontSize: UIConfig.detailsPageActionTextSize,
-                          color: disabled ? UIConfig.detailsPageActionDisabledIconColor(context) : UIConfig.detailsPageActionTextColor(context),
-                          height: 1,
-                        ),
-                      ),
+                return IconTextButton(
+                  width: UIConfig.detailsPageActionExtent,
+                  icon: Icon(
+                    Icons.visibility,
+                    color: disabled ? UIConfig.detailsPageActionDisabledIconColor(context) : UIConfig.detailsPageActionIconColor(context),
+                  ),
+                  text: Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: UIConfig.detailsPageActionTextSize,
+                      color: disabled ? UIConfig.detailsPageActionDisabledIconColor(context) : UIConfig.detailsPageActionTextColor(context),
+                      height: 1,
+                    ),
+                  ),
                   onPressed: disabled ? null : logic.goToReadPage,
                 );
               },
@@ -1468,63 +1476,66 @@ class DetailsPage extends StatelessWidget with Scroll2TopPageMixin {
                                           containerWidth: constraints.maxWidth,
                                           borderRadius: BorderRadius.circular(8),
                                           maxBytes: 128 * 1024,
-                                                      )
-                                                    : EHThumbnail(
-                                                        thumbnail: state.galleryDetails!.thumbnails[index],
-                                                        containerHeight: constraints.maxHeight,
-                                                        containerWidth: constraints.maxWidth,
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                              ),
-                                            ),
-                                          ),
+                                          disableAnimation: true,
+                                        )
+                                      : EHThumbnail(
+                                          thumbnail: state.galleryDetails!.thumbnails[index],
+                                          containerHeight: constraints.maxHeight,
+                                          containerWidth: constraints.maxWidth,
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
-                                        const SizedBox(height: 3),
-                                        Text((index + 1).toString(), style: TextStyle(color: UIConfig.detailsPageThumbnailIndexColor(context))),
-                                      ],
-                                    );
-                            }, childCount: state.galleryDetails?.thumbnails.length ?? 0),
-                            gridDelegate: styleSetting.crossAxisCountInDetailPage.value == null
-                                ? const SliverGridDelegateWithMaxCrossAxisExtent(
-                                    mainAxisExtent: UIConfig.detailsPageThumbnailHeight,
-                                    maxCrossAxisExtent: UIConfig.detailsPageThumbnailWidth,
-                                    mainAxisSpacing: 20,
-                                    crossAxisSpacing: 5,
-                                  )
-                                : SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: styleSetting.crossAxisCountInDetailPage.value!,
-                                    mainAxisSpacing: 20,
-                                    crossAxisSpacing: 5,
-                                    childAspectRatio: UIConfig.detailsPageGridViewCardAspectRatio,
-                                  ),
+                                ),
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: 3),
+                          Text((index + 1).toString(), style: TextStyle(color: UIConfig.detailsPageThumbnailIndexColor(context))),
+                        ],
+                      );
+                    },
+                    childCount: state.galleryDetails?.thumbnails.length ?? 0,
                   ),
+                  gridDelegate: styleSetting.crossAxisCountInDetailPage.value == null
+                      ? const SliverGridDelegateWithMaxCrossAxisExtent(
+                          mainAxisExtent: UIConfig.detailsPageThumbnailHeight,
+                          maxCrossAxisExtent: UIConfig.detailsPageThumbnailWidth,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 5,
+                        )
+                      : SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: styleSetting.crossAxisCountInDetailPage.value!,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 5,
+                          childAspectRatio: UIConfig.detailsPageGridViewCardAspectRatio,
+                        ),
                 ),
-              );
-            }
+        ),
+      ),
+    );
+  }
 
-            Widget buildLoadingThumbnailIndicator(BuildContext context) {
-              return SliverToBoxAdapter(
-                child: GetBuilder<DetailsPageLogic>(
-                  id: DetailsPageLogic.detailsId,
-                  global: false,
-                  init: logic,
-                  builder: (_) {
-                    if (state.galleryDetails == null) {
-                      return const SizedBox();
-                    }
-
-                    return GetBuilder<DetailsPageLogic>(
-                      id: DetailsPageLogic.loadingThumbnailsStateId,
-                      global: false,
-                      init: logic,
-                      builder: (_) => LoadingStateIndicator(
-                        loadingState: state.loadingThumbnailsState,
-                        errorTapCallback: logic.loadMoreThumbnails,
-                      ),
-                    ).marginOnly(bottom: 200, top: 20);
-                  },
-                ),
-              );
-            }
+  Widget buildLoadingThumbnailIndicator(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: GetBuilder<DetailsPageLogic>(
+        id: DetailsPageLogic.detailsId,
+        global: false,
+        init: logic,
+        builder: (_) {
+          if (state.galleryDetails == null) {
+            return const SizedBox();
           }
+
+          return GetBuilder<DetailsPageLogic>(
+            id: DetailsPageLogic.loadingThumbnailsStateId,
+            global: false,
+            init: logic,
+            builder: (_) => LoadingStateIndicator(
+              loadingState: state.loadingThumbnailsState,
+              errorTapCallback: logic.loadMoreThumbnails,
+            ),
+          ).marginOnly(bottom: 200, top: 20);
+        },
+      ),
+    );
+  }
+}

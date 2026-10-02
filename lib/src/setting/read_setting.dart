@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:get/get.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
+import 'package:jhentai/src/model/tap_zone_config.dart';
 import 'package:jhentai/src/service/log.dart';
 
 import '../service/jh_service.dart';
@@ -42,7 +43,7 @@ class ReadSetting
   RxInt imageRegionWidthRatio = 100.obs;
   RxInt portraitImageRegionWidthRatio = 100.obs;
   RxInt landscapeImageRegionWidthRatio = 100.obs;
-  RxInt gestureRegionWidthRatio = 60.obs;
+  RxnString tapZoneConfigJson = RxnString();
   RxBool useThirdPartyViewer = false.obs;
   RxnString thirdPartyViewerPath = RxnString();
   RxDouble autoModeInterval = 2.0.obs;
@@ -68,8 +69,6 @@ class ReadSetting
   RxBool displayFirstPageAlone = true.obs;
   RxBool portraitDisplayFirstPageAlone = true.obs;
   RxBool landscapeDisplayFirstPageAlone = true.obs;
-  RxBool reverseTurnPageDirection = false.obs;
-  RxBool disablePageTurningOnTap = false.obs;
   RxBool enableMaxImageKilobyte =
       (GetPlatform.isDesktop ||
               PlatformDispatcher.instance.views.first.physicalSize.width /
@@ -82,6 +81,7 @@ class ReadSetting
           ? false.obs
           : true.obs;
   RxInt maxImageKilobyte = (1024 * 5).obs;
+  RxBool autoDetectWebtoon = false.obs;
 
   static bool isListDirection(ReadDirection d) =>
       d == ReadDirection.top2bottomList ||
@@ -193,22 +193,13 @@ class ReadSetting
         DeviceDirection.values[map['deviceDirection'] ??
             DeviceDirection.followSystem.index];
     readDirection.value = ReadDirection.values[map['readDirection']];
-    notchOptimization.value =
-        map['notchOptimization'] ?? notchOptimization.value;
-    imageRegionWidthRatio.value =
-        map['imageRegionWidthRatio'] ?? imageRegionWidthRatio.value;
-    portraitImageRegionWidthRatio.value =
-        map['portraitImageRegionWidthRatio'] ??
-        map['imageRegionWidthRatio'] ??
-        portraitImageRegionWidthRatio.value;
-    landscapeImageRegionWidthRatio.value =
-        map['landscapeImageRegionWidthRatio'] ??
-        map['imageRegionWidthRatio'] ??
-        landscapeImageRegionWidthRatio.value;
-    gestureRegionWidthRatio.value =
-        map['gestureRegionWidthRatio'] ?? gestureRegionWidthRatio.value;
-    useThirdPartyViewer.value =
-        map['useThirdPartyViewer'] ?? useThirdPartyViewer.value;
+    notchOptimization.value = map['notchOptimization'] ?? notchOptimization.value;
+    imageRegionWidthRatio.value = map['imageRegionWidthRatio'] ?? imageRegionWidthRatio.value;
+    portraitImageRegionWidthRatio.value = map['portraitImageRegionWidthRatio'] ?? map['imageRegionWidthRatio'] ?? portraitImageRegionWidthRatio.value;
+    landscapeImageRegionWidthRatio.value = map['landscapeImageRegionWidthRatio'] ?? map['imageRegionWidthRatio'] ?? landscapeImageRegionWidthRatio.value;
+    tapZoneConfigJson.value = map['tapZoneConfig'] ?? TapZoneConfig.classic().toJsonString();
+    _cachedTapZoneConfig = null;
+    useThirdPartyViewer.value = map['useThirdPartyViewer'] ?? useThirdPartyViewer.value;
     thirdPartyViewerPath.value = map['thirdPartyViewerPath'];
     turnPageMode.value = TurnPageMode.values[map['turnPageMode']];
     preloadDistance.value = map['preloadDistance'];
@@ -241,10 +232,6 @@ class ReadSetting
         map['landscapeDisplayFirstPageAlone'] ??
         map['displayFirstPageAlone'] ??
         landscapeDisplayFirstPageAlone.value;
-    reverseTurnPageDirection.value =
-        map['reverseTurnPageDirection'] ?? reverseTurnPageDirection.value;
-    disablePageTurningOnTap.value =
-        map['disablePageTurningOnTap'] ?? disablePageTurningOnTap.value;
     enableMaxImageKilobyte.value =
         map['enableMaxImageKilobyte'] ?? enableMaxImageKilobyte.value;
     maxImageKilobyte.value = map['maxImageKilobyte'] ?? maxImageKilobyte.value;
@@ -252,6 +239,7 @@ class ReadSetting
         map['enableOrientationSpecificReadDirection'] ??
         enableOrientationSpecificReadDirection.value;
 
+    autoDetectWebtoon.value = map['autoDetectWebtoon'] ?? autoDetectWebtoon.value;
     /// On first load, migrate existing readDirection to both portrait and landscape
     portraitReadDirection.value =
         ReadDirection.values[map['portraitReadDirection'] ??
@@ -287,7 +275,7 @@ class ReadSetting
       'imageRegionWidthRatio': imageRegionWidthRatio.value,
       'portraitImageRegionWidthRatio': portraitImageRegionWidthRatio.value,
       'landscapeImageRegionWidthRatio': landscapeImageRegionWidthRatio.value,
-      'gestureRegionWidthRatio': gestureRegionWidthRatio.value,
+      'tapZoneConfig': tapZoneConfigJson.value,
       'useThirdPartyViewer': useThirdPartyViewer.value,
       'thirdPartyViewerPath': thirdPartyViewerPath.value,
       'turnPageMode': turnPageMode.value.index,
@@ -302,12 +290,10 @@ class ReadSetting
       'displayFirstPageAlone': displayFirstPageAlone.value,
       'portraitDisplayFirstPageAlone': portraitDisplayFirstPageAlone.value,
       'landscapeDisplayFirstPageAlone': landscapeDisplayFirstPageAlone.value,
-      'reverseTurnPageDirection': reverseTurnPageDirection.value,
-      'disablePageTurningOnTap': disablePageTurningOnTap.value,
       'enableMaxImageKilobyte': enableMaxImageKilobyte.value,
       'maxImageKilobyte': maxImageKilobyte.value,
-      'enableOrientationSpecificReadDirection':
-          enableOrientationSpecificReadDirection.value,
+      'enableOrientationSpecificReadDirection': enableOrientationSpecificReadDirection.value,
+      'autoDetectWebtoon': autoDetectWebtoon.value,
       'portraitReadDirection': portraitReadDirection.value.index,
       'landscapeReadDirection': landscapeReadDirection.value.index,
     });
@@ -421,9 +407,28 @@ class ReadSetting
     await saveBeanConfig();
   }
 
-  Future<void> saveGestureRegionWidthRatio(int value) async {
-    log.debug('saveGestureRegionWidthRatio:$value');
-    gestureRegionWidthRatio.value = value;
+  TapZoneConfig? _cachedTapZoneConfig;
+
+  TapZoneConfig get tapZoneConfig {
+    if (_cachedTapZoneConfig != null) {
+      return _cachedTapZoneConfig!;
+    }
+    String? json = tapZoneConfigJson.value;
+    if (json == null) {
+      return _cachedTapZoneConfig = TapZoneConfig.classic();
+    }
+    try {
+      return _cachedTapZoneConfig = TapZoneConfig.fromJsonString(json);
+    } catch (e) {
+      log.error('Failed to parse tapZoneConfig, fallback to classic', e);
+      return _cachedTapZoneConfig = TapZoneConfig.classic();
+    }
+  }
+
+  Future<void> saveTapZoneConfig(TapZoneConfig value) async {
+    log.debug('saveTapZoneConfig:${value.toJsonString()}');
+    _cachedTapZoneConfig = value;
+    tapZoneConfigJson.value = value.toJsonString();
     await saveBeanConfig();
   }
 
@@ -544,18 +549,6 @@ class ReadSetting
     await saveBeanConfig();
   }
 
-  Future<void> saveReverseTurnPageDirection(bool value) async {
-    log.debug('saveReverseTurnPageDirection:$value');
-    reverseTurnPageDirection.value = value;
-    await saveBeanConfig();
-  }
-
-  Future<void> saveDisablePageTurningOnTap(bool value) async {
-    log.debug('saveDisablePageTurningOnTap:$value');
-    disablePageTurningOnTap.value = value;
-    await saveBeanConfig();
-  }
-
   Future<void> saveEnableMaxImageKilobyte(bool value) async {
     log.debug('saveEnableMaxImageKilobyte:$value');
     enableMaxImageKilobyte.value = value;
@@ -571,6 +564,12 @@ class ReadSetting
   Future<void> saveEnableOrientationSpecificReadDirection(bool value) async {
     log.debug('saveEnableOrientationSpecificReadDirection:$value');
     enableOrientationSpecificReadDirection.value = value;
+    await saveBeanConfig();
+  }
+
+  Future<void> saveAutoDetectWebtoon(bool value) async {
+    log.debug('saveAutoDetectWebtoon:$value');
+    autoDetectWebtoon.value = value;
     await saveBeanConfig();
   }
 

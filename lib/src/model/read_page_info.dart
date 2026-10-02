@@ -1,5 +1,7 @@
 import 'gallery_image.dart';
 
+import '../setting/read_setting.dart';
+
 enum ReadMode { downloaded, online, archive, local }
 
 class ReadPageInfo {
@@ -39,6 +41,7 @@ class ReadPageInfo {
   /// Optional CSV of `namespace:key` tags when known; `language:` entries help
   /// detect already-translated galleries.
   String? galleryTags;
+  ReadDirection? readDirection;
 
   ReadPageInfo({
     required this.mode,
@@ -54,5 +57,6 @@ class ReadPageInfo {
     required this.useSuperResolution,
     this.galleryLanguage,
     this.galleryTags,
+    this.readDirection,
   }) : currentImageIndex = initialIndex;
 }

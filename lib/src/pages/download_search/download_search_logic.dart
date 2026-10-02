@@ -259,6 +259,8 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
       /// Ensure image list is resident before entering read page.
       await galleryDownloadService.galleryDownloadInfos[gallery.gid]!.ensureImagesLoaded();
 
+      ReadDirection? readDirection = isWebtoonGalleryFromTagDataList(gallery.tags) ? ReadDirection.top2bottomList : null;
+
       toRoute(
         Routes.read,
         arguments: ReadPageInfo(
@@ -272,6 +274,7 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
           pageCount: gallery.pageCount,
           useSuperResolution: superResolutionService.get(gallery.gid, SuperResolutionType.gallery) != null,
           galleryTags: gallery.tags.map((t) => '${t.namespace}:${t.key}').join(','),
+          readDirection: readDirection,
         ),
       );
     }
@@ -291,6 +294,8 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
 
       List<GalleryImage> images = await archiveDownloadService.getUnpackedImages(archive.gid);
 
+      ReadDirection? readDirection = isWebtoonGalleryFromTagDataList(archive.tags) ? ReadDirection.top2bottomList : null;
+
       toRoute(
         Routes.read,
         arguments: ReadPageInfo(
@@ -305,6 +310,7 @@ class DownloadSearchLogic extends GetxController with UpdateGlobalGalleryStatusL
           images: images,
           useSuperResolution: superResolutionService.get(archive.gid, SuperResolutionType.archive) != null,
           galleryTags: archive.tags.map((t) => '${t.namespace}:${t.key}').join(','),
+          readDirection: readDirection,
         ),
       );
     }
