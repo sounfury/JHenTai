@@ -1,9 +1,12 @@
+import 'package:flutter/material.dart';
+
+import '../database/database.dart';
+import '../model/gallery_tag.dart';
+
 import 'package:clipboard/clipboard.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/exception/eh_parse_exception.dart';
 import 'package:jhentai/src/exception/eh_site_exception.dart';
 import 'package:jhentai/src/extension/dio_exception_extension.dart';
@@ -19,12 +22,8 @@ import 'package:jhentai/src/widget/eh_tag_set_dialog.dart';
 import 'package:jhentai/src/widget/eh_warning_image.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
 import 'package:like_button/like_button.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-
 import '../config/ui_config.dart';
-import '../database/database.dart';
-import '../model/gallery_tag.dart';
 import '../network/eh_request.dart';
 import '../setting/user_setting.dart';
 import '../service/log.dart';
@@ -69,9 +68,10 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
   @override
   void initState() {
     super.initState();
-    _currentVote = widget.voteStatus == EHTagVoteStatus.up
-        ? true
-        : widget.voteStatus == EHTagVoteStatus.down
+    _currentVote =
+        widget.voteStatus == EHTagVoteStatus.up
+            ? true
+            : widget.voteStatus == EHTagVoteStatus.down
             ? false
             : null;
   }
@@ -87,14 +87,13 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
     return SimpleDialog(
       title: GestureDetector(
         child: Text('${widget.tagData.namespace}:${widget.tagData.key}'),
-        onTap: () => FlutterClipboard.copy('${widget.tagData.namespace}:"${widget.tagData.key}"').then((_) => toast('hasCopiedToClipboard'.tr)),
+        onTap:
+            () =>
+                FlutterClipboard.copy('${widget.tagData.namespace}:"${widget.tagData.key}"').then((_) => toast('hasCopiedToClipboard'.tr)),
       ),
       contentPadding: const EdgeInsets.only(left: 12, right: 12, bottom: 12, top: 12),
       children: [
-        if (widget.tagData.tagName != null) ...[
-          _buildInfo(),
-          const Divider(height: 1).marginOnly(top: 16),
-        ],
+        if (widget.tagData.tagName != null) ...[_buildInfo(), const Divider(height: 1).marginOnly(top: 16)],
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -113,12 +112,7 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
     String content = widget.tagData.fullTagName! + widget.tagData.intro! + widget.tagData.links!;
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minHeight: 50,
-        maxHeight: 400,
-        minWidth: 200,
-        maxWidth: 200,
-      ),
+      constraints: const BoxConstraints(minHeight: 50, maxHeight: 400, minWidth: 200, maxWidth: 200),
       child: EHWheelSpeedController(
         controller: scrollController,
         child: HtmlWidget(
@@ -126,10 +120,7 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
           renderMode: ListViewMode(shrinkWrap: true, controller: scrollController),
           textStyle: const TextStyle(fontSize: 12),
           onErrorBuilder: (context, element, error) => Text('$element error: $error'),
-          onLoadingBuilder: (context, element, loadingProgress) =>
-              ThemeConfig.isApple
-                  ? GlassProgressIndicator.circular()
-                  : const CircularProgressIndicator(),
+          onLoadingBuilder: (context, element, loadingProgress) => const CircularProgressIndicator(),
           onTapUrl: launchUrlString,
           customWidgetBuilder: (element) {
             if (element.localName != 'img') {
@@ -150,11 +141,12 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
   Widget _buildVoteUpButton() {
     return LikeButton(
       isLiked: _currentVote == true,
-      likeBuilder: (bool liked) => Icon(
-        Icons.thumb_up,
-        size: UIConfig.tagDialogButtonSize,
-        color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
-      ),
+      likeBuilder:
+          (bool liked) => Icon(
+            Icons.thumb_up,
+            size: UIConfig.tagDialogButtonSize,
+            color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
+          ),
       onTap: (_) => vote(isVotingUp: true),
     );
   }
@@ -162,11 +154,12 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
   Widget _buildVoteDownButton() {
     return LikeButton(
       isLiked: _currentVote == false,
-      likeBuilder: (bool liked) => Icon(
-        Icons.thumb_down,
-        size: UIConfig.tagDialogButtonSize,
-        color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
-      ),
+      likeBuilder:
+          (bool liked) => Icon(
+            Icons.thumb_down,
+            size: UIConfig.tagDialogButtonSize,
+            color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
+          ),
       onTap: (_) => vote(isVotingUp: false),
     );
   }
@@ -174,38 +167,42 @@ class _EHTagDialogState extends State<EHTagDialog> with LoginRequiredMixin {
   Widget _buildWatchTagButton() {
     return LikeButton(
       isLiked: myTagsSetting.containWatchedOnlineTag(widget.tagData),
-      likeBuilder: (bool liked) => Icon(
-        Icons.favorite,
-        size: UIConfig.tagDialogButtonSize,
-        color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
-      ),
-      onTap: (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(true, useDefault: preferenceSetting.enableDefaultTagSet.isTrue),
+      likeBuilder:
+          (bool liked) => Icon(
+            Icons.favorite,
+            size: UIConfig.tagDialogButtonSize,
+            color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
+          ),
+      onTap:
+          (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(true, useDefault: preferenceSetting.enableDefaultTagSet.isTrue),
       onLongPress:
-          preferenceSetting.enableDefaultTagSet.isFalse ? null : (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(true, useDefault: false),
+          preferenceSetting.enableDefaultTagSet.isFalse
+              ? null
+              : (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(true, useDefault: false),
     );
   }
 
   Widget _buildHideTagButton() {
     return LikeButton(
       isLiked: myTagsSetting.containHiddenOnlineTag(widget.tagData),
-      likeBuilder: (bool liked) => Icon(
-        Icons.visibility_off,
-        size: UIConfig.tagDialogButtonSize,
-        color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
-      ),
-      onTap: (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(false, useDefault: preferenceSetting.enableDefaultTagSet.isTrue),
+      likeBuilder:
+          (bool liked) => Icon(
+            Icons.visibility_off,
+            size: UIConfig.tagDialogButtonSize,
+            color: liked ? UIConfig.tagDialogLikedButtonColor(context) : UIConfig.tagDialogButtonColor(context),
+          ),
+      onTap:
+          (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(false, useDefault: preferenceSetting.enableDefaultTagSet.isTrue),
       onLongPress:
-          preferenceSetting.enableDefaultTagSet.isFalse ? null : (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(false, useDefault: false),
+          preferenceSetting.enableDefaultTagSet.isFalse
+              ? null
+              : (bool liked) => liked ? Future.value(true) : handleAddWatchedTag(false, useDefault: false),
     );
   }
 
   Widget _buildGoToTagSetsButton() {
     return LikeButton(
-      likeBuilder: (_) => Icon(
-        Icons.settings,
-        size: UIConfig.tagDialogButtonSize,
-        color: UIConfig.tagDialogButtonColor(context),
-      ),
+      likeBuilder: (_) => Icon(Icons.settings, size: UIConfig.tagDialogButtonSize, color: UIConfig.tagDialogButtonColor(context)),
       onTap: (_) async {
         backRoute();
         toRoute(Routes.tagSets);

@@ -1,7 +1,6 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/pages/base/base_page.dart';
 import 'package:jhentai/src/pages/details/details_page_logic.dart';
@@ -10,8 +9,6 @@ import 'package:jhentai/src/pages/search/mixin/search_page_logic_mixin.dart';
 import 'package:jhentai/src/pages/search/mixin/search_page_state_mixin.dart';
 import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/search_util.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
-import 'package:jhentai/src/widget/eh_apple_glass_toolbar.dart';
 
 import '../../../database/database.dart';
 import '../../../model/gallery_tag.dart';
@@ -31,44 +28,40 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
   @override
   S get state;
 
-  List<Widget> buildActionButtons({
-    VisualDensity? visualDensity,
-    double? compactSize,
-    double? spacing,
-  }) {
+  List<Widget> buildActionButtons({VisualDensity? visualDensity, double? compactSize, double? spacing}) {
     final BoxConstraints? buttonConstraints = compactSize == null ? null : BoxConstraints.tightFor(width: compactSize, height: compactSize);
     final EdgeInsetsGeometry? buttonPadding = compactSize == null ? null : EdgeInsets.zero;
 
-    final List<EHAppleToolbarItem> buttons = [
-      EHAppleToolbarItem(
+    final List<Widget> buttons = [
+      IconButton(
         icon: const Icon(Icons.attach_file),
         onPressed: logic.handleFileSearch,
         visualDensity: visualDensity,
         constraints: buttonConstraints,
         padding: buttonPadding,
       ),
-      EHAppleToolbarItem(
+      IconButton(
         icon: const Icon(Icons.restore),
         onPressed: logic.handleTapJumpButton,
         visualDensity: visualDensity,
         constraints: buttonConstraints,
         padding: buttonPadding,
       ),
-      EHAppleToolbarItem(
+      IconButton(
         icon: Icon(state.bodyType == SearchPageBodyType.galleries ? Icons.search : Icons.image_outlined),
         onPressed: logic.toggleBodyType,
         visualDensity: visualDensity,
         constraints: buttonConstraints,
         padding: buttonPadding,
       ),
-      EHAppleToolbarItem(
+      IconButton(
         icon: const Icon(Icons.filter_alt_outlined),
         onPressed: () => logic.handleTapFilterButton(EHSearchConfigDialogType.filter),
         visualDensity: visualDensity,
         constraints: buttonConstraints,
         padding: buttonPadding,
       ),
-      EHAppleToolbarItem(
+      IconButton(
         icon: const Icon(Icons.more_vert),
         onPressed: () => toRoute(Routes.quickSearch),
         visualDensity: visualDensity,
@@ -77,12 +70,15 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
       ),
     ];
 
+    if (spacing == null) {
+      return buttons;
+    }
+
     return [
-      EHAppleGlassToolbar(
-        items: buttons,
-        materialSpacing: spacing ?? 0,
-        itemPadding: EdgeInsets.all(compactSize == null ? 9 : 7),
-      ),
+      for (var i = 0; i < buttons.length; i++) ...[
+        if (i > 0) SizedBox(width: spacing),
+        buttons[i],
+      ],
     ];
   }
 
@@ -95,11 +91,8 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
         height: styleSetting.isInDesktopLayout ? UIConfig.desktopSearchBarHeight : UIConfig.mobileV2SearchBarHeight,
         child: FutureBuilder(
           future: state.searchConfigInitCompleter.future,
-          builder: (_, __) => EHAppleTextField(
+          builder: (_, __) => TextField(
             focusNode: state.searchFieldFocusNode,
-            // Entering the search page (from the sidebar) on Apple mobile
-            // starts typing immediately and pulls up the system keyboard.
-            autofocus: ThemeConfig.isApple && styleSetting.isInMobileLayout,
             textInputAction: TextInputAction.search,
             controller: TextEditingController.fromValue(
               TextEditingValue(
@@ -260,17 +253,16 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
             duration: const Duration(milliseconds: UIConfig.searchPageAnimationDuration),
             child: state.hideSearchHistory || !tagTranslationService.isReady
                 ? null
-                : EHAppleIconButton(
+                : IconButton(
                     onPressed: logic.toggleEnableSearchHistoryTranslation,
                     icon: Icon(Icons.translate, size: 20, color: UIConfig.primaryColor((context))),
                   ),
           ),
-          const SizedBox(width: 8),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: UIConfig.searchPageAnimationDuration),
             child: GestureDetector(
               onLongPress: state.hideSearchHistory ? null : logic.handleClearAllSearchHistories,
-              child: EHAppleIconButton(
+              child: IconButton(
                 key: ValueKey(state.hideSearchHistory),
                 onPressed: state.hideSearchHistory ? logic.toggleHideSearchHistory : logic.toggleDeleteSearchHistoryMode,
                 icon: state.hideSearchHistory

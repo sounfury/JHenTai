@@ -35,8 +35,7 @@ class en_US {
       'archiveError': 'Download Archive Error',
       'edit': 'Edit',
       'confirmDestructiveActions': 'Confirm destructive actions',
-      'confirmDestructiveActionsHint':
-          'Show a confirmation dialog before destructive actions such as deleting tasks or re-downloading in the download page',
+      'confirmDestructiveActionsHint': 'Show a confirmation dialog before destructive actions such as deleting tasks or re-downloading in the download page',
 
       'home': "Home",
       'mainSite': 'Main Site',
@@ -106,10 +105,8 @@ class en_US {
       'refreshIgneousFailed': 'Refresh Igneous Failed',
 
       /// request
-      'sadPanda':
-          'Sad Panda(no data). Refer: https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
-      'sadPandaReferLink':
-          'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
+      'sadPanda': 'Sad Panda(no data). Refer: https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
+      'sadPandaReferLink': 'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
 
       /// gallery card
       'filtered': 'Filtered',
@@ -148,12 +145,10 @@ class en_US {
       'noComments': 'No Comments',
       'lastEditedOn': 'Last edited on',
       'getGalleryDetailFailed': 'Get Gallery Detail Failed',
-      'cloudflare403':
-          'You have been restricted by Cloudflare from making network requests. Please try switching networks or using another login method.',
+      'cloudflare403': 'You have been restricted by Cloudflare from making network requests. Please try switching networks or using another login method.',
       'invisible2User': 'This Gallery is invisible to You',
       'invisibleHints': 'This gallery is removed or unavailable.',
-      'copyRightHints':
-          'This gallery is unavailable due to a copyright claim by: ',
+      'copyRightHints': 'This gallery is unavailable due to a copyright claim by: ',
       'refreshGalleryDetailsFailed': 'Refresh Gallery Details Failed',
       'failToGetThumbnails': "Fail To Get Thumbnails",
       'favoriteGallerySuccess': "Favorite Gallery Success",
@@ -161,8 +156,7 @@ class en_US {
       'removeFavoriteSuccess': "Remove Favorite Success",
       'removeFavoriteFailed': "Remove Favorite Failed",
       'getGalleryFavoriteInfoFailed': 'Get gallery favorite info failed',
-      'favoriteNoteSlotFullHint':
-          'Favorite note slot is full, please delete some notes first',
+      'favoriteNoteSlotFullHint': 'Favorite note slot is full, please delete some notes first',
       'ratingSuccess': 'Rating Success',
       'ratingFailed': 'Rating Failed',
       'voteTagFailed': 'Vote Tag Failed',
@@ -172,12 +166,10 @@ class en_US {
       'addNewTagSetSuccess': 'Add New Tag Set Success',
       'addNewWatchedTagSetSuccess': 'Add New Watched Tag Set Success',
       'addNewHiddenTagSetSuccess': 'Add New Hidden Tag Set Success',
-      'addNewTagSetSuccessHint':
-          'You can check your tags at Setting->EH->My Tags',
+      'addNewTagSetSuccessHint': 'You can check your tags at Setting->EH->My Tags',
       'addNewTagSetFailed': 'Add New Tag Set Failed',
       'VisitorStatistics': 'Visitor Statistics',
-      'invisible2UserWithoutDonation':
-          'This gallery\'s stats is invisible to user without donation',
+      'invisible2UserWithoutDonation': 'This gallery\'s stats is invisible to user without donation',
       'getGalleryStatisticsFailed': 'Get Gallery Statistics Failed',
       'totalVisits': 'Total Visits',
       'visits': 'Visits',
@@ -187,29 +179,23 @@ class en_US {
       'score': 'Score',
       'NotOnTheList': 'Not on the list',
       'getGalleryArchiveFailed': 'Get Gallery Archive Failed',
-      'parseGalleryArchiveFailed':
-          'Parse failed, make sure your [Archiver Settings] in e-hentai is [Manual Select, Manual Start (Default)]',
+      'parseGalleryArchiveFailed': 'Parse failed, make sure your [Archiver Settings] in e-hentai is [Manual Select, Manual Start (Default)]',
       'original': 'Original',
       'resample': 'Resample',
       'beginToDownloadArchive': 'Begin to Download Archive',
-      'beginToDownloadArchiveHint':
-          'You can check progress at Download -> Archive',
+      'beginToDownloadArchiveHint': 'You can check progress at Download -> Archive',
       'updateGalleryError': 'Update Gallery Error',
       'thisGalleryHasANewVersion': 'This gallery has a new version',
       'hasUpdated': 'Has updated',
       'unpackingArchiveError': 'Unpacking archive error',
       'failedToDealWith': 'Failed to deal with',
       'hasDownloaded': 'Has downloaded',
-      '410Hints':
-          'You have clocked too many downloaded bytes on this archive, and need to re-unlock of this archive to resume.',
-      '429Hints':
-          'Too many download requests! You\'d better decrease your archive download concurrency.',
-      'getUnpackedImagesFailedMsg':
-          'JHenTai can\'t load images of this archive, please check your local file.',
+      '410Hints': 'You have clocked too many downloaded bytes on this archive, and need to re-unlock of this archive to resume.',
+      '429Hints': 'Too many download requests! You\'d better decrease your archive download concurrency.',
+      'getUnpackedImagesFailedMsg': 'JHenTai can\'t load images of this archive, please check your local file.',
       'getGalleryTorrentsFailed': 'Get torrents failed',
       'chooseArchive': 'Choose Archive',
-      'tagSetExceedLimit':
-          'No more tags can be added because you have reach the limit',
+      'tagSetExceedLimit': 'No more tags can be added because you have reach the limit',
       'useTranslation': 'Use Translation',
       'addTagSuccess': 'Add Tag Success',
       'addTagFailed': 'Add Tag Failed',
@@ -250,10 +236,8 @@ class en_US {
       'loading': "Loading",
       'paused': 'Paused',
       'exceedImageLimits': "Exceed Image Limits",
-      'ehServerError':
-          'An error occurred due to EH\'s server, please try again later',
-      'unsupportedImagePageStyle':
-          "JHenTai doesn't support Multi-Page Viewer(MPV), please change to default style in e-hentai.org",
+      'ehServerError': 'An error occurred due to EH\'s server, please try again later',
+      'unsupportedImagePageStyle': "JHenTai doesn't support Multi-Page Viewer(MPV), please change to default style in e-hentai.org",
       'toNext': 'To next',
       'toPrev': 'To prev',
       'back': 'Back',
@@ -291,8 +275,7 @@ class en_US {
       /// eh setting page
       'site': 'Site',
       'redirect2Eh': 'Redirect to EH if available',
-      'redirect2EhHint':
-          'Try to load gallery detail page from EH site first to get better network performance',
+      'redirect2EhHint': 'Try to load gallery detail page from EH site first to get better network performance',
       'redirectAllGallery': 'Redirect all gallery to EH',
       'imDonorHint': 'If you are a donor, you can turn this on to help you access galleries in EX site',
       'profileSetting': 'Profile Setting',
@@ -349,18 +332,13 @@ class en_US {
       'enableTagZHTranslation': 'Translate Tag Name into Chinese',
       'version': 'Version',
       'downloadTagTranslationHint': 'Downloading data..., downloaded: ',
-      'zhTagSearchOrderOptimization':
-          'Chinese Tag Auto-Completion Ordering Rule',
-      'zhTagSearchOrderOptimizationHint':
-          'Intelligent sorting by default and sort by frequency if enabled',
+      'zhTagSearchOrderOptimization': 'Chinese Tag Auto-Completion Ordering Rule',
+      'zhTagSearchOrderOptimizationHint': 'Intelligent sorting by default and sort by frequency if enabled',
       'themeMode': 'Theme Mode',
       'dark': 'Dark',
       'light': 'Light',
       'followSystem': 'Follow System',
       'themeColor': 'Theme Color',
-      'themeColorFixedOnApple': 'Fixed accent on macOS / iOS',
-      'appleVisualStyle': 'Apple visual style',
-      'appleVisualStyleHint': 'Enable the redesigned Apple-style interface',
       'listStyle': 'Gallery List Style (Global)',
       'flat': 'Flat',
       'flatWithoutTags': 'Flat(Without Tags)',
@@ -371,10 +349,8 @@ class en_US {
       'waterfallFlowBig': 'Waterfall Flow (Big)',
       'crossAxisCountInWaterFallFlow': 'Waterfall Flow Column Count',
       'pageListStyle': 'Gallery List Style (Page)',
-      'crossAxisCountInGridDownloadPageForGroup':
-          'Download Page Grid Column Count(Group)',
-      'crossAxisCountInGridDownloadPageForGallery':
-          'Download Page Grid Column Count(Gallery)',
+      'crossAxisCountInGridDownloadPageForGroup': 'Download Page Grid Column Count(Group)',
+      'crossAxisCountInGridDownloadPageForGallery': 'Download Page Grid Column Count(Gallery)',
       'crossAxisCountInDetailPage': 'Detail Page Thumbnail Column Count',
       'global': 'Global',
       'auto': 'Auto',
@@ -389,8 +365,7 @@ class en_US {
       'whenScrollUp': 'When Scroll Up',
       'whenScrollDown': 'When Scroll Down',
       'preloadGalleryCover': 'Preload gallery cover',
-      'preloadGalleryCoverHint':
-          'Preload the covers of galleries that are not yet displayed on the page',
+      'preloadGalleryCoverHint': 'Preload the covers of galleries that are not yet displayed on the page',
       'enableSwipeBackGesture': 'Enable Swipe Back Gesture',
       'enableLeftMenuDrawerGesture': 'Enable Left Menu Drawer Gesture',
       'enableQuickSearchDrawerGesture': 'Enable QuickSearch Drawer Gesture',
@@ -408,26 +383,21 @@ class en_US {
       'inheritAll': 'Inherit All',
       'inheritAllHint': 'Use last search options for next search',
       'inheritPartially': 'Inherit Partially',
-      'inheritPartiallyHint':
-          'Use last search options for next search(except language and category)',
+      'inheritPartiallyHint': 'Use last search options for next search(except language and category)',
       'none': 'None',
       'noneHint': 'Use default search options for next search',
       'showAllGalleryTitles': 'Show All Gallery Titles',
-      'showAllGalleryTitlesHint':
-          'Show both original and japanese titles if available',
+      'showAllGalleryTitlesHint': 'Show both original and japanese titles if available',
       'showGalleryTagVoteStatus': 'Show Gallery Tag Vote Status',
-      'showGalleryTagVoteStatusHint':
-          'Include confidence, skepticism and incorrect',
+      'showGalleryTagVoteStatusHint': 'Include confidence, skepticism and incorrect',
       'showComments': 'Show Comments',
       'showAllComments': 'Show All Comments',
-      'showAllCommentsHint':
-          'By default only the 45 highest scoring and 5 most recent comments will be shown',
+      'showAllCommentsHint': 'By default only the 45 highest scoring and 5 most recent comments will be shown',
       'addTag': 'Add Tag',
       'addTagHint': 'Enter new tags, separated with comma',
 
       /// theme color setting page
-      'themeColorSettingHint':
-          'Assign different color for light and dark theme',
+      'themeColorSettingHint': 'Assign different color for light and dark theme',
       'preview': 'Preview',
       'preset': 'Preset',
       'custom': 'Custom',
@@ -449,25 +419,20 @@ class en_US {
       'hostMapping': 'Host Mapping',
       'hostMappingHint': 'Used for domain fronting',
       'proxyAddress': 'Proxy Address',
-      'proxyAddressHint':
-          'If you use proxy server, make sure to set it up correctly',
+      'proxyAddressHint': 'If you use proxy server, make sure to set it up correctly',
       'saveSuccess': 'Save success',
       'saveFailed': 'Save failed',
       'updateSuccess': 'Update success',
       'connectTimeout': 'Connect Timeout',
       'receiveTimeout': 'Receive Data Timeout',
       'enableSmartCache': "Smart Cache",
-      'enableSmartCacheHint':
-          "Keep viewed pages and images for the retention period; turn off to keep only a short-lived cache",
+      'enableSmartCacheHint': "Keep viewed pages and images for the retention period; turn off to keep only a short-lived cache",
       'smartCacheRetention': "Cache Retention",
-      'smartCacheRetentionHint':
-          "Cache older than this is cleared automatically",
+      'smartCacheRetentionHint': "Cache older than this is cleared automatically",
       'smartCacheMaxSize': "Max Cache Size",
-      'smartCacheMaxSizeHint':
-          "Cache is automatically trimmed when it exceeds this limit",
+      'smartCacheMaxSizeHint': "Cache is automatically trimmed when it exceeds this limit",
       'smartCacheEvictPolicy': "Eviction Policy",
-      'smartCacheEvictPolicyHint':
-          "Which cache entries are removed first when the limit is reached",
+      'smartCacheEvictPolicyHint': "Which cache entries are removed first when the limit is reached",
       'smartCacheEvictByAddedDate': "By added date",
       'smartCacheEvictByUsageFrequency': "By usage frequency",
       'unlimited': "Unlimited",
@@ -497,39 +462,28 @@ class en_US {
       'inferenceModeCpu': 'CPU',
       'inferencePreferredBackend': 'Preferred backend',
       'inferenceDetectedDevice': 'Detected device',
-      'inferenceDeviceNotDetected':
-          'Not detected (filled after model integration)',
+      'inferenceDeviceNotDetected': 'Not detected (filled after model integration)',
       'inferenceDomainOcr': 'Image translation (OCR)',
       'inferenceEnableNnapi': 'Enable NNAPI acceleration',
-      'inferenceEnableNnapiHint':
-          'Route to NPU/GPU/DSP on supported Android devices; falls back to CPU automatically.',
+      'inferenceEnableNnapiHint': 'Route to NPU/GPU/DSP on supported Android devices; falls back to CPU automatically.',
       'inferenceEnableCpuFallback': 'CPU fallback',
-      'inferenceEnableCpuFallbackHint':
-          'Fall back to CPU when the selected backend is unavailable.',
+      'inferenceEnableCpuFallbackHint': 'Fall back to CPU when the selected backend is unavailable.',
       'inferenceEngineOcr': 'Image/Text Translation',
       'inferenceModelReady': 'Ready',
-      'inferenceModelNotIntegrated':
-          'Inference is not ready; see Inference Settings for details',
+      'inferenceModelNotIntegrated': 'Inference is not ready; see Inference Settings for details',
       'inferenceOcrModel': 'PP-OCRv6 small multilingual OCR',
-      'inferenceOcrLanguageAuto':
-          'Automatically recognizes Chinese, Japanese, English, and 50 languages',
+      'inferenceOcrLanguageAuto': 'Automatically recognizes Chinese, Japanese, English, and 50 languages',
       'inferenceModelNotDownloaded': 'Not downloaded',
       'inferenceModelValidating': 'Validating model integrity',
       'inferenceModelVerified': 'Downloaded and integrity verified',
-      'inferenceModelInvalid':
-          'Model is corrupt or failed verification; download it again',
+      'inferenceModelInvalid': 'Model is corrupt or failed verification; download it again',
       'inferenceSessionStatus': 'Session status',
-      'inferenceSessionBackendUnavailable':
-          'The inference runtime or selected backend is unavailable',
-      'inferenceSessionWaitingForModel':
-          'Waiting for a downloaded and verified model',
-      'inferenceSessionNotTested':
-          'Not created yet; it will be verified on first inference',
+      'inferenceSessionBackendUnavailable': 'The inference runtime or selected backend is unavailable',
+      'inferenceSessionWaitingForModel': 'Waiting for a downloaded and verified model',
+      'inferenceSessionNotTested': 'Not created yet; it will be verified on first inference',
       'inferenceSessionReady': 'Created successfully and ready for inference',
-      'inferenceSessionFailed':
-          'The last creation failed; check logs or select another backend',
-      'inferenceFrameworkNote':
-          'Providers, model integrity, and session state are detected separately.',
+      'inferenceSessionFailed': 'The last creation failed; check logs or select another backend',
+      'inferenceFrameworkNote': 'Providers, model integrity, and session state are detected separately.',
       'inferenceBackendAuto': 'Auto',
       'inferenceBackendCpu': 'CPU',
       'inferenceBackendDirectml': 'DirectML (GPU)',
@@ -541,30 +495,25 @@ class en_US {
       'inferenceBackendXnnpack': 'XNNPACK',
       'imageTranslationOcrEngineOnnx': 'ONNX (on-device)',
       'imageTranslationOcrEngineMangaOcr': 'manga-OCR (to be implemented)',
-      'imageTranslationOcrNotConfigured':
-          'ONNX OCR engine is not configured yet. Integrate models in the inference backend.',
+      'imageTranslationOcrNotConfigured': 'ONNX OCR engine is not configured yet. Integrate models in the inference backend.',
       'onnxModelDescRapidOcrSmall':
           'Full PP-OCRv6 multilingual dictionary with high recognition accuracy at moderate size and speed. Good for most comics and images.',
       'onnxModelDescRapidOcrTiny':
           'Reduced dictionary and lightweight networks: the fastest and smallest tier, but with a smaller character set and slightly lower accuracy on complex glyphs. Best for low-end devices or speed-first use.',
       'stopSuperResolution': 'Stop Super Resolution',
       'deleteSuperResolvedImage': 'Delete Super Resolved Image',
-      'superResolveOriginalImageHint':
-          'Process original image cost more time, space and performance, are you sure to continue?',
+      'superResolveOriginalImageHint': 'Process original image cost more time, space and performance, are you sure to continue?',
       'verityAppLinks4Android12': 'Verity App Links(Android 12+)',
-      'verityAppLinks4Android12Hint':
-          'For Android 12+, you need to manually add link to verified links in order to open JHenTai in 3-rd apps',
+      'verityAppLinks4Android12Hint': 'For Android 12+, you need to manually add link to verified links in order to open JHenTai in 3-rd apps',
       'noImageMode': 'No Image Mode',
       'exportData': 'Export Data',
       'exportDataHint': 'Export configs, block rules and history',
       'selectExportItems': 'Select Export Items',
       'importData': 'Import Data',
-      'importDataHint':
-          'App will shutdown automatically after importing to apply the latest configuration',
+      'importDataHint': 'App will shutdown automatically after importing to apply the latest configuration',
 
       /// host mapping page
-      'hostDataSource':
-          'No need to change by default.\nData source: https://dns.google/',
+      'hostDataSource': 'No need to change by default.\nData source: https://dns.google/',
 
       /// proxy page
       'proxySetting': 'Proxy Setting',
@@ -583,8 +532,7 @@ class en_US {
       'enableAuthOnResumeHints': '3 seconds delay',
       'enableBlurBackgroundApp': 'Enable Blur Page When Switch to Background',
       'hideImagesInAlbum': 'Hide Images in Album',
-      'hideImagesInAlbumHints':
-          'If you changed default download path, you need to create .nomedia manually',
+      'hideImagesInAlbumHints': 'If you changed default download path, you need to create .nomedia manually',
 
       /// read setting page
       'enableImmersiveMode': 'Enable Immersive Mode',
@@ -597,16 +545,13 @@ class en_US {
       'landscape': 'Landscape',
       'portrait': 'Portrait',
       'readDirection': 'Read Direction',
-      'enableOrientationSpecificReadDirection':
-          'Orientation-Specific Read Direction',
-      'enableOrientationSpecificReadDirectionHint':
-          'Set different read directions for portrait and landscape orientations',
+      'enableOrientationSpecificReadDirection': 'Orientation-Specific Read Direction',
+      'enableOrientationSpecificReadDirectionHint': 'Set different read directions for portrait and landscape orientations',
       'portraitReadDirection': 'Portrait Read Direction',
       'landscapeReadDirection': 'Landscape Read Direction',
       'autoSwitchedReadDirection': 'Auto-switched read direction',
       'notchOptimization': 'Notch Optimization',
-      'notchOptimizationHint':
-          'Add padding before the first image to avoid the notch and status bar',
+      'notchOptimizationHint': 'Add padding before the first image to avoid the notch and status bar',
       'imageRegionWidthRatio': 'Image Region Width Ratio',
       'portraitImageRegionWidthRatio': 'Portrait Image Width Ratio',
       'landscapeImageRegionWidthRatio': 'Landscape Image Width Ratio',
@@ -630,8 +575,7 @@ class en_US {
       'left2rightList': 'Left to Right (Continuous)',
       'right2leftList': 'Right to Left (Continuous)',
       'enablePageTurnByVolumeKeys': 'Use volume key to turn page',
-      'enablePageTurnByVolumeKeysHint':
-          'On iOS, if the volume is at 0 or 100%, it will be adjusted automatically when entering the reader to support page turning, and restored on exit',
+      'enablePageTurnByVolumeKeysHint': 'On iOS, if the volume is at 0 or 100%, it will be adjusted automatically when entering the reader to support page turning, and restored on exit',
       'enablePageTurnAnime': 'Enable Turn Page Animation',
       'enableDoubleTapToScaleUp': 'Enable Double Tap to Scale up',
       'enableTapDragToScaleUp': 'Enable Tap Drag to Scale up',
@@ -643,8 +587,7 @@ class en_US {
       'turnPageModeHint': 'To next screen or next image',
       'enableImageMaxKilobytes': 'Enable Image Compression',
       'imageMaxKilobytes': 'Image Max Size',
-      'imageMaxKilobytesHint':
-          'Images larger than this size will be compressed',
+      'imageMaxKilobytesHint': 'Images larger than this size will be compressed',
       'image': 'Image',
       'screen': 'Screen',
       'preloadDistanceInOnlineMode': 'Preload Distance(Online)',
@@ -653,11 +596,9 @@ class en_US {
       'preloadPageCount': 'Preload Page Count(Online)',
       'preloadPageCountInLocalMode': 'Preload Page Count(Local)',
       'failedImageRetryScope': "Retry Failed Images",
-      'failedImageRetryScopeHint':
-          "Scope when tapping a failed online image to reload it",
+      'failedImageRetryScopeHint': "Scope when tapping a failed online image to reload it",
       'imageTimeoutRetry': 'Timeout Retry',
-      'imageTimeoutRetryHint':
-          'Automatically retry when an online image has no response or stalled progress',
+      'imageTimeoutRetryHint': 'Automatically retry when an online image has no response or stalled progress',
       'imageTimeoutRetryCount': 'Retry Count',
       'imageTimeoutRetryInterval': 'Timeout Threshold',
       'retrySingleImage': "Only the tapped image",
@@ -802,8 +743,7 @@ class en_US {
       'pageAtLeast': 'Page At Least',
       'pageAtMost': 'Page At Most',
       'pagesBetween': 'Pages Between',
-      'pageRangeSelectHint':
-          'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
+      'pageRangeSelectHint': 'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
       'to': 'to',
       'minimumRating': 'Minimum Rating',
       'disableFilterForLanguage': 'Disable Filter For Language',
@@ -857,17 +797,14 @@ class en_US {
       'originalImage': 'Original',
       'resampleImage': 'Resample',
       'defaultGalleryGroup': 'Default Gallery Group',
-      'prioritizeRecentGalleryGroups':
-          'Prioritize Recently Used Gallery Groups',
+      'prioritizeRecentGalleryGroups': 'Prioritize Recently Used Gallery Groups',
       'defaultArchiveGroup': 'Default Archive Group',
       'never': 'Never',
       'manual': 'Manual',
       'always': 'Always',
       'longPress2Reset': 'Long Press to Reset',
-      'needPermissionToChangeDownloadPath':
-          'Need permission to change download path',
-      'invalidPath':
-          'Invalid Path. Avoid using SD-Card, system path or root path.',
+      'needPermissionToChangeDownloadPath': 'Need permission to change download path',
+      'invalidPath': 'Invalid Path. Avoid using SD-Card, system path or root path.',
       'downloadTaskConcurrency': 'Download Concurrency',
       'needRestart': 'Need restart',
       'speedLimit': 'Speed Limit',
@@ -879,16 +816,12 @@ class en_US {
       'downloadAllGalleriesOfSamePriorityHint': 'Download only 1 gallery simultaneously in 1 group with highest priority by default',
       'alwaysUseDefaultGroup': 'Always Use Default Group',
       'enableStoreMetadataForRestore': 'Enable Store Metadata for Restore',
-      'enableStoreMetadataForRestoreHint':
-          'If disable this, you can\'t restore download tasks',
+      'enableStoreMetadataForRestoreHint': 'If disable this, you can\'t restore download tasks',
       'archiveDownloadIsolateCount': 'Archive Download Thread Count',
-      'archiveDownloadIsolateCountHint':
-          'Sum of threads for all tasks needs to be less than 10, otherwise the download will fail',
+      'archiveDownloadIsolateCountHint': 'Sum of threads for all tasks needs to be less than 10, otherwise the download will fail',
       'manageArchiveDownloadConcurrency': 'Manage Archive Download Concurrency',
-      'manageArchiveDownloadConcurrencyHint':
-          'Archive will wait until there are enough threads to download',
-      'deleteArchiveFileAfterDownload':
-          'Delete Archive .zip File After Download',
+      'manageArchiveDownloadConcurrencyHint': 'Archive will wait until there are enough threads to download',
+      'deleteArchiveFileAfterDownload': 'Delete Archive .zip File After Download',
       'restoreDownloadTasks': 'Restore Download Tasks',
       'restoreDownloadTasksHint': 'Restore download tasks by metadata',
       'restoreDownloadTasksSuccess': 'Restore Download Tasks Success',
@@ -896,12 +829,9 @@ class en_US {
       'restoredGalleryCount': 'Restored gallery count',
       'restoredArchiveCount': 'Restored archive count',
       'restoreTasksAutomatically': 'Restore Tasks Automatically',
-      'restoreTasksAutomaticallyHint':
-          'Restore tasks automatically when app launched',
-      'brokenDownloadPathHint':
-          'Seems your download path is broken, download function may be ineffective',
-      'brokenExtraScanPathHint':
-          'Seems your default local gallery path is broken, local gallery may be not recognized',
+      'restoreTasksAutomaticallyHint': 'Restore tasks automatically when app launched',
+      'brokenDownloadPathHint': 'Seems your download path is broken, download function may be ineffective',
+      'brokenExtraScanPathHint': 'Seems your default local gallery path is broken, local gallery may be not recognized',
       'useJH2UpdateGallery': 'Use JH server to accelerate gallery updates',
 
       /// archive bot settings
@@ -918,8 +848,7 @@ class en_US {
       'checkInFailed': 'Check-in failed',
       'checkInSuccess': 'Check-in success',
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
-      'pauseDownloadByInvalidArchiveBotKey':
-          'Archive bot settings is invalid, download paused',
+      'pauseDownloadByInvalidArchiveBotKey': 'Archive bot settings is invalid, download paused',
       'chooseArchiveParseSource': 'Change Parse Source',
       'official': 'Official',
       'archiveBot': 'Archive Bot',
@@ -948,8 +877,7 @@ class en_US {
       'upload2cloud': 'Upload to Cloud',
       'upload2cloudHint': 'Upload your current local configuration',
       'tap2upload': 'Tap to upload',
-      'copyIdentificationCodeSuccess':
-          'Upload successfully. Identification code has been copied',
+      'copyIdentificationCodeSuccess': 'Upload successfully. Identification code has been copied',
       'copyShareCode': 'Copy Share Code',
       'import': 'Import',
       'save2Local': 'Save to Local',
@@ -965,8 +893,7 @@ class en_US {
       'inputNumberHint': 'Please input a correct number',
       'inputRegexHint': 'Please input a correct regex',
       'useBuiltInBlockedUsers': 'Enable Built-in User Blocklist',
-      'useBuiltInBlockedUsersHint':
-          'Filter out gallery comments from users on the blocklist',
+      'useBuiltInBlockedUsersHint': 'Filter out gallery comments from users on the blocklist',
       'blockingRules': 'Block Rules',
       'blockingRulesHint': 'Additional blocking rules for galleries and comments',
       'blockingTarget': 'Blocking Target',
@@ -982,8 +909,7 @@ class en_US {
       'content': 'Content',
       'incompleteInformation': 'Incomplete information',
       'noBlockingRuleHint': 'Add at least 1 rule',
-      'notSameBlockingRuleTargetHint':
-          'All sub-rules should have the same blocking target',
+      'notSameBlockingRuleTargetHint': 'All sub-rules should have the same blocking target',
       'blockingRuleHelp': '''
 Blocking Target: Filter galleries on the list page or filter comments on the details page. All sub-rules under the same rule must have the same blocking target.
 Blocking Attribute: Specify the attribute of the target based on which the rule is written to block.
@@ -1033,15 +959,8 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// image text translation
       'imageTextTranslation': 'Image Text Translation',
       'translateImageText': 'Recognize and Translate This Page',
-      'addBookmark': 'Add bookmark',
-      'removeBookmark': 'Remove bookmark',
       'enableTranslationFloatingBall': 'Show translation floating ball',
-      'enableTranslationFloatingBallHint':
-          'Show the image translation ball on the reader page',
-      'enableBookmarkFloatingBall': 'Bookmark navigation ball',
-      'enableBookmarkFloatingBallHint':
-          'Jump to the nearest bookmark after the current page',
-      'bookmarkNavigation': 'Jump to next bookmark',
+      'enableTranslationFloatingBallHint': 'Show the image translation ball on the reader page',
       'readerTranslation': 'Reader translation',
       'recognizingImageText': 'Recognizing image text…',
       'translatingImageText': 'Translating image text…',
@@ -1053,36 +972,27 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'configure': 'Configure',
       'saveSetting': 'Save',
       'imageTranslationNoResult': 'No result to display',
-      'imageTranslationConfigureHint':
-          'Original text was recognized. Configure a translation provider in Advanced settings first.',
-      'imageTranslationUnsupportedPlatform':
-          'Image OCR is not available on this platform yet.',
-      'imageTranslationOcrUnavailable':
-          'OCR executable was not found. Install or configure Tesseract on desktop.',
-      'imageTranslationOcrFailed':
-          'Text recognition failed. Check the OCR language packs and image format.',
+      'imageTranslationConfigureHint': 'Original text was recognized. Configure a translation provider in Advanced settings first.',
+      'imageTranslationUnsupportedPlatform': 'Image OCR is not available on this platform yet.',
+      'imageTranslationOcrUnavailable': 'OCR executable was not found. Install or configure Tesseract on desktop.',
+      'imageTranslationOcrFailed': 'Text recognition failed. Check the OCR language packs and image format.',
       'imageTranslationNoText': 'No text was recognized in this image.',
       'imageTranslationAlreadyTranslated': 'This page is already translated.',
       'imageTranslationCancelled': 'Translation cancelled.',
-      'imageTranslationRequestFailed':
-          'Translation request failed. Check the endpoint, key, and network.',
-      'imageTranslationInvalidResponse':
-          'The translation provider returned an invalid result.',
+      'imageTranslationRequestFailed': 'Translation request failed. Check the endpoint, key, and network.',
+      'imageTranslationInvalidResponse': 'The translation provider returned an invalid result.',
       'imageTranslationFailed': 'Image text translation failed.',
-      'imageTranslationPaddleNotReady':
-          'PaddleOCR runtime is not installed. Install it in Advanced settings first.',
+      'imageTranslationPaddleNotReady': 'PaddleOCR runtime is not installed. Install it in Advanced settings first.',
       'imageTranslationDeletePaddleRuntime': 'Delete PaddleOCR Runtime',
-      'imageTranslationDeletePaddleHint':
-          'Remove the virtual environment and downloaded models.',
+      'imageTranslationDeletePaddleHint': 'Remove the virtual environment and downloaded models.',
       'imageTranslationDeletePaddleConfirm': 'Delete the PaddleOCR runtime?',
       'imageTranslationEnableThinking': 'Enable Thinking',
-      'imageTranslationEnableThinkingHint':
-          'Off for faster translation; on for deeper reasoning.',
+      'imageTranslationEnableThinkingHint': 'Off for faster translation; on for deeper reasoning.',
       'imageTranslationAutoMergeText': 'Automatically merge text blocks',
-      'imageTranslationAutoMergeTextHint':
-          'When enabled, lines in the same bubble or text box are translated and embedded as one block.',
+      'imageTranslationAutoMergeTextHint': 'When enabled, lines in the same bubble or text box are translated and embedded as one block.',
       'imageTranslationBubbleDetection': 'Detect speech bubbles',
-      'imageTranslationBubbleDetectionHint': 'Use the Manga109 bubble segmentation model for whole-bubble layout, with OCR-region fallback.',
+      'imageTranslationBubbleDetectionHint':
+          'Use the Manga109 bubble segmentation model for whole-bubble layout, with OCR-region fallback.',
       'imageTranslationBackgroundColor': 'Embedded text background color',
       'imageTranslationBackgroundOpacity': 'Embedded text background opacity',
       'imageTranslationBubbleModel': 'Speech bubble detection model',
@@ -1090,22 +1000,17 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationScopeCurrent': 'Current page only',
       'imageTranslationScopeSubsequent': 'Current and following pages',
       'enableAutoTranslate': 'Auto-translate',
-      'enableAutoTranslateHint':
-          'When you start reading or turn pages, automatically translate the current page and the next page.',
+      'enableAutoTranslateHint': 'When you start reading or turn pages, automatically translate the current page and the next page.',
       'preTranslatePageCount': 'Pre-translate page count',
-      'preTranslatePageCountHint':
-          'After enabling pre-translate on a gallery detail page, translate the first N pages in the background.',
+      'preTranslatePageCountHint': 'After enabling pre-translate on a gallery detail page, translate the first N pages in the background.',
       'preTranslateConcurrency': 'Pre-translate concurrency',
       'preTranslateConcurrencyHint': 'Pages translated at the same time. Default: 5.',
       'preTranslate': 'Pre-translate',
       'preTranslateEnabled': 'Pre-translate on',
-      'preTranslateHint':
-          'When enabled, immediately pre-translates the first @count pages of this gallery in the background.',
-      'preTranslateEnabledToast':
-          'Pre-translate enabled (first @count pages). Starting in the background now.',
+      'preTranslateHint': 'When enabled, immediately pre-translates the first @count pages of this gallery in the background.',
+      'preTranslateEnabledToast': 'Pre-translate enabled (first @count pages). Starting in the background now.',
       'preTranslateDisabledToast': 'Pre-translate disabled for this gallery.',
-      'preTranslateAlreadyTargetLanguageToast':
-          'This gallery is already in the target language; pre-translate is not needed.',
+      'preTranslateAlreadyTargetLanguageToast': 'This gallery is already in the target language; pre-translate is not needed.',
       'preTranslateMonitorTitle': 'Pre-translation monitor',
       'preTranslateMonitorNotStarted': 'Pre-translation has not started',
       'preTranslateMonitorWaiting': 'Waiting',
@@ -1139,8 +1044,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslateMonitorSettingsHint': 'For this gallery only. Apply or start after adjusting; completed pages use cached results.',
       'imageTranslationContextPages': 'Pages per context request',
       'imageTranslationContextPagesValue': '@count page(s)',
-      'imageTranslationContextAppleUnsupported':
-          'Apple Translation currently supports one page per request.',
+      'imageTranslationContextAppleUnsupported': 'Apple Translation currently supports one page per request.',
       'imageTranslationCachedRetranslate': 'Cached · Retranslate',
       'translationProgress': 'Translating @current/@total · @stage',
       'translationStageIdle': 'Preparing',
@@ -1151,8 +1055,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationSourceUnavailable': 'The current image is unavailable.',
       'imageTranslationSettingHint': 'Configure OCR and translation provider',
       'imageTranslationOcrSection': 'Text recognition',
-      'imageTranslationOcrHint':
-          'Desktop uses local Tesseract by default. Install the required language packs.',
+      'imageTranslationOcrHint': 'Desktop uses local Tesseract by default. Install the required language packs.',
       'imageTranslationOcrExecutable': 'OCR executable',
       'imageTranslationOcrLanguage': 'OCR languages',
       'imageTranslationTranslatorSection': 'Translation provider',
@@ -1160,16 +1063,13 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationTranslatorEngineApi': 'Third-party API',
       'imageTranslationTranslatorEngineApple': 'Apple on-device',
       'imageTranslationTranslatorEngineLocal': 'Local GGUF',
-      'imageTranslationLocalGgufHint':
-          'Uses the selected downloaded GGUF model and the configured local llama.cpp runtime.',
+      'imageTranslationLocalGgufHint': 'Uses the selected downloaded GGUF model and the configured local llama.cpp runtime.',
       'imageTranslationLocalModel': 'Local translation model',
       'imageTranslationLocalModelDownloading': 'Downloading @progress',
       'imageTranslationLocalFfiRuntime': 'On-device llama.cpp runtime',
-      'imageTranslationLocalFfiRuntimeHint':
-          'Uses the built-in Flutter FFI runtime when it is available on this device.',
+      'imageTranslationLocalFfiRuntimeHint': 'Uses the built-in Flutter FFI runtime when it is available on this device.',
       'imageTranslationBrowseRuntime': 'Choose runtime',
-      'imageTranslationTranslatorHint':
-          'Uses an OpenAI-compatible Chat Completions endpoint. The key stays on this device.',
+      'imageTranslationTranslatorHint': 'Uses an OpenAI-compatible Chat Completions endpoint. The key stays on this device.',
       'imageTranslationEndpoint': 'Endpoint',
       'imageTranslationModel': 'Model',
       'imageTranslationTargetLanguage': 'Target language',
@@ -1180,8 +1080,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationApiBaseUrl': 'API base URL',
       'imageTranslationTestAndFetchModels': 'Test and fetch models',
       'imageTranslationFetchModelsFirst': 'Test the API and fetch models first',
-      'imageTranslationApiTestSuccess':
-          'Connection succeeded; @count models found',
+      'imageTranslationApiTestSuccess': 'Connection succeeded; @count models found',
       'imageTranslationApiTestFailed': 'API test failed: @error',
       'imageTranslationOcrDownloadHint':
           'Download tessdata_fast language models into the local Tesseract data directory. Choose a China mirror or the official source.',
@@ -1193,24 +1092,18 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationGithubOfficial': 'Official GitHub source',
       'imageTranslationOcrInstalled': 'Installed',
       'imageTranslationOcrNotInstalled': 'Not installed',
-      'imageTranslationOcrDetectFailed':
-          'OCR detection failed. Check the executable path.',
-      'imageTranslationOcrDirectoryRequired':
-          'Choose or detect the OCR data directory first.',
+      'imageTranslationOcrDetectFailed': 'OCR detection failed. Check the executable path.',
+      'imageTranslationOcrDirectoryRequired': 'Choose or detect the OCR data directory first.',
       'imageTranslationOcrDownloadSuccess': 'OCR model downloaded.',
-      'imageTranslationOcrDownloadFailed':
-          'OCR model download failed. Try another source.',
+      'imageTranslationOcrDownloadFailed': 'OCR model download failed. Try another source.',
       'imageTranslationOcrEngine': 'OCR engine',
       'imageTranslationPaddleHint':
           'The app creates an isolated Python environment in its data directory. PaddleOCR-VL-1.6 is downloaded from Hugging Face and may take some time.',
       'imageTranslationPaddleLanguage': 'PaddleOCR language',
       'imageTranslationOcrEngineAppleLiveText': 'Apple Live Text',
-      'imageTranslationAppleLiveTextLanguage':
-          'Apple Live Text recognition language',
-      'imageTranslationAppleLiveTextHint':
-          'On-device OCR via Apple Vision. Works on iOS and macOS, no model download needed.',
-      'imageTranslationAppleLiveTextUnavailable':
-          'Apple Live Text is only available on iOS and macOS.',
+      'imageTranslationAppleLiveTextLanguage': 'Apple Live Text recognition language',
+      'imageTranslationAppleLiveTextHint': 'On-device OCR via Apple Vision. Works on iOS and macOS, no model download needed.',
+      'imageTranslationAppleLiveTextUnavailable': 'Apple Live Text is only available on iOS and macOS.',
       'imageTranslationMethodSection': 'Translation method',
       'onnxModelDescComicTextDetector':
           'Detects comic text and produces precise repair masks. The model is downloaded separately under GPL-3.0.',
@@ -1222,26 +1115,21 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationDisplayCtdMigan': 'CTD + LaMa Large repaired background',
       'imageTranslationCtdModel': 'Comic Text Detector (CTD)',
       'imageTranslationMiganModel': 'Background repair model (LaMa Large)',
-      'imageTranslationCtdLicenseNotice':
-          'The GPL-3.0 CTD model is downloaded at runtime and is not distributed with the app',
-      'imageTranslationCtdFallbackHint':
-          'Both CTD and LaMa Large are required. Any failure safely falls back to the text overlay.',
+      'imageTranslationCtdLicenseNotice': 'The GPL-3.0 CTD model is downloaded at runtime and is not distributed with the app',
+      'imageTranslationCtdFallbackHint': 'Both CTD and LaMa Large are required. Any failure safely falls back to the text overlay.',
       'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/LaMa Large.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Custom',
-      'imageTranslationAppleLiveTextUseApi':
-          'Use third-party API for translation',
+      'imageTranslationAppleLiveTextUseApi': 'Use third-party API for translation',
       'imageTranslationAppleLiveTextUseApiHint':
           'Reuse the same OpenAI-compatible / Anthropic API as the custom mode instead of Apple on-device translation.',
       'imageTranslationAppleLiveTextOnDeviceHint':
           'Translation runs on-device via Apple, independently of the OCR engine. It needs iOS 26 / macOS 26 or newer.',
       'autoTranslateGalleryText': 'Auto-translate titles & comments',
-      'autoTranslateGalleryTextHint':
-          'Translate the gallery titles and comments you see on-device (requires Apple on-device translation).',
+      'autoTranslateGalleryTextHint': 'Translate the gallery titles and comments you see on-device (requires Apple on-device translation).',
       'imageTranslationTranslationUnavailable':
           'Apple on-device translation needs iOS 26 / macOS 26 or newer. Select the third-party API engine to translate on this system.',
-      'imageTranslationTranslationFailed':
-          'Text translation failed. Please try again.',
+      'imageTranslationTranslationFailed': 'Text translation failed. Please try again.',
       'imageTranslationShow': 'Show translation',
       'imageTranslationHide': 'Hide translation',
       'imageTranslationRetranslate': 'Re-translate',
@@ -1258,8 +1146,7 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationExportOverlay': 'Create translated overlay',
       'imageTranslationExporting': 'Creating…',
       'imageTranslationOverlaySaved': 'Translated overlay saved: @path',
-      'imageTranslationOverlayUnavailable':
-          'The translated lines do not match the text regions, so an overlay cannot be generated safely.',
+      'imageTranslationOverlayUnavailable': 'The translated lines do not match the text regions, so an overlay cannot be generated safely.',
       'imageTranslationOverlayFailed': 'Failed to create translated overlay.',
     };
   }

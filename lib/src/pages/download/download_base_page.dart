@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/pages/download/grid/local/local_gallery_grid_page.dart';
 import 'package:jhentai/src/service/local_config_service.dart';
 import 'package:jhentai/src/setting/preference_setting.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:simple_animations/animation_controller_extension/animation_controller_extension.dart';
 import 'package:simple_animations/animation_mixin/animation_mixin.dart';
 import '../../config/ui_config.dart';
@@ -95,68 +93,20 @@ class DownloadPageSegmentControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const TextStyle segmentTextStyle = TextStyle(
-      fontSize: UIConfig.downloadPageSegmentedTextSize,
-      fontWeight: FontWeight.bold,
+    const TextStyle segmentTextStyle = TextStyle(fontSize: UIConfig.downloadPageSegmentedTextSize, fontWeight: FontWeight.bold);
+    return CupertinoSlidingSegmentedControl<DownloadPageGalleryType>(
+      groupValue: galleryType,
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
+      children: {
+        DownloadPageGalleryType.download: SizedBox(
+          width: UIConfig.downloadPageSegmentedControlWidth,
+          child: Center(child: Text('download'.tr, style: segmentTextStyle, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        ),
+        DownloadPageGalleryType.archive: Text('archive'.tr, style: segmentTextStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        DownloadPageGalleryType.local: Text('local'.tr, style: segmentTextStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
+      },
+      onValueChanged: (value) => DownloadPageBodyTypeChangeNotification(galleryType: value!).dispatch(context),
     );
-    return ThemeConfig.isApple
-        ? Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                // Keep the segmented control compact so the AppBar centers it
-                // instead of clamping a full-width control against the trailing
-                // actions (which pushes it to the right).
-                maxWidth: DownloadPageGalleryType.values.length *
-                        UIConfig.downloadPageSegmentedControlWidth +
-                    40,
-              ),
-              child: GlassSegmentedControl(
-                selectedIndex: galleryType.index,
-                segments: [
-                  for (final type in DownloadPageGalleryType.values)
-                    GlassSegment(label: type.name.tr),
-                ],
-                selectedTextStyle: segmentTextStyle,
-                unselectedTextStyle: segmentTextStyle,
-                onSegmentSelected: (index) =>
-                    DownloadPageBodyTypeChangeNotification(
-                      galleryType: DownloadPageGalleryType.values[index],
-                    ).dispatch(context),
-              ),
-            ),
-          )
-        : CupertinoSlidingSegmentedControl<DownloadPageGalleryType>(
-            groupValue: galleryType,
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
-            children: {
-              DownloadPageGalleryType.download: SizedBox(
-                width: UIConfig.downloadPageSegmentedControlWidth,
-                child: Center(
-                  child: Text(
-                    'download'.tr,
-                    style: segmentTextStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              DownloadPageGalleryType.archive: Text(
-                'archive'.tr,
-                style: segmentTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              DownloadPageGalleryType.local: Text(
-                'local'.tr,
-                style: segmentTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            },
-            onValueChanged: (value) =>
-                DownloadPageBodyTypeChangeNotification(galleryType: value!)
-                    .dispatch(context),
-          );
   }
 }
 
@@ -201,19 +151,8 @@ class _GroupOpenIndicatorState extends State<GroupOpenIndicator> with AnimationM
 
   @override
   Widget build(BuildContext context) {
-    final Widget chevron = RotationTransition(
-      turns: animation,
-      child: const Icon(Icons.keyboard_arrow_left),
-    );
-    if (ThemeConfig.isApple) {
-      // Passive glass circle indicator — must not absorb the row's tap.
-      return GlassContainer(
-        shape: const LiquidOval(),
-        width: 28,
-        height: 28,
-        child: chevron,
-      );
-    }
+    final Widget chevron = RotationTransition(turns: animation, child: const Icon(Icons.keyboard_arrow_left));
+
     return chevron;
   }
 }

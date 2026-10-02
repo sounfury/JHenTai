@@ -1,30 +1,21 @@
 import Cocoa
 import FlutterMacOS
-import macos_window_utils
 import window_manager
 
 class MainFlutterWindow: NSWindow {
   private var liveTextChannel: FlutterMethodChannel?
 
   override func awakeFromNib() {
-    titleVisibility = .visible
-    titlebarAppearsTransparent = false
-    isOpaque = false
-    backgroundColor = .clear
-
+    let flutterViewController = FlutterViewController.init()
     let windowFrame = self.frame
-    let macOSWindowUtilsViewController = MacOSWindowUtilsViewController()
-    self.contentViewController = macOSWindowUtilsViewController
+    self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 
-    /* Initialize the macos_window_utils plugin */
-    MainFlutterWindowManipulator.start(mainFlutterWindow: self)
-
-    RegisterGeneratedPlugins(registry: macOSWindowUtilsViewController.flutterViewController)
+    RegisterGeneratedPlugins(registry: flutterViewController)
 
     let channel = FlutterMethodChannel(
       name: LiveTextOCR.channelName,
-      binaryMessenger: macOSWindowUtilsViewController.flutterViewController.engine.binaryMessenger)
+      binaryMessenger: flutterViewController.engine.binaryMessenger)
     channel.setMethodCallHandler { call, result in
       switch call.method {
       case "recognizeText":

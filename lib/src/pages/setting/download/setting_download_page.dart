@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/extension/string_extension.dart';
+import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/service/local_gallery_service.dart';
 import 'package:jhentai/src/setting/download_setting.dart';
 import 'package:jhentai/src/setting/user_setting.dart';
-import 'package:jhentai/src/utils/app_icons.dart';
 import 'package:jhentai/src/utils/file_util.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
@@ -22,9 +22,6 @@ import '../../../service/gallery_download/gallery_download_service.dart';
 import '../../../service/log.dart';
 import '../../../utils/permission_util.dart';
 import '../../../utils/route_util.dart';
-import '../../../widget/eh_apple_settings_list_view.dart';
-import '../../../widget/eh_apple_controls.dart';
-import '../../../widget/eh_codex_style_dropdown.dart';
 import '../../../widget/eh_download_dialog.dart';
 
 class SettingDownloadPage extends StatefulWidget {
@@ -52,33 +49,30 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
       body: Obx(
         () => EHWheelSpeedController(
           controller: scrollController,
-          child: EHAppleSettingsListView(
+          child: ListView(
             controller: scrollController,
-            groups: [
-              EHAppleSettingsGroup(
-                children: [
-                  _buildDownloadPath(),
-                  if (!GetPlatform.isIOS) _buildResetDownloadPath(),
-                  _buildExtraGalleryScanPath(),
-                  if (GetPlatform.isDesktop) _buildSingleImageSavePath(),
-                  _buildDownloadOriginalImage(),
-                  _buildDefaultGalleryGroup(context),
-                  _buildPrioritizeRecentGalleryGroups(),
-                  _buildDefaultArchiveGroup(context),
-                  _buildArchiveBotSettings(),
-                  _buildDownloadConcurrency(),
-                  _buildSpeedLimit(context),
-                  _buildDownloadAllGalleriesOfSamePriority(),
-                  _buildUseJH2UpdateGallery(),
-                  _buildArchiveDownloadIsolateCount(),
-                  _buildManageArchiveDownloadConcurrency(),
-                  _buildDeleteArchiveFileAfterDownload(),
-                  _buildRestore(),
-                  _buildRestoreTasksAutomatically(),
-                ],
-              ),
+            padding: const EdgeInsets.only(top: 16),
+            children: [
+              _buildDownloadPath(),
+              if (!GetPlatform.isIOS) _buildResetDownloadPath(),
+              _buildExtraGalleryScanPath(),
+              if (GetPlatform.isDesktop) _buildSingleImageSavePath(),
+              _buildDownloadOriginalImage(),
+              _buildDefaultGalleryGroup(context),
+              _buildPrioritizeRecentGalleryGroups(),
+              _buildDefaultArchiveGroup(context),
+              _buildArchiveBotSettings(),
+              _buildDownloadConcurrency(),
+              _buildSpeedLimit(context),
+              _buildDownloadAllGalleriesOfSamePriority(),
+              _buildUseJH2UpdateGallery(),
+              _buildArchiveDownloadIsolateCount(),
+              _buildManageArchiveDownloadConcurrency(),
+              _buildDeleteArchiveFileAfterDownload(),
+              _buildRestore(),
+              _buildRestoreTasksAutomatically(),
             ],
-          ),
+          ).withListTileTheme(context),
         ),
       ),
     );
@@ -88,9 +82,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
       title: Text('downloadPath'.tr),
       subtitle: Text(downloadSetting.downloadPath.value.breakWord),
-      trailing: changeDownloadPathState == LoadingState.loading
-          ? const CupertinoActivityIndicator()
-          : null,
+      trailing: changeDownloadPathState == LoadingState.loading ? const CupertinoActivityIndicator() : null,
       onTap: () {
         if (!GetPlatform.isIOS) {
           toast('changeDownloadPathHint'.tr, isShort: false);
@@ -112,7 +104,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
       title: Text('extraGalleryScanPath'.tr),
       subtitle: Text('extraGalleryScanPathHint'.tr),
-      trailing: Icon(AppIcons.chevronRight),
+      trailing: const Icon(Icons.keyboard_arrow_right),
       onTap: () => toRoute(Routes.extraGalleryScanPath),
     );
   }
@@ -121,13 +113,13 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
       title: Text('singleImageSavePath'.tr),
       subtitle: Text(downloadSetting.singleImageSavePath.value.breakWord),
-      trailing: GetPlatform.isMacOS ? null : Icon(AppIcons.chevronRight),
+      trailing: GetPlatform.isMacOS ? null : const Icon(Icons.keyboard_arrow_right),
       onTap: GetPlatform.isMacOS ? null : _handleChangeSingleImageSavePath,
     );
   }
 
   Widget _buildDownloadOriginalImage() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('downloadOriginalImageByDefault'.tr),
       value: downloadSetting.downloadOriginalImageByDefault.value,
       onChanged: (value) {
@@ -144,8 +136,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
       title: Text('defaultGalleryGroup'.tr),
       subtitle: Text('longPress2Reset'.tr),
-      trailing: Text(downloadSetting.defaultGalleryGroup.value ?? '',
-          style: UIConfig.settingPageListTileTrailingTextStyle(context)),
+      trailing: Text(downloadSetting.defaultGalleryGroup.value ?? '', style: UIConfig.settingPageListTileTrailingTextStyle(context)),
       onTap: () async {
         ({String group, bool downloadOriginalImage})? result = await showDialog(
           context: context,
@@ -170,11 +161,9 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
         title: Text('defaultArchiveGroup'.tr),
         subtitle: Text('longPress2Reset'.tr),
-        trailing: Text(downloadSetting.defaultArchiveGroup.value ?? '',
-            style: UIConfig.settingPageListTileTrailingTextStyle(context)),
+        trailing: Text(downloadSetting.defaultArchiveGroup.value ?? '', style: UIConfig.settingPageListTileTrailingTextStyle(context)),
         onTap: () async {
-          ({String group, bool downloadOriginalImage})? result =
-              await showDialog(
+          ({String group, bool downloadOriginalImage})? result = await showDialog(
             context: context,
             builder: (_) => EHDownloadDialog(
               title: 'chooseGroup'.tr,
@@ -193,7 +182,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   }
 
   Widget _buildPrioritizeRecentGalleryGroups() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('prioritizeRecentGalleryGroups'.tr),
       value: downloadSetting.prioritizeRecentGalleryGroups.value,
       onChanged: downloadSetting.savePrioritizeRecentGalleryGroups,
@@ -203,11 +192,10 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   Widget _buildDownloadConcurrency() {
     return ListTile(
       title: Text('downloadTaskConcurrency'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: downloadSetting.downloadTaskConcurrency.value,
         elevation: 4,
-        onChanged: (int? newValue) =>
-            downloadSetting.saveDownloadTaskConcurrency(newValue!),
+        onChanged: (int? newValue) => downloadSetting.saveDownloadTaskConcurrency(newValue!),
         items: const [
           DropdownMenuItem(child: Text('2'), value: 2),
           DropdownMenuItem(child: Text('4'), value: 4),
@@ -223,7 +211,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
       title: Text('archiveBotSettings'.tr),
       subtitle: Text('archiveBotSettingsHint'.tr),
-      trailing: Icon(AppIcons.chevronRight),
+      trailing: const Icon(Icons.keyboard_arrow_right),
       onTap: () => toRoute(Routes.archiveBotSettings),
     );
   }
@@ -236,7 +224,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          EHCodexStyleDropdown<int>(
+          DropdownButton<int>(
             value: downloadSetting.maximum.value,
             elevation: 4,
             alignment: AlignmentDirectional.bottomEnd,
@@ -252,15 +240,12 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
               DropdownMenuItem(child: Text('99'), value: 99),
             ],
           ),
-          Text('${'images'.tr} ${'per'.tr}',
-                  style: UIConfig.settingPageListTileTrailingTextStyle(context))
-              .marginSymmetric(horizontal: 8),
-          EHCodexStyleDropdown<Duration>(
+          Text('${'images'.tr} ${'per'.tr}', style: UIConfig.settingPageListTileTrailingTextStyle(context)).marginSymmetric(horizontal: 8),
+          DropdownButton<Duration>(
             value: downloadSetting.period.value,
             elevation: 4,
             alignment: AlignmentDirectional.bottomEnd,
-            onChanged: (Duration? newValue) =>
-                downloadSetting.savePeriod(newValue!),
+            onChanged: (Duration? newValue) => downloadSetting.savePeriod(newValue!),
             items: const [
               DropdownMenuItem(child: Text('1s'), value: Duration(seconds: 1)),
               DropdownMenuItem(child: Text('2s'), value: Duration(seconds: 2)),
@@ -273,17 +258,16 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   }
 
   Widget _buildDownloadAllGalleriesOfSamePriority() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('downloadAllGalleriesOfSamePriority'.tr),
-      subtitle: Text(
-          '${'downloadAllGalleriesOfSamePriorityHint'.tr} | ${'needRestart'.tr}'),
+      subtitle: Text('${'downloadAllGalleriesOfSamePriorityHint'.tr} | ${'needRestart'.tr}'),
       value: downloadSetting.downloadAllGalleriesOfSamePriority.value,
       onChanged: downloadSetting.saveDownloadAllGalleriesOfSamePriority,
     );
   }
 
   Widget _buildUseJH2UpdateGallery() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('useJH2UpdateGallery'.tr),
       value: downloadSetting.useJH2UpdateGallery.value,
       onChanged: downloadSetting.saveUseJH2UpdateGallery,
@@ -294,11 +278,10 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     return ListTile(
       title: Text('archiveDownloadIsolateCount'.tr),
       subtitle: Text('archiveDownloadIsolateCountHint'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: downloadSetting.archiveDownloadIsolateCount.value,
         elevation: 4,
-        onChanged: (int? newValue) =>
-            downloadSetting.saveArchiveDownloadIsolateCount(newValue!),
+        onChanged: (int? newValue) => downloadSetting.saveArchiveDownloadIsolateCount(newValue!),
         items: const [
           DropdownMenuItem(child: Text('1'), value: 1),
           DropdownMenuItem(child: Text('2'), value: 2),
@@ -316,7 +299,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   }
 
   Widget _buildManageArchiveDownloadConcurrency() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('manageArchiveDownloadConcurrency'.tr),
       subtitle: Text('manageArchiveDownloadConcurrencyHint'.tr),
       value: downloadSetting.manageArchiveDownloadConcurrency.value,
@@ -325,7 +308,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   }
 
   Widget _buildDeleteArchiveFileAfterDownload() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('deleteArchiveFileAfterDownload'.tr),
       value: downloadSetting.deleteArchiveFileAfterDownload.value,
       onChanged: downloadSetting.saveDeleteArchiveFileAfterDownload,
@@ -341,7 +324,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   }
 
   Widget _buildRestoreTasksAutomatically() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('restoreTasksAutomatically'.tr),
       subtitle: Text('restoreTasksAutomaticallyHint'.tr),
       value: downloadSetting.restoreTasksAutomatically.value,
@@ -391,10 +374,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
         await _copyOldFiles(oldDownloadPath, newDownloadPath);
       } on Exception catch (e) {
         log.error('Copy files failed!', e);
-        log.uploadError(e, extraInfos: {
-          'oldDownloadPath': oldDownloadPath,
-          'newDownloadPath': newDownloadPath
-        });
+        log.uploadError(e, extraInfos: {'oldDownloadPath': oldDownloadPath, 'newDownloadPath': newDownloadPath});
         toast('internalError'.tr);
       }
 
@@ -414,15 +394,12 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
   }
 
   Future<void> _handleResetDownloadPath() {
-    return _handleChangeDownloadPath(
-        newDownloadPath: downloadSetting.defaultDownloadPath);
+    return _handleChangeDownloadPath(newDownloadPath: downloadSetting.defaultDownloadPath);
   }
 
-  Future<void> _copyOldFiles(
-      String oldDownloadPath, String newDownloadPath) async {
+  Future<void> _copyOldFiles(String oldDownloadPath, String newDownloadPath) async {
     io.Directory oldDownloadDir = io.Directory(oldDownloadPath);
-    List<io.FileSystemEntity> oldEntities =
-        oldDownloadDir.listSync(recursive: true);
+    List<io.FileSystemEntity> oldEntities = oldDownloadDir.listSync(recursive: true);
     List<io.Directory> oldDirs = oldEntities.whereType<io.Directory>().toList();
     List<io.File> oldFiles = oldEntities.whereType<io.File>().toList();
 
@@ -431,8 +408,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     /// copy directories first
     for (io.Directory oldDir in oldDirs) {
       if (FileUtil.isJHenTaiGalleryDirectory(oldDir)) {
-        io.Directory newDir = io.Directory(join(
-            newDownloadPath, relative(oldDir.path, from: oldDownloadPath)));
+        io.Directory newDir = io.Directory(join(newDownloadPath, relative(oldDir.path, from: oldDownloadPath)));
         futures.add(newDir.create(recursive: true));
       }
     }
@@ -442,8 +418,7 @@ class _SettingDownloadPageState extends State<SettingDownloadPage> {
     /// then copy files
     for (io.File oldFile in oldFiles) {
       if (FileUtil.isJHenTaiFile(oldFile)) {
-        futures.add(oldFile.copy(join(
-            newDownloadPath, relative(oldFile.path, from: oldDownloadPath))));
+        futures.add(oldFile.copy(join(newDownloadPath, relative(oldFile.path, from: oldDownloadPath))));
       }
     }
     await Future.wait(futures);

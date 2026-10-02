@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/utils/screen_size_util.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:path/path.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -43,20 +42,16 @@ class _LogPageState extends State<LogPage> {
             .titleMedium
             ?.copyWith(fontWeight: FontWeight.bold),
         actions: [
-          if (!GetPlatform.isDesktop) EHAppleIconButton(onPressed: _shareLog, icon: const Icon(Icons.share)),
+          if (!GetPlatform.isDesktop) IconButton(onPressed: _shareLog, icon: const Icon(Icons.share)),
           if (!GetPlatform.isDesktop) const SizedBox(width: 8),
-          EHAppleIconButton(onPressed: _copyLog, icon: const Icon(Icons.copy)),
+          IconButton(onPressed: _copyLog, icon: const Icon(Icons.copy)),
         ],
       ),
       body: SizedBox.expand(
         child: SelectableText(
           logText,
           scrollPhysics: const ClampingScrollPhysics(),
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            fontFamily: Platform.isAndroid ? 'monospace' : 'PingFang HK',
-          ),
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, fontFamily: Platform.isAndroid ? 'monospace' : 'PingFang HK'),
         ),
       ).marginSymmetric(horizontal: 4),
     );

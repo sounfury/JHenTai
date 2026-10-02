@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/database/database.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/pages/download_search/download_search_state.dart';
 import 'package:jhentai/src/service/archive_download_service.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:jhentai/src/widget/eh_image.dart';
-import 'package:jhentai/src/widget/eh_translated_text.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../config/ui_config.dart';
@@ -25,6 +20,8 @@ import '../../utils/route_util.dart';
 import '../../widget/eh_gallery_category_tag.dart';
 import '../details/details_page_logic.dart';
 import 'download_search_logic.dart';
+
+import 'package:jhentai/src/widget/eh_translated_text.dart';
 
 class DownloadSearchPage extends StatelessWidget {
   DownloadSearchPage({Key? key}) : super(key: key);
@@ -49,7 +46,7 @@ class DownloadSearchPage extends StatelessWidget {
   Widget _buildSearchField() {
     return GetBuilder<DownloadSearchLogic>(
       id: logic.searchFieldId,
-      builder: (_) => EHAppleTextField(
+      builder: (_) => TextField(
         controller: logic.textEditingController,
         textInputAction: TextInputAction.search,
         textAlignVertical: TextAlignVertical.center,
@@ -62,7 +59,7 @@ class DownloadSearchPage extends StatelessWidget {
             future: state.searchTypeCompleter.future,
             builder: (_, __) => !state.searchTypeCompleter.isCompleted
                 ? const SizedBox()
-                : EHAppleTextButton(child: Text(state.searchType.desc.tr), onPressed: logic.toggleSearchType),
+                : TextButton(child: Text(state.searchType.desc.tr), onPressed: logic.toggleSearchType),
           ),
           prefixIconConstraints: const BoxConstraints(minWidth: 52),
           suffixIcon: MouseRegion(
@@ -336,15 +333,10 @@ class DownloadSearchPage extends StatelessWidget {
 
     return SizedBox(
       height: UIConfig.downloadPageProgressIndicatorHeight,
-      child: ThemeConfig.isApple
-          ? GlassProgressIndicator.linear(
-              value: downloadProgress.curCount / downloadProgress.totalCount,
-              color: UIConfig.downloadPageProgressIndicatorColor(context),
-            )
-          : LinearProgressIndicator(
-              value: downloadProgress.curCount / downloadProgress.totalCount,
-              color: UIConfig.downloadPageProgressIndicatorColor(context),
-            ),
+      child: LinearProgressIndicator(
+        value: downloadProgress.curCount / downloadProgress.totalCount,
+        color: UIConfig.downloadPageProgressIndicatorColor(context),
+      ),
     );
   }
 
@@ -543,19 +535,12 @@ class DownloadSearchPage extends StatelessWidget {
       height: UIConfig.downloadPageProgressIndicatorHeight,
       child: GetBuilder<ArchiveDownloadService>(
         id: '${ArchiveDownloadService.archiveSpeedComputerId}::${archive.gid}::${archive.isOriginal}',
-        builder: (_) => ThemeConfig.isApple
-            ? GlassProgressIndicator.linear(
-                value: archiveDownloadInfo.speedComputer.downloadedBytes / archiveDownloadInfo.size,
-                color: archiveDownloadInfo.archiveStatus.code <= ArchiveStatus.paused.code
-                    ? UIConfig.downloadPageProgressPausedIndicatorColor(context)
-                    : UIConfig.downloadPageProgressIndicatorColor(context),
-              )
-            : LinearProgressIndicator(
-                value: archiveDownloadInfo.speedComputer.downloadedBytes / archiveDownloadInfo.size,
-                color: archiveDownloadInfo.archiveStatus.code <= ArchiveStatus.paused.code
-                    ? UIConfig.downloadPageProgressPausedIndicatorColor(context)
-                    : UIConfig.downloadPageProgressIndicatorColor(context),
-              ),
+        builder: (_) => LinearProgressIndicator(
+          value: archiveDownloadInfo.speedComputer.downloadedBytes / archiveDownloadInfo.size,
+          color: archiveDownloadInfo.archiveStatus.code <= ArchiveStatus.paused.code
+              ? UIConfig.downloadPageProgressPausedIndicatorColor(context)
+              : UIConfig.downloadPageProgressIndicatorColor(context),
+        ),
       ),
     );
   }

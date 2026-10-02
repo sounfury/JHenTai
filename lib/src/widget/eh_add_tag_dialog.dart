@@ -7,8 +7,6 @@ import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/extension/list_extension.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/pages/search/mixin/search_page_mixin.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:throttling/throttling.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -39,7 +37,7 @@ class EHAddTagDialog extends StatelessWidget {
           if (tagTranslationService.isReady)
             GetBuilder<EHAddTagDialogLogic>(
               id: EHAddTagDialogLogic.checkBoxId,
-              builder: (_) => EHAppleCheckbox(
+              builder: (_) => Checkbox(
                 value: state.useTranslation,
                 onChanged: (value) {
                   state.useTranslation = value!;
@@ -61,11 +59,11 @@ class EHAddTagDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        EHAppleIconButton(
+        IconButton(
           icon: Icon(Icons.help, color: UIConfig.primaryColor(context)),
           onPressed: () => launchUrlString('https://ehwiki.org/wiki/Gallery_Tagging', mode: LaunchMode.externalApplication),
         ),
-        EHAppleTextButton(child: Text('OK'.tr), onPressed: () => backRoute(result: state.keyword)),
+        TextButton(child: Text('OK'.tr), onPressed: () => backRoute(result: state.keyword)),
       ],
       actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 12),
     );
@@ -75,7 +73,7 @@ class EHAddTagDialog extends StatelessWidget {
     return GetBuilder<EHAddTagDialogLogic>(
       id: EHAddTagDialogLogic.searchFieldId,
       builder: (_) {
-        return EHAppleTextField(
+        return TextField(
           focusNode: state.focusNode,
           textInputAction: TextInputAction.search,
           textAlignVertical: TextAlignVertical.center,

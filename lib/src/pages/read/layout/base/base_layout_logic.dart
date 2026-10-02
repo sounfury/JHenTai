@@ -171,14 +171,6 @@ abstract class BaseLayoutLogic extends GetxController
     }
   }
 
-  String _bookmarkActionLabel(int index) =>
-      readPageLogic.isPageBookmarked(index)
-          ? 'removeBookmark'.tr
-          : 'addBookmark'.tr;
-
-  Future<void> _toggleBookmark(int index) =>
-      readPageLogic.togglePageBookmark(index);
-
   void _dismissMobileContextMenu(BuildContext sheetContext) {
     Navigator.of(sheetContext, rootNavigator: true).pop();
   }
@@ -209,10 +201,7 @@ abstract class BaseLayoutLogic extends GetxController
           value: 'translate_image',
           child: Text('translateImageText'.tr),
         ),
-        PopupMenuItem(
-          value: 'toggle_bookmark',
-          child: Text(_bookmarkActionLabel(index)),
-        ),
+
         PopupMenuItem(
           value: 'save',
           child: Text('${'save'.tr}(${'resampleImage'.tr})'),
@@ -239,9 +228,6 @@ abstract class BaseLayoutLogic extends GetxController
         break;
       case 'translate_image':
         translateImage(index, context);
-        break;
-      case 'toggle_bookmark':
-        await _toggleBookmark(index);
         break;
       case 'save':
         await saveOnlineImage(index);
@@ -297,13 +283,7 @@ abstract class BaseLayoutLogic extends GetxController
                   translateImage(index, context);
                 },
               ),
-              CupertinoActionSheetAction(
-                child: ehActionSheetText(_bookmarkActionLabel(index)),
-                onPressed: () async {
-                  _dismissMobileContextMenu(sheetContext);
-                  await _toggleBookmark(index);
-                },
-              ),
+
               CupertinoActionSheetAction(
                 child: ehActionSheetText('${'save'.tr}(${'resampleImage'.tr})'),
                 onPressed: () async {
@@ -697,13 +677,7 @@ abstract class BaseLayoutLogic extends GetxController
       builder:
           (sheetContext) => CupertinoActionSheet(
             actions: [
-              CupertinoActionSheetAction(
-                child: ehActionSheetText(_bookmarkActionLabel(index)),
-                onPressed: () async {
-                  _dismissMobileContextMenu(sheetContext);
-                  await _toggleBookmark(index);
-                },
-              ),
+
             ],
             cancelButton: CupertinoActionSheetAction(
               child: ehActionSheetText('cancel'.tr),
@@ -728,16 +702,10 @@ abstract class BaseLayoutLogic extends GetxController
         position.dy,
       ),
       items: [
-        PopupMenuItem(
-          value: 'toggle_bookmark',
-          child: Text(_bookmarkActionLabel(index)),
-        ),
+
       ],
     );
     switch (selected) {
-      case 'toggle_bookmark':
-        await _toggleBookmark(index);
-        break;
     }
   }
 
@@ -752,13 +720,7 @@ abstract class BaseLayoutLogic extends GetxController
       builder:
           (sheetContext) => CupertinoActionSheet(
             actions: [
-              CupertinoActionSheetAction(
-                child: ehActionSheetText(_bookmarkActionLabel(index)),
-                onPressed: () async {
-                  _dismissMobileContextMenu(sheetContext);
-                  await _toggleBookmark(index);
-                },
-              ),
+
               CupertinoActionSheetAction(
                 child: ehActionSheetText('share'.tr),
                 onPressed: () {
@@ -824,13 +786,7 @@ abstract class BaseLayoutLogic extends GetxController
       builder:
           (sheetContext) => CupertinoActionSheet(
             actions: [
-              CupertinoActionSheetAction(
-                child: ehActionSheetText(_bookmarkActionLabel(index)),
-                onPressed: () async {
-                  _dismissMobileContextMenu(sheetContext);
-                  await _toggleBookmark(index);
-                },
-              ),
+
               CupertinoActionSheetAction(
                 child: ehActionSheetText('share'.tr),
                 onPressed: () {
@@ -897,10 +853,7 @@ abstract class BaseLayoutLogic extends GetxController
           value: 'translate_image',
           child: Text('translateImageText'.tr),
         ),
-        PopupMenuItem(
-          value: 'toggle_bookmark',
-          child: Text(_bookmarkActionLabel(index)),
-        ),
+
         PopupMenuItem(value: 'save', child: Text('save'.tr)),
         PopupMenuItem(value: 'redownload', child: Text('reDownload'.tr)),
         PopupMenuItem(value: 'open_read_setting', child: Text('setting'.tr)),
@@ -916,9 +869,6 @@ abstract class BaseLayoutLogic extends GetxController
         break;
       case 'translate_image':
         translateImage(index, context);
-        break;
-      case 'toggle_bookmark':
-        await _toggleBookmark(index);
         break;
       case 'save':
         saveDownloadedImageFile(index);
@@ -960,10 +910,7 @@ abstract class BaseLayoutLogic extends GetxController
           value: 'translate_image',
           child: Text('translateImageText'.tr),
         ),
-        PopupMenuItem(
-          value: 'toggle_bookmark',
-          child: Text(_bookmarkActionLabel(index)),
-        ),
+
         PopupMenuItem(value: 'save', child: Text('save'.tr)),
         PopupMenuItem(value: 'open_read_setting', child: Text('setting'.tr)),
       ],
@@ -975,9 +922,6 @@ abstract class BaseLayoutLogic extends GetxController
         break;
       case 'translate_image':
         translateImage(index, context);
-        break;
-      case 'toggle_bookmark':
-        await _toggleBookmark(index);
         break;
       case 'save':
         saveArchiveImageFile(index);

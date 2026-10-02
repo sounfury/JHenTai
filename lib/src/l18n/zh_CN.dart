@@ -105,10 +105,8 @@ class zh_CN {
       'refreshIgneousFailed': '刷新Igneous失败',
 
       /// request
-      'sadPanda':
-          'Sad Panda(无响应数据). 解决参考Github Wiki: https://github.com/jiangtian616/JHenTai/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98',
-      'sadPandaReferLink':
-          'https://github.com/jiangtian616/JHenTai/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98',
+      'sadPanda': 'Sad Panda(无响应数据). 解决参考Github Wiki: https://github.com/jiangtian616/JHenTai/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98',
+      'sadPandaReferLink': 'https://github.com/jiangtian616/JHenTai/wiki/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98',
 
       /// gallery card
       'filtered': '已过滤',
@@ -181,8 +179,7 @@ class zh_CN {
       'score': '分数',
       'NotOnTheList': '未上榜',
       'getGalleryArchiveFailed': '获取归档数据失败',
-      'parseGalleryArchiveFailed':
-          '解析错误，确保你e站的[Archiver Settings]设置的是[Manual Select, Manual Start (Default)]',
+      'parseGalleryArchiveFailed': '解析错误，确保你e站的[Archiver Settings]设置的是[Manual Select, Manual Start (Default)]',
       'original': '原图',
       'resample': '压缩',
       'beginToDownloadArchive': '开始下载归档',
@@ -239,8 +236,7 @@ class zh_CN {
       'paused': '已暂停',
       'exceedImageLimits': "超出图片配额限制",
       'ehServerError': 'E站服务器发生错误，请稍后重试',
-      'unsupportedImagePageStyle':
-          "JHenTai当前不支持Multi-Page Viewer(MPV)多页查看，请在e-hentai.org更换为默认风格",
+      'unsupportedImagePageStyle': "JHenTai当前不支持Multi-Page Viewer(MPV)多页查看，请在e-hentai.org更换为默认风格",
       'toNext': '下一页',
       'toPrev': '上一页',
       'back': '返回',
@@ -342,9 +338,6 @@ class zh_CN {
       'light': '明亮',
       'followSystem': '跟随系统',
       'themeColor': '主题颜色',
-      'themeColorFixedOnApple': 'macOS / iOS 使用固定强调色',
-      'appleVisualStyle': 'Apple 视觉样式',
-      'appleVisualStyleHint': '启用 Apple 风格的重设计界面',
       'listStyle': '画廊列表样式(全局)',
       'flat': '平坦',
       'flatWithoutTags': '平坦 - 无标签',
@@ -413,8 +406,7 @@ class zh_CN {
       'maxGalleryNum4Animation': '下载页支持列表动画的最大画廊个数',
       'maxGalleryNum4AnimationHint': '列表模式下，拥有超过此配置个数画廊的分组在展开/收起时取消动画效果',
       'enableCoverDecodeOptimization': '封面解码优化',
-      'enableCoverDecodeOptimizationHint':
-          '按接近显示尺寸的大小解码画廊封面，而不是完整原始分辨率。浏览网格时降低解码耗时与内存占用，画质有轻微取舍',
+      'enableCoverDecodeOptimizationHint': '按接近显示尺寸的大小解码画廊封面，而不是完整原始分辨率。浏览网格时降低解码耗时与内存占用，画质有轻微取舍',
 
       /// mouse wheel setting page
       'wheelScrollSpeed': '鼠标滚轮速度',
@@ -472,8 +464,7 @@ class zh_CN {
       'inferenceDeviceNotDetected': '未检测（接入模型后填充）',
       'inferenceDomainOcr': '图片翻译（OCR）',
       'inferenceEnableNnapi': '启用 NNAPI 硬件加速',
-      'inferenceEnableNnapiHint':
-          '在支持的 Android 设备上路由到 NPU/GPU/DSP，不可用时自动回退 CPU。',
+      'inferenceEnableNnapiHint': '在支持的 Android 设备上路由到 NPU/GPU/DSP，不可用时自动回退 CPU。',
       'inferenceEnableCpuFallback': '允许回退 CPU',
       'inferenceEnableCpuFallbackHint': '所选后端不可用时自动改用 CPU。',
       'inferenceEngineOcr': '图片/文字翻译',
@@ -504,16 +495,13 @@ class zh_CN {
       'imageTranslationOcrEngineOnnx': 'ONNX（端侧）',
       'imageTranslationOcrEngineMangaOcr': 'manga-OCR（待实现）',
       'imageTranslationOcrNotConfigured': 'ONNX OCR 引擎尚未配置，请在推理后端接入模型。',
-      'onnxModelDescRapidOcrSmall':
-          '完整 PP-OCRv6 多语言词典，识别精度高，体积与速度适中。适合大多数漫画与图片。',
-      'onnxModelDescRapidOcrTiny':
-          '精简词典与轻量网络：速度最快、占用最小，但字符集较小，复杂字形识别率略低。适合低配置设备或追求速度的场景。',
+      'onnxModelDescRapidOcrSmall': '完整 PP-OCRv6 多语言词典，识别精度高，体积与速度适中。适合大多数漫画与图片。',
+      'onnxModelDescRapidOcrTiny': '精简词典与轻量网络：速度最快、占用最小，但字符集较小，复杂字形识别率略低。适合低配置设备或追求速度的场景。',
       'stopSuperResolution': '停止图片超分辨率',
       'deleteSuperResolvedImage': '删除图片超分辨率后的图片',
       'superResolveOriginalImageHint': '处理原图会耗费更多的时间、空间和性能，确定继续？',
       'verityAppLinks4Android12': '验证应用链接（安卓12+）',
-      'verityAppLinks4Android12Hint':
-          '对于Android 12+，您需要手动添加链接到已验证链接才能在其他应用中唤起JHenTai',
+      'verityAppLinks4Android12Hint': '对于Android 12+，您需要手动添加链接到已验证链接才能在其他应用中唤起JHenTai',
       'noImageMode': '无图模式',
       'exportData': '导出数据',
       'exportDataHint': '导出配置、屏蔽规则与历史记录',
@@ -584,8 +572,7 @@ class zh_CN {
       'left2rightList': '从左至右(连续)',
       'right2leftList': '从右至左(连续)',
       'enablePageTurnByVolumeKeys': '使用音量键翻页',
-      'enablePageTurnByVolumeKeysHint':
-          'iOS 上，若音量为 0 或 100%，进入阅读页时音量将被自动调整以支持翻页，退出后恢复',
+      'enablePageTurnByVolumeKeysHint': 'iOS 上，若音量为 0 或 100%，进入阅读页时音量将被自动调整以支持翻页，退出后恢复',
       'enablePageTurnAnime': '开启翻页动画',
       'enableDoubleTapToScaleUp': '允许双击放大图片',
       'enableTapDragToScaleUp': '允许单击后拖拽放大图片',
@@ -680,10 +667,8 @@ class zh_CN {
       'reUnlock': '重新解锁',
       'reUnlockHint': '注意！重新解锁需要重新购买此归档！',
       'downloadHelpInfo': '如果发现无法下载，在日志中发现了数据库表不存在等问题，卸载当前app重装即可。',
-      'localGalleryHelpInfo':
-          '加载那些不是由JHenTai下载的画廊(当做本地阅览器)。在下载设置-额外的画廊扫描路径中配置，之后刷新即可',
-      'localGalleryHelpInfo4iOSAndMacOS':
-          '加载那些不是由JHenTai下载的画廊(当做本地阅览器)。将你的画廊放在默认下载路径下，之后刷新即可',
+      'localGalleryHelpInfo': '加载那些不是由JHenTai下载的画廊(当做本地阅览器)。在下载设置-额外的画廊扫描路径中配置，之后刷新即可',
+      'localGalleryHelpInfo4iOSAndMacOS': '加载那些不是由JHenTai下载的画廊(当做本地阅览器)。将你的画廊放在默认下载路径下，之后刷新即可',
       'deleteLocalGalleryHint': '删除您的本地文件',
       'priority': '优先级',
       'highest': '最高',
@@ -714,8 +699,7 @@ class zh_CN {
       'peakHoursHint': '高峰段下载原图需要耗费GP，由于你的GP不足，下载已自动停止。',
       'oldGalleryHint': '部分画廊下载原图需要耗费GP，由于你的GP不足，下载已自动停止。',
       'exceedLimitHint': '图片配额已耗尽，由于你的GP不足，下载已自动停止。',
-      'deleteUpdatingDependentHint':
-          '有其他画廊的更新依赖当前画廊，此时删除会影响其他画廊的更新速度，推荐在更新完毕后再执行删除操作。',
+      'deleteUpdatingDependentHint': '有其他画廊的更新依赖当前画廊，此时删除会影响其他画廊的更新速度，推荐在更新完毕后再执行删除操作。',
       'migrateToDownload': '迁移至「下载」',
       'refresh': '刷新',
 
@@ -756,8 +740,7 @@ class zh_CN {
       'pageAtLeast': '页数至少',
       'pageAtMost': '页数最多',
       'pagesBetween': '页数范围',
-      'pageRangeSelectHint':
-          'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
+      'pageRangeSelectHint': 'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
       'to': '到',
       'minimumRating': '最低评分',
       'disableFilterForLanguage': '禁用语言过滤',
@@ -806,8 +789,7 @@ favnote：匹配收藏备注
 
       /// download setting page
       'downloadPath': '下载路径',
-      'changeDownloadPathHint':
-          '长按来改变下载路径(请不要使用SD卡或系统路径)。会自动复制已下载的画廊到新路径，并保留原文件。如果你遇到相关错误，请尝试重置路径',
+      'changeDownloadPathHint': '长按来改变下载路径(请不要使用SD卡或系统路径)。会自动复制已下载的画廊到新路径，并保留原文件。如果你遇到相关错误，请尝试重置路径',
       'resetDownloadPath': '重置下载路径',
       'singleImageSavePath': '单张图片保存路径',
       'extraGalleryScanPath': '额外的画廊扫描路径',
@@ -979,13 +961,8 @@ favnote：匹配收藏备注
       /// image text translation
       'imageTextTranslation': '图片文字翻译',
       'translateImageText': '识别并翻译本页',
-      'addBookmark': '添加书签',
-      'removeBookmark': '删除书签',
       'enableTranslationFloatingBall': '显示翻译悬浮球',
       'enableTranslationFloatingBallHint': '在阅读页显示图片翻译悬浮球',
-      'enableBookmarkFloatingBall': '书签跳转悬浮球',
-      'enableBookmarkFloatingBallHint': '点击后跳转到当前页之后最近的书签',
-      'bookmarkNavigation': '跳转到下一个书签',
       'readerTranslation': '阅读页翻译',
       'recognizingImageText': '正在识别图片文字…',
       'translatingImageText': '正在翻译图片文字…',
@@ -1007,16 +984,14 @@ favnote：匹配收藏备注
       'imageTranslationRequestFailed': '翻译请求失败，请检查接口地址、密钥和网络。',
       'imageTranslationInvalidResponse': '翻译接口返回了无效结果。',
       'imageTranslationFailed': '图片文字翻译失败。',
-      'imageTranslationPaddleNotReady':
-          'PaddleOCR 运行环境未安装，请先在高级设置中点击“安装运行环境并下载模型”。',
+      'imageTranslationPaddleNotReady': 'PaddleOCR 运行环境未安装，请先在高级设置中点击“安装运行环境并下载模型”。',
       'imageTranslationDeletePaddleRuntime': '删除 PaddleOCR 运行环境',
       'imageTranslationDeletePaddleHint': '将删除虚拟环境和已下载的模型。',
       'imageTranslationDeletePaddleConfirm': '确定删除 PaddleOCR 运行环境？',
       'imageTranslationEnableThinking': '是否思考',
       'imageTranslationEnableThinkingHint': '关闭时翻译更快，开启时推理更深。',
       'imageTranslationAutoMergeText': '自动合并文本框内的文字',
-      'imageTranslationAutoMergeTextHint':
-          '开启后，同一气泡或文本框内的多行文字会作为一个整体翻译和嵌字；关闭后逐行处理。',
+      'imageTranslationAutoMergeTextHint': '开启后，同一气泡或文本框内的多行文字会作为一个整体翻译和嵌字；关闭后逐行处理。',
       'imageTranslationBubbleDetection': '检测气泡',
       'imageTranslationBubbleDetectionHint': '使用 Manga109 气泡分割模型确定整块嵌字区域；检测失败时回退到 OCR 区域。',
       'imageTranslationBackgroundColor': '嵌字背板颜色',
@@ -1095,8 +1070,7 @@ favnote：匹配收藏备注
       'imageTranslationLocalFfiRuntime': '端侧 llama.cpp 运行时',
       'imageTranslationLocalFfiRuntimeHint': '设备支持时使用软件内置的 Flutter FFI 运行时。',
       'imageTranslationBrowseRuntime': '选择运行时',
-      'imageTranslationTranslatorHint':
-          '支持 OpenAI-compatible Chat Completions 接口；密钥仅保存在本机。',
+      'imageTranslationTranslatorHint': '支持 OpenAI-compatible Chat Completions 接口；密钥仅保存在本机。',
       'imageTranslationEndpoint': '接口地址',
       'imageTranslationModel': '模型名称',
       'imageTranslationTargetLanguage': '目标语言',
@@ -1108,8 +1082,7 @@ favnote：匹配收藏备注
       'imageTranslationFetchModelsFirst': '请先测试接口并获取模型',
       'imageTranslationApiTestSuccess': '接口可用，已获取 @count 个模型',
       'imageTranslationApiTestFailed': '接口测试失败：@error',
-      'imageTranslationOcrDownloadHint':
-          '下载 tessdata_fast 语言模型到本机 Tesseract 数据目录；可选择中国镜像或官方源。',
+      'imageTranslationOcrDownloadHint': '下载 tessdata_fast 语言模型到本机 Tesseract 数据目录；可选择中国镜像或官方源。',
       'imageTranslationOcrDataDirectory': 'OCR 数据目录',
       'imageTranslationChooseDirectory': '选择数据目录',
       'imageTranslationDetectOcr': '检测本机 OCR',
@@ -1123,15 +1096,12 @@ favnote：匹配收藏备注
       'imageTranslationOcrDownloadSuccess': 'OCR 模型下载完成。',
       'imageTranslationOcrDownloadFailed': 'OCR 模型下载失败，请切换来源后重试。',
       'imageTranslationOcrEngine': 'OCR 引擎',
-      'imageTranslationPaddleHint':
-          '应用会在自己的数据目录创建独立 Python 环境。PaddleOCR-VL-1.6 会从 Hugging Face 下载模型，过程可能耗时较长。',
+      'imageTranslationPaddleHint': '应用会在自己的数据目录创建独立 Python 环境。PaddleOCR-VL-1.6 会从 Hugging Face 下载模型，过程可能耗时较长。',
       'imageTranslationPaddleLanguage': 'PaddleOCR 语言',
       'imageTranslationOcrEngineAppleLiveText': 'Apple Live Text',
       'imageTranslationAppleLiveTextLanguage': 'Apple Live Text 识别语言',
-      'imageTranslationAppleLiveTextHint':
-          '使用 Apple Vision 进行端侧 OCR，支持 iOS 和 macOS，无需下载模型。',
-      'imageTranslationAppleLiveTextUnavailable':
-          'Apple Live Text 仅在 iOS 和 macOS 上可用。',
+      'imageTranslationAppleLiveTextHint': '使用 Apple Vision 进行端侧 OCR，支持 iOS 和 macOS，无需下载模型。',
+      'imageTranslationAppleLiveTextUnavailable': 'Apple Live Text 仅在 iOS 和 macOS 上可用。',
       'imageTranslationMethodSection': '翻译方式',
       'onnxModelDescComicTextDetector': '检测漫画文字区域并生成精确修复遮罩，模型按 GPL-3.0 条款单独下载。',
       'imageTranslationImageProcessingSection': '图片处理',
@@ -1142,30 +1112,24 @@ favnote：匹配收藏备注
       'imageTranslationCtdModel': '漫画文字检测模型（CTD）',
       'imageTranslationMiganModel': '背景修复模型（LaMa Large）',
       'imageTranslationCtdLicenseNotice': 'CTD 模型按 GPL-3.0 条款运行时下载，不随应用分发',
-      'imageTranslationCtdFallbackHint':
-          '需要同时下载 CTD 与 LaMa Large；任何步骤失败都会安全退回文字覆盖层。',
+      'imageTranslationCtdFallbackHint': '需要同时下载 CTD 与 LaMa Large；任何步骤失败都会安全退回文字覆盖层。',
       'imageTranslationInpaintFallback': '背景修复不可用（@reason），已回退到文字方块覆盖，并未使用 CTD/LaMa Large。',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': '自定义',
       'imageTranslationAppleLiveTextUseApi': '使用第三方 API 翻译',
-      'imageTranslationAppleLiveTextUseApiHint':
-          '复用自定义模式的 OpenAI 兼容 / Anthropic API，而不是使用 Apple 端侧翻译。',
-      'imageTranslationAppleLiveTextOnDeviceHint':
-          '翻译由 Apple 在端侧完成，与 OCR 引擎独立选择。需要 iOS 26 / macOS 26 及以上系统。',
+      'imageTranslationAppleLiveTextUseApiHint': '复用自定义模式的 OpenAI 兼容 / Anthropic API，而不是使用 Apple 端侧翻译。',
+      'imageTranslationAppleLiveTextOnDeviceHint': '翻译由 Apple 在端侧完成，与 OCR 引擎独立选择。需要 iOS 26 / macOS 26 及以上系统。',
       'autoTranslateGalleryText': '自动翻译图库标题与评论',
       'autoTranslateGalleryTextHint': '开启后，你看到的图库标题和评论将自动翻译（需要 Apple 端侧翻译）。',
-      'imageTranslationTranslationUnavailable':
-          'Apple 端侧翻译需要 iOS 26 / macOS 26 及以上系统。当前系统请改选第三方 API 翻译。',
+      'imageTranslationTranslationUnavailable': 'Apple 端侧翻译需要 iOS 26 / macOS 26 及以上系统。当前系统请改选第三方 API 翻译。',
       'imageTranslationTranslationFailed': '文字翻译失败，请重试。',
       'imageTranslationShow': '显示翻译',
       'imageTranslationHide': '隐藏翻译',
       'imageTranslationRetranslate': '重新翻译',
       'imageTranslationStart': '开始翻译',
       'imageTranslationSettings': '翻译设置',
-      'imageTranslationTranslationNotInstalled':
-          'Apple 端侧翻译语言包尚未安装。请在系统设置 → 通用 → 语言与地区 → 翻译语言 中下载，或开启「使用第三方 API 翻译」。',
-      'imageTranslationTranslationNotInstalledIos':
-          'Apple 端侧翻译语言包尚未安装。请在 设置 → 翻译 → 已下载语言 中下载，或开启「使用第三方 API 翻译」。',
+      'imageTranslationTranslationNotInstalled': 'Apple 端侧翻译语言包尚未安装。请在系统设置 → 通用 → 语言与地区 → 翻译语言 中下载，或开启「使用第三方 API 翻译」。',
+      'imageTranslationTranslationNotInstalledIos': 'Apple 端侧翻译语言包尚未安装。请在 设置 → 翻译 → 已下载语言 中下载，或开启「使用第三方 API 翻译」。',
       'imageTranslationPaddleRuntimePath': 'Paddle 运行环境',
       'imageTranslationPreparePaddle': '安装运行环境并下载模型',
       'imageTranslationPaddleReady': 'PaddleOCR 运行环境已准备完成。',

@@ -1,14 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/extension/get_logic_extension.dart';
 import 'package:jhentai/src/pages/setting/account/login/login_page_logic.dart';
 import 'package:jhentai/src/pages/setting/account/login/login_page_state.dart';
-import 'package:jhentai/src/utils/route_util.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:jhentai/src/widget/icon_text_button.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 
@@ -20,21 +15,12 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<LoginPageLogic>(
+    return GetBuilder<LoginPageLogic>( 
       builder: (_) => Scaffold(
         /// set false to deal with keyboard
         resizeToAvoidBottomInset: false,
         backgroundColor: UIConfig.loginPageBackgroundColor(context),
-        appBar: AppBar(
-          backgroundColor: UIConfig.loginPageBackgroundColor(context),
-          leading: ThemeConfig.isApple
-              ? EHAppleIconButton(
-                  icon: const Icon(CupertinoIcons.back),
-                  onPressed: backRoute,
-                  color: UIConfig.loginPageForegroundColor(context),
-                )
-              : BackButton(color: UIConfig.loginPageForegroundColor(context)),
-        ),
+        appBar: AppBar(backgroundColor: UIConfig.loginPageBackgroundColor(context), leading: BackButton(color: UIConfig.loginPageForegroundColor(context))),
         body: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -154,7 +140,7 @@ class _PasswordTabBody extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 44,
-      child: EHAppleElevatedButton(
+      child: ElevatedButton(
         onPressed: logic.handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: UIConfig.loginPageFormIconColor(context),
@@ -336,7 +322,7 @@ class _CookieTabBody extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 44,
-      child: EHAppleElevatedButton(
+      child: ElevatedButton(
         onPressed: logic.handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: UIConfig.loginPageFormIconColor(context),
@@ -393,7 +379,7 @@ class _WebTabBody extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 height: 44,
-                child: EHAppleElevatedButton(
+                child: ElevatedButton(
                   onPressed: logic.handleWebLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: UIConfig.loginPageFormIconColor(context),

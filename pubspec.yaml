@@ -138,10 +138,6 @@ dependencies:
   volume_button_override:
     git:
       url: https://github.com/jiangtian616/volume_button_override
-  # Apple Liquid Glass UI (macOS/iOS style)
-  # macOS native window vibrancy (translucent sidebar / title bar)
-  macos_window_utils: ^1.9.1
-  liquid_glass_widgets: ^0.29.3
 
 dependency_overrides:
   # Local safety patch: keeps Dart/session options and native ORT version

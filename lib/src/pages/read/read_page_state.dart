@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:jhentai/src/mixin/scroll_status_listener_state.dart';
 import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/model/read_page_info.dart';
-import 'package:jhentai/src/model/reader_bookmark.dart';
 import 'package:jhentai/src/setting/site_setting.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -76,7 +75,7 @@ class ReadPageState with ScrollStatusListerState {
   Battery battery = Battery();
   int batteryLevel = 100;
   bool useSuperResolution = false;
-  List<ReaderBookmark> readerBookmarks = <ReaderBookmark>[];
+
   bool displayFirstPageAlone = readSetting.displayFirstPageAlone.value;
   FocusNode focusNode = FocusNode();
 

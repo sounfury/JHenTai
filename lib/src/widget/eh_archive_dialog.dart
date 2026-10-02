@@ -1,3 +1,4 @@
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,7 +7,6 @@ import 'package:jhentai/src/extension/dio_exception_extension.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/model/gallery_archive.dart';
 import 'package:jhentai/src/setting/archive_bot_setting.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
 import 'package:jhentai/src/widget/eh_asset.dart';
 import 'package:jhentai/src/widget/eh_group_name_selector.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
@@ -15,8 +15,9 @@ import '../exception/eh_site_exception.dart';
 import '../network/eh_request.dart';
 import '../utils/eh_spider_parser.dart';
 import '../service/log.dart';
-import '../utils/route_util.dart';
 import '../utils/snack_util.dart';
+
+import '../utils/route_util.dart';
 
 class EHArchiveDialog extends StatefulWidget {
   final String title;
@@ -24,13 +25,8 @@ class EHArchiveDialog extends StatefulWidget {
   final List<String> candidates;
   final String archivePageUrl;
 
-  const EHArchiveDialog({
-    Key? key,
-    required this.title,
-    this.currentGroup,
-    required this.candidates,
-    required this.archivePageUrl,
-  }) : super(key: key);
+  const EHArchiveDialog({Key? key, required this.title, this.currentGroup, required this.candidates, required this.archivePageUrl})
+    : super(key: key);
 
   @override
   _EHArchiveDialogState createState() => _EHArchiveDialogState();
@@ -50,6 +46,7 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
     candidates = List.of(widget.candidates);
     candidates.remove(group);
     candidates.insert(0, group);
+    
     _getArchiveInfo();
   }
 
@@ -59,11 +56,7 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
       title: Text('chooseArchive'.tr),
       content: SizedBox(
         height: UIConfig.archiveDialogBodyHeight,
-        child: LoadingStateIndicator(
-          loadingState: loadingState,
-          errorTapCallback: _getArchiveInfo,
-          successWidgetBuilder: _buildBody,
-        ),
+        child: LoadingStateIndicator(loadingState: loadingState, errorTapCallback: _getArchiveInfo, successWidgetBuilder: _buildBody),
       ),
     );
   }
@@ -73,7 +66,8 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
       mainAxisSize: MainAxisSize.min,
       children: [
         EHGroupNameSelector(candidates: candidates, currentGroup: group, listener: (g) => group = g),
-        if (archive.creditCount != null && archive.gpCount != null) EHAsset(gpCount: archive.gpCount!, creditCount: archive.creditCount!).marginOnly(top: 12),
+        if (archive.creditCount != null && archive.gpCount != null)
+          EHAsset(gpCount: archive.gpCount!, creditCount: archive.creditCount!).marginOnly(top: 12),
         Expanded(child: _buildButtons().marginOnly(top: 12)),
       ],
     );
@@ -87,30 +81,26 @@ class _EHArchiveDialogState extends State<EHArchiveDialog> {
           cost: archive.resampleCost,
           size: archive.resampleSize,
           text: 'resample'.tr,
-          callback: _canAffordDownload(isOriginal: false)
-              ? () => backRoute(
-                    result: (useBot: false, isOriginal: false, size: _computeSizeInBytes(isOriginal: false), group: group),
-                  )
-              : null,
+          callback:
+              _canAffordDownload(isOriginal: false)
+                  ? () => backRoute(result: (useBot: false, isOriginal: false, size: _computeSizeInBytes(isOriginal: false), group: group))
+                  : null,
         ),
         _ArchiveButtonSet(
           cost: archive.originalCost,
           size: archive.originalSize,
           text: 'original'.tr,
-          callback: _canAffordDownload(isOriginal: true)
-              ? () => backRoute(
-                    result: (useBot: false, isOriginal: true, size: _computeSizeInBytes(isOriginal: true), group: group),
-                  )
-              : null,
+          callback:
+              _canAffordDownload(isOriginal: true)
+                  ? () => backRoute(result: (useBot: false, isOriginal: true, size: _computeSizeInBytes(isOriginal: true), group: group))
+                  : null,
         ),
         if (archiveBotSetting.isReady)
           _ArchiveButtonSet(
             cost: 'Free!',
             size: archive.originalSize,
             icon: const Icon(Icons.smart_toy_outlined),
-            callback: () => backRoute(
-              result: (useBot: true, isOriginal: true, size: _computeSizeInBytes(isOriginal: true), group: group),
-            ),
+            callback: () => backRoute(result: (useBot: true, isOriginal: true, size: _computeSizeInBytes(isOriginal: true), group: group)),
           ),
       ],
     );
@@ -204,14 +194,7 @@ class _ArchiveButtonSet extends StatelessWidget {
   final Icon? icon;
   final VoidCallback? callback;
 
-  const _ArchiveButtonSet({
-    Key? key,
-    this.cost,
-    this.size,
-    this.text,
-    this.icon,
-    this.callback,
-  }) : super(key: key);
+  const _ArchiveButtonSet({Key? key, this.cost, this.size, this.text, this.icon, this.callback}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -219,11 +202,8 @@ class _ArchiveButtonSet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (cost != null)
-          Text(
-            cost!,
-            style: TextStyle(color: UIConfig.archiveDialogCostTextColor(context), fontSize: UIConfig.archiveDialogCostTextSize),
-          ),
-        EHAppleElevatedButton(
+          Text(cost!, style: TextStyle(color: UIConfig.archiveDialogCostTextColor(context), fontSize: UIConfig.archiveDialogCostTextSize)),
+        ElevatedButton(
           onPressed: callback,
           child: Row(
             children: [
@@ -233,10 +213,7 @@ class _ArchiveButtonSet extends StatelessWidget {
           ),
         ),
         if (size != null)
-          Text(
-            size!,
-            style: TextStyle(color: UIConfig.archiveDialogCostTextColor(context), fontSize: UIConfig.archiveDialogCostTextSize),
-          ),
+          Text(size!, style: TextStyle(color: UIConfig.archiveDialogCostTextColor(context), fontSize: UIConfig.archiveDialogCostTextSize)),
       ],
     );
   }

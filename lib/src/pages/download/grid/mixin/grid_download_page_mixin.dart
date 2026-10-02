@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_draggable_gridview/flutter_draggable_gridview.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/model/gallery_image.dart';
 import 'package:jhentai/src/utils/route_util.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:jhentai/src/widget/eh_image.dart';
-import 'package:jhentai/src/widget/eh_translated_text.dart';
 import 'package:jhentai/src/widget/eh_wheel_speed_controller.dart';
 import 'package:jhentai/src/service/super_resolution_service.dart';
 
@@ -21,6 +18,8 @@ import '../../download_base_page.dart';
 import 'grid_download_page_logic_mixin.dart';
 import 'grid_download_page_service_mixin.dart';
 import 'grid_download_page_state_mixin.dart';
+
+import 'package:jhentai/src/widget/eh_translated_text.dart';
 
 mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
   DownloadPageGalleryType get galleryType;
@@ -41,11 +40,7 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
       appBar: buildAppBar(context),
       body: buildBody(context),
       floatingActionButton: buildFloatingActionButton(),
-      floatingActionButtonLocation: GlassAwareFloatingActionButtonLocation(UIConfig.liquidGlassNavBarRaise(context)),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: UIConfig.liquidGlassNavContentInset(context)),
-        child: buildGridBottomAppBar(context),
-      ),
+      bottomNavigationBar: Padding(padding: EdgeInsets.only(bottom: 0), child: buildGridBottomAppBar(context)),
     );
   }
 
@@ -53,197 +48,177 @@ mixin GridBasePage on StatelessWidget implements Scroll2TopPageMixin {
     return AppBar(
       centerTitle: true,
       leading: styleSetting.isInV2Layout
-          ? (ThemeConfig.isApple
-              ? IconButton(
-                  onPressed: () {
-                    if (isRouteAtTop(Routes.download)) {
-                      backRoute(currentRoute: Routes.download);
-                    } else {
-                      TapMenuButtonNotification().dispatch(context);
-                    }
-                  },
-                  icon: isRouteAtTop(Routes.download)
-                      ? const Icon(Icons.arrow_back)
-                      : Icon(Icons.menu, size: 22),
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  hoverColor: Colors.transparent,
-                )
-              : EHAppleIconButton(
-                  icon: isRouteAtTop(Routes.download) ? const Icon(Icons.arrow_back) : Icon(Icons.menu, size: 20),
-                  onPressed: () {
-                    if (isRouteAtTop(Routes.download)) {
-                      backRoute(currentRoute: Routes.download);
-                    } else {
-                      TapMenuButtonNotification().dispatch(context);
-                    }
-                  },
-                ))
-          : null,
-      titleSpacing: 0,
-      title: DownloadPageSegmentControl(galleryType: galleryType),
-      actions: buildAppBarActions(context),
-    );
-  }
-
-  Widget buildBody(BuildContext context) {
-    return GetBuilder<GridBasePageServiceMixin>(
-      global: false,
-      init: logic.galleryService,
-      id: logic.galleryService.galleryCountChangedId,
-      builder: (_) => GetBuilder<GridBasePageLogic>(
-        global: false,
-        init: logic,
-        id: logic.bodyId,
-        builder: (_) => NotificationListener<UserScrollNotification>(
-          onNotification: logic.onUserScroll,
-          child: EHWheelSpeedController(
-            controller: state.scrollController,
-            child: Obx(
-              () => DraggableGridViewBuilder(
-                key: PageStorageKey(state.currentGroup),
-                controller: state.scrollController,
-                padding: EdgeInsets.only(left: 12, right: 16, bottom: 24 + UIConfig.liquidGlassNavContentInset(context)),
-                children: getChildren(context),
-                dragFeedback: (List<DraggableGridItem> list, int index) {
-                  return SizedBox(
-                    width: 150,
-                    height: 200,
-                    child: Center(child: DefaultTextStyle(style: DefaultTextStyle.of(context).style, child: list[index].child)),
-                  );
-                },
-                dragPlaceHolder: (_, __) {
-                  return PlaceHolderWidget(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: UIConfig.downloadPageGridViewCardDragBorderColor(context), width: 1.2),
-                      ),
-                    ),
-                  );
-                },
-                dragCompletion: (_, int beforeIndex, int afterIndex) async {
-                  if (state.isAtRoot) {
-                    await logic.saveGroupOrderAfterDrag(beforeIndex, afterIndex);
+              ? (IconButton(
+                icon: isRouteAtTop(Routes.download) ? const Icon(Icons.arrow_back) : Icon(Icons.menu, size: 20),
+                onPressed: () {
+                  if (isRouteAtTop(Routes.download)) {
+                    backRoute(currentRoute: Routes.download);
                   } else {
-                    await logic.saveGalleryOrderAfterDrag(beforeIndex - 1, afterIndex - 1);
+                    TapMenuButtonNotification().dispatch(context);
                   }
                 },
-                gridDelegate: state.isAtRoot
-                    ? styleSetting.crossAxisCountInGridDownloadPageForGroup.value == null
-                        ? const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: UIConfig.downloadPageGridViewCardWidth,
-                            mainAxisSpacing: 24,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
-                          )
-                        : SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: styleSetting.crossAxisCountInGridDownloadPageForGroup.value!,
-                            mainAxisSpacing: 24,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
-                          )
-                    : styleSetting.crossAxisCountInGridDownloadPageForGallery.value == null
-                        ? const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: UIConfig.downloadPageGridViewCardWidth,
-                            mainAxisSpacing: 24,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
-                          )
-                        : SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: styleSetting.crossAxisCountInGridDownloadPageForGallery.value!,
-                            mainAxisSpacing: 24,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
-                          ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> buildAppBarActions(BuildContext context) {
-    return [];
-  }
-
-  Widget? buildGridBottomAppBar(BuildContext context) {
-    return null;
-  }
-
-  List<DraggableGridItem> getChildren(BuildContext context) {
-    if (state.isAtRoot) {
-      return state.allRootGroups
-          .map((groupName) => DraggableGridItem(
-                child: groupBuilder(context, groupName, state.inEditMode),
-                isDraggable: state.inEditMode,
               ))
-          .toList();
-    }
+              : null,
+          titleSpacing: 0,
+          title: DownloadPageSegmentControl(galleryType: galleryType),
+          actions: buildAppBarActions(context),
+        );
+      }
 
-    DraggableGridItem returnWidget = DraggableGridItem(
-      child: ReturnWidget(
-        onTap: () {
-          state.inEditMode = false;
-          logic.backGroup();
-        },
-      ),
-    );
+      Widget buildBody(BuildContext context) {
+        return GetBuilder<GridBasePageServiceMixin>(
+          global: false,
+          init: logic.galleryService,
+          id: logic.galleryService.galleryCountChangedId,
+          builder: (_) => GetBuilder<GridBasePageLogic>(
+            global: false,
+            init: logic,
+            id: logic.bodyId,
+            builder: (_) => NotificationListener<UserScrollNotification>(
+              onNotification: logic.onUserScroll,
+              child: EHWheelSpeedController(
+                controller: state.scrollController,
+                child: Obx(
+                  () => DraggableGridViewBuilder(
+                    key: PageStorageKey(state.currentGroup),
+                    controller: state.scrollController,
+                        padding: EdgeInsets.only(left: 12, right: 16, bottom: 24 + 0),
+                        children: getChildren(context),
+                        dragFeedback: (List<DraggableGridItem> list, int index) {
+                          return SizedBox(
+                            width: 150,
+                            height: 200,
+                            child: Center(child: DefaultTextStyle(style: DefaultTextStyle.of(context).style, child: list[index].child)),
+                          );
+                        },
+                        dragPlaceHolder: (_, __) {
+                          return PlaceHolderWidget(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: UIConfig.downloadPageGridViewCardDragBorderColor(context), width: 1.2),
+                              ),
+                            ),
+                          );
+                        },
+                        dragCompletion: (_, int beforeIndex, int afterIndex) async {
+                          if (state.isAtRoot) {
+                            await logic.saveGroupOrderAfterDrag(beforeIndex, afterIndex);
+                          } else {
+                            await logic.saveGalleryOrderAfterDrag(beforeIndex - 1, afterIndex - 1);
+                          }
+                        },
+                        gridDelegate: state.isAtRoot
+                            ? styleSetting.crossAxisCountInGridDownloadPageForGroup.value == null
+                                ? const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: UIConfig.downloadPageGridViewCardWidth,
+                                    mainAxisSpacing: 24,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                                  )
+                                : SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: styleSetting.crossAxisCountInGridDownloadPageForGroup.value!,
+                                    mainAxisSpacing: 24,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                                  )
+                            : styleSetting.crossAxisCountInGridDownloadPageForGallery.value == null
+                                ? const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: UIConfig.downloadPageGridViewCardWidth,
+                                    mainAxisSpacing: 24,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                                  )
+                                : SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: styleSetting.crossAxisCountInGridDownloadPageForGallery.value!,
+                                    mainAxisSpacing: 24,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: UIConfig.downloadPageGridViewCardAspectRatio,
+                                  ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
 
-    List<DraggableGridItem> galleryWidgets = state.currentGalleryObjects
-        .map(
-          (gallery) => DraggableGridItem(
-            child: GetBuilder<GridBasePageLogic>(
-              global: false,
-              init: logic,
-              id: '${logic.galleryId}::${gallery.gid}',
-              builder: (_) => galleryBuilder(context, gallery, state.inEditMode),
-            ),
-            isDraggable: state.inEditMode,
-          ),
-        )
-        .toList();
+          List<Widget> buildAppBarActions(BuildContext context) {
+            return [];
+          }
 
-    return [returnWidget, ...galleryWidgets];
-  }
+          Widget? buildGridBottomAppBar(BuildContext context) {
+            return null;
+          }
 
-  GridGroup groupBuilder(BuildContext context, String groupName, bool inEditMode);
+          List<DraggableGridItem> getChildren(BuildContext context) {
+            if (state.isAtRoot) {
+              return state.allRootGroups
+                  .map((groupName) => DraggableGridItem(
+                        child: groupBuilder(context, groupName, state.inEditMode),
+                        isDraggable: state.inEditMode,
+                      ))
+                  .toList();
+            }
 
-  GridGallery galleryBuilder(BuildContext context, covariant Object gallery, bool inEditMode);
+            DraggableGridItem returnWidget = DraggableGridItem(
+              child: ReturnWidget(
+                onTap: () {
+                  state.inEditMode = false;
+                  logic.backGroup();
+                },
+              ),
+            );
 
-  Widget buildGroupInnerImage(GalleryImage image) {
-    return EHImage.autoLayout(
-      galleryImage: image,
-      fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(8),
-      maxBytes: 2 * 1024 * 1024,
-    );
-  }
+            List<DraggableGridItem> galleryWidgets = state.currentGalleryObjects
+                .map(
+                  (gallery) => DraggableGridItem(
+                    child: GetBuilder<GridBasePageLogic>(
+                      global: false,
+                      init: logic,
+                      id: '${logic.galleryId}::${gallery.gid}',
+                      builder: (_) => galleryBuilder(context, gallery, state.inEditMode),
+                    ),
+                    isDraggable: state.inEditMode,
+                  ),
+                )
+                .toList();
 
-  Widget buildGalleryImage(GalleryImage image) {
-    return EHImage.autoLayout(
-      galleryImage: image,
-      fit: BoxFit.cover,
-      forceFadeIn: true,
-      borderRadius: BorderRadius.circular(12),
-      maxBytes: 2 * 1024 * 1024,
-    );
-  }
-}
+            return [returnWidget, ...galleryWidgets];
+          }
 
-class ReturnWidget extends StatelessWidget {
-  final VoidCallback onTap;
+          GridGroup groupBuilder(BuildContext context, String groupName, bool inEditMode);
 
-  const ReturnWidget({Key? key, required this.onTap}) : super(key: key);
+          GridGallery galleryBuilder(BuildContext context, covariant Object gallery, bool inEditMode);
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: const Icon(Icons.keyboard_return),
-    );
+          Widget buildGroupInnerImage(GalleryImage image) {
+            return EHImage.autoLayout(
+              galleryImage: image,
+              fit: BoxFit.cover,
+              borderRadius: BorderRadius.circular(8),
+              maxBytes: 2 * 1024 * 1024,
+            );
+          }
+
+          Widget buildGalleryImage(GalleryImage image) {
+            return EHImage.autoLayout(
+              galleryImage: image,
+              fit: BoxFit.cover,
+              forceFadeIn: true,
+              borderRadius: BorderRadius.circular(12),
+              maxBytes: 2 * 1024 * 1024,
+            );
+          }
+        }
+
+        class ReturnWidget extends StatelessWidget {
+          final VoidCallback onTap;
+
+          const ReturnWidget({Key? key, required this.onTap}) : super(key: key);
+
+          @override
+          Widget build(BuildContext context) {
+    return GestureDetector(onTap: onTap, behavior: HitTestBehavior.opaque, child: const Icon(Icons.keyboard_return));
   }
 }
 
@@ -286,11 +261,7 @@ class GridGallery extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Stack(
-              children: [widget, buildChips(context)],
-            ),
-          ),
+          Expanded(child: Stack(children: [widget, buildChips(context)])),
           GestureDetector(
             onTap: onTapTitle,
             child: Center(child: EHTranslatedText(title, breakWord: true, maxLines: 1, overflow: TextOverflow.ellipsis)),

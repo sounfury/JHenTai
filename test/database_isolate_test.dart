@@ -46,7 +46,15 @@ void main() {
       expect(pragma.single['journal_mode'].toString().toLowerCase(), 'wal');
     } finally {
       await executor.close();
-      await dir.delete(recursive: true);
+      for (int attempt = 0; ; attempt++) {
+        try {
+          await dir.delete(recursive: true);
+          break;
+        } on FileSystemException catch (error) {
+          if (!Platform.isWindows || error.osError?.errorCode != 32 || attempt >= 9) rethrow;
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        }
+      }
     }
   });
 }

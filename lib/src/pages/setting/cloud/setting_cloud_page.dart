@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/network/jh_request.dart';
 import 'package:jhentai/src/utils/jh_spider_parser.dart';
 import 'package:jhentai/src/service/log.dart';
-import 'package:jhentai/src/utils/app_icons.dart';
-import 'package:jhentai/src/widget/eh_apple_settings_list_view.dart';
 
 import '../../../routes/routes.dart';
 import '../../../utils/route_util.dart';
@@ -24,11 +23,8 @@ class _SettingCloudPageState extends State<SettingCloudPage> {
   void initState() {
     _loadingState = LoadingState.loading;
 
-    jhRequest
-        .requestAlive(parser: JHResponseParser.api2Success)
-        .then((bool alive) {
-      setState(() =>
-          _loadingState = alive ? LoadingState.success : LoadingState.error);
+    jhRequest.requestAlive(parser: JHResponseParser.api2Success).then((bool alive) {
+      setState(() => _loadingState = alive ? LoadingState.success : LoadingState.error);
     }).catchError((e) {
       log.error('requestAlive error: $e');
       setState(() => _loadingState = LoadingState.error);
@@ -41,16 +37,13 @@ class _SettingCloudPageState extends State<SettingCloudPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: Text('cloud'.tr)),
-      body: EHAppleSettingsListView(
-        groups: [
-          EHAppleSettingsGroup(
-            children: [
-              _buildServerCondition(),
-              _buildConfigSync(),
-            ],
-          ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 16),
+        children: [
+          _buildServerCondition(),
+          _buildConfigSync(),
         ],
-      ),
+      ).withListTileTheme(context),
     );
   }
 
@@ -62,10 +55,8 @@ class _SettingCloudPageState extends State<SettingCloudPage> {
         children: [
           LoadingStateIndicator(
             loadingState: _loadingState,
-            successWidgetBuilder: () =>
-                const Icon(Icons.check, color: Colors.green),
-            errorWidgetBuilder: () =>
-                const Icon(Icons.close, color: Colors.red),
+            successWidgetBuilder: () => const Icon(Icons.check, color: Colors.green),
+            errorWidgetBuilder: () => const Icon(Icons.close, color: Colors.red),
           ),
         ],
       ),
@@ -76,7 +67,7 @@ class _SettingCloudPageState extends State<SettingCloudPage> {
     return ListTile(
       title: Text('configSync'.tr),
       subtitle: Text('configSyncHint'.tr),
-      trailing: Icon(AppIcons.chevronRight),
+      trailing: const Icon(Icons.keyboard_arrow_right),
       onTap: () => toRoute(Routes.configSync),
     );
   }

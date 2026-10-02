@@ -1,22 +1,20 @@
 import 'package:flutter/rendering.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
-import 'package:jhentai/src/config/ui_config.dart';
+import 'package:get/get.dart';import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/model/tag_set.dart';
 import 'package:jhentai/src/pages/setting/eh/tagsets/tag_sets_page_logic.dart';
 import 'package:jhentai/src/pages/setting/eh/tagsets/tag_sets_page_state.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
-import '../../../../utils/route_util.dart';
-import '../../../../utils/text_input_formatter.dart';
 import '../../../../widget/eh_wheel_speed_controller.dart';
 import '../../../../widget/loading_state_indicator.dart';
+
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:jhentai/src/config/ui_config.dart';
+import '../../../../utils/route_util.dart';
+import '../../../../utils/text_input_formatter.dart';
 
 class TagSetsPage extends StatelessWidget {
   final TagSetsLogic logic = Get.put<TagSetsLogic>(TagSetsLogic());
@@ -26,10 +24,7 @@ class TagSetsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(context),
-      body: _buildBody(context),
-    );
+    return Scaffold(appBar: _buildAppBar(context), body: _buildBody(context));
   }
 
   AppBar _buildAppBar(BuildContext context) {
@@ -37,17 +32,9 @@ class TagSetsPage extends StatelessWidget {
       centerTitle: true,
       title: GetBuilder<TagSetsLogic>(
         id: TagSetsLogic.titleId,
-        builder: (_) => Text(state.tagSets.isEmpty
-            ? 'myTags'.tr
-            : state.tagSets
-                .firstWhere((t) => t.number == state.currentTagSetNo)
-                .name),
+        builder: (_) => Text(state.tagSets.isEmpty ? 'myTags'.tr : state.tagSets.firstWhere((t) => t.number == state.currentTagSetNo).name),
       ),
-      actions: [
-        _buildTagSetColor(context),
-        const SizedBox(width: 8),
-        _buildTagSetSwitcher(),
-      ],
+      actions: [_buildTagSetColor(context), const SizedBox(width: 8), _buildTagSetSwitcher()],
     );
   }
 
@@ -59,127 +46,94 @@ class TagSetsPage extends StatelessWidget {
         idleWidgetBuilder: () => const SizedBox(),
         loadingWidgetBuilder: () => const SizedBox(),
         errorWidgetSameWithIdle: true,
-        successWidgetBuilder: () => EHAppleIconButton(
-          icon: Icon(
-            Icons.circle,
-            color: state.currentTagSetBackgroundColor ??
-                UIConfig.ehWatchedTagDefaultBackGroundColor,
-          ),
-          onPressed: () async {
-            dynamic result = await showDialog(
-              context: context,
-              builder: (context) => _ColorSettingDialog(
-                  initialColor: state.currentTagSetBackgroundColor ??
-                      UIConfig.ehWatchedTagDefaultBackGroundColor),
+        successWidgetBuilder: () => IconButton(
+                  icon: Icon(Icons.circle, color: state.currentTagSetBackgroundColor ?? UIConfig.ehWatchedTagDefaultBackGroundColor),
+                  onPressed: () async {
+                    dynamic result = await showDialog(
+                      context: context,
+                      builder:
+                          (context) => _ColorSettingDialog(
+                            initialColor: state.currentTagSetBackgroundColor ?? UIConfig.ehWatchedTagDefaultBackGroundColor,
+                          ),
+                    );
+
+                    if (result == null) {
+                      return;
+                    }
+
+                    if (result == 'default') {
+                      logic.handleUpdateTagSetColor(null);
+                    }
+
+                    if (result is Color) {
+                      logic.handleUpdateTagSetColor(result);
+                    }
+                  },
+                ),
+              ),
             );
+          }
 
-            if (result == null) {
-              return;
-            }
+          GetBuilder<TagSetsLogic> _buildTagSetSwitcher() {
+            return GetBuilder<TagSetsLogic>(
+              id: TagSetsLogic.titleId,
+              builder: (_) => PopupMenuButton<int>(
+                initialValue: state.currentTagSetNo,
+                padding: EdgeInsets.zero,
+                onSelected: (value) {
+                  if (state.currentTagSetNo == value) {
+                    return;
+                  }
+                  state.currentTagSetNo = value;
+              logic.getCurrentTagSet();
+            },
+            itemBuilder: (_) => state.tagSets.map((t) => PopupMenuItem<int>(value: t.number, child: Center(child: Text(t.name)))).toList(),
+          ),
+        );
+      }
 
-            if (result == 'default') {
-              logic.handleUpdateTagSetColor(null);
-            }
-
-            if (result is Color) {
-              logic.handleUpdateTagSetColor(result);
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  GetBuilder<TagSetsLogic> _buildTagSetSwitcher() {
-    return GetBuilder<TagSetsLogic>(
-      id: TagSetsLogic.titleId,
-      builder: (_) => ThemeConfig.isApple
-          ? EHGlassMenu(
-              triggerBuilder: (context, toggle) => EHAppleIconButton(
-                  icon: const Icon(Icons.more_vert), onPressed: toggle),
-              items: state.tagSets
-                  .map(
-                    (t) => GlassMenuItem(
-                      title: t.name,
-                      onTap: () {
-                        if (state.currentTagSetNo == t.number) {
-                          return;
-                        }
-                        state.currentTagSetNo = t.number;
-                        logic.getCurrentTagSet();
-                      },
-                    ),
-                  )
-                  .toList(),
-            )
-          : PopupMenuButton<int>(
-              initialValue: state.currentTagSetNo,
-              padding: EdgeInsets.zero,
-              onSelected: (value) {
-                if (state.currentTagSetNo == value) {
-                  return;
-                }
-                state.currentTagSetNo = value;
-                logic.getCurrentTagSet();
-              },
-              itemBuilder: (_) => state.tagSets
-                  .map(
-                    (t) => PopupMenuItem<int>(
-                        value: t.number, child: Center(child: Text(t.name))),
-                  )
-                  .toList(),
-            ),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
-    return GetBuilder<TagSetsLogic>(
-      id: TagSetsLogic.bodyId,
-      builder: (_) {
-        return LoadingStateIndicator(
-          loadingState: state.loadingState,
-          errorTapCallback: logic.getCurrentTagSet,
-          successWidgetBuilder: () => EHWheelSpeedController(
-            controller: state.scrollController,
-            child: SafeArea(
-              child: ListView.builder(
-                itemExtent: 64,
-                scrollCacheExtent: ScrollCacheExtent.pixels(3000),
-                itemCount: state.tags.length,
+      Widget _buildBody(BuildContext context) {
+        return GetBuilder<TagSetsLogic>(
+          id: TagSetsLogic.bodyId,
+          builder: (_) {
+            return LoadingStateIndicator(
+              loadingState: state.loadingState,
+              errorTapCallback: logic.getCurrentTagSet,
+              successWidgetBuilder: () => EHWheelSpeedController(
                 controller: state.scrollController,
-                itemBuilder: (_, int index) => GetBuilder<TagSetsLogic>(
-                  id: '${TagSetsLogic.tagId}::${state.tags[index].tagId}',
-                  builder: (_) => LoadingStateIndicator(
-                    loadingState: state.updateTagState,
-                    idleWidgetBuilder: () => FadeIn(
-                      child: _Tag(
-                        tag: state.tags[index],
-                        tagSetBackgroundColor:
-                            state.currentTagSetBackgroundColor,
-                        onLongPress: (position) => logic.showBottomSheet(
-                            index, context,
-                            position: position),
-                        onSecondaryTap: (position) => logic.showBottomSheet(
-                            index, context,
-                            position: position),
-                        onColorUpdated: (v) =>
-                            logic.handleUpdateTagColor(index, v),
-                        onWeightUpdated: (v) =>
-                            logic.handleUpdateTagWeight(index, v),
-                        onStatusUpdated: (v) =>
-                            logic.handleUpdateTagStatus(index, v),
-                      ),
-                    ),
-                    errorWidgetSameWithIdle: true,
+                child: SafeArea(
+                  child: ListView.builder(
+                    itemExtent: 64,
+                    scrollCacheExtent: ScrollCacheExtent.pixels(3000),
+                    itemCount: state.tags.length,
+                    controller: state.scrollController,
+                    itemBuilder:
+                        (_, int index) => GetBuilder<TagSetsLogic>(
+                          id: '${TagSetsLogic.tagId}::${state.tags[index].tagId}',
+                          builder:
+                              (_) => LoadingStateIndicator(
+                                loadingState: state.updateTagState,
+                                idleWidgetBuilder: () => FadeIn(
+                                  child: _Tag(
+                                    tag: state.tags[index],
+                                    tagSetBackgroundColor: state.currentTagSetBackgroundColor,
+                                        onLongPress: (position) => logic.showBottomSheet(index, context, position: position),
+                                        onSecondaryTap: (position) => logic.showBottomSheet(index, context, position: position),
+                                        onColorUpdated: (v) => logic.handleUpdateTagColor(index, v),
+                                        onWeightUpdated: (v) => logic.handleUpdateTagWeight(index, v),
+                                        onStatusUpdated: (v) => logic.handleUpdateTagStatus(index, v),
+                                      ),
+                                    ),
+                                    errorWidgetSameWithIdle: true,
+                              ),
+                        ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
-      },
-    );
-  }
+      }
 }
 
 class _Tag extends StatelessWidget {
@@ -206,21 +160,17 @@ class _Tag extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: GestureDetector(
-        onLongPressStart: onLongPress == null
-            ? null
-            : (details) => onLongPress!(details.globalPosition),
-        onSecondaryTapDown: onSecondaryTap == null
-            ? null
-            : (details) => onSecondaryTap!(details.globalPosition),
+        onLongPressStart: onLongPress == null ? null : (details) => onLongPress!(details.globalPosition),
+        onSecondaryTapDown: onSecondaryTap == null ? null : (details) => onSecondaryTap!(details.globalPosition),
         child: ListTile(
           dense: true,
           leading: _buildLeadingIcon(context),
-          title: Text(tag.tagData.translatedNamespace == null
-              ? '${tag.tagData.namespace}:${tag.tagData.key}'
-              : '${tag.tagData.translatedNamespace}:${tag.tagData.tagName}'),
-          subtitle: tag.tagData.translatedNamespace == null
-              ? null
-              : Text('${tag.tagData.namespace}:${tag.tagData.key}'),
+          title: Text(
+            tag.tagData.translatedNamespace == null
+                ? '${tag.tagData.namespace}:${tag.tagData.key}'
+                : '${tag.tagData.translatedNamespace}:${tag.tagData.tagName}',
+          ),
+          subtitle: tag.tagData.translatedNamespace == null ? null : Text('${tag.tagData.namespace}:${tag.tagData.key}'),
           trailing: _buildWeight(),
         ),
       ),
@@ -228,24 +178,18 @@ class _Tag extends StatelessWidget {
   }
 
   Widget _buildLeadingIcon(BuildContext context) {
-    return EHAppleIconButton(
+    return IconButton(
       icon: Icon(
-        tag.watched
-            ? Icons.favorite
-            : tag.hidden
-                ? Icons.not_interested
-                : Icons.question_mark,
-        color: tag.backgroundColor ??
-            tagSetBackgroundColor ??
-            UIConfig.ehWatchedTagDefaultBackGroundColor,
+        tag.watched ? Icons.favorite : tag.hidden ? Icons.not_interested : Icons.question_mark,
+        color: tag.backgroundColor ?? tagSetBackgroundColor ?? UIConfig.ehWatchedTagDefaultBackGroundColor,
       ),
       onPressed: () async {
         dynamic result = await showDialog(
           context: context,
-          builder: (context) => _ColorSettingDialog(
-              initialColor: tag.backgroundColor ??
-                  tagSetBackgroundColor ??
-                  UIConfig.ehWatchedTagDefaultBackGroundColor),
+          builder:
+              (context) => _ColorSettingDialog(
+                initialColor: tag.backgroundColor ?? tagSetBackgroundColor ?? UIConfig.ehWatchedTagDefaultBackGroundColor,
+              ),
         );
 
         if (result == null) {
@@ -266,15 +210,12 @@ class _Tag extends StatelessWidget {
   Widget _buildWeight() {
     return SizedBox(
       width: 40,
-      child: EHAppleTextField(
+      child: TextField(
         controller: TextEditingController(text: tag.weight.toString()),
         style: const TextStyle(fontSize: 12),
         decoration: const InputDecoration(isDense: true),
         textAlign: TextAlign.center,
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[\d-]')),
-          IntRangeTextInputFormatter(minValue: -99, maxValue: 99),
-        ],
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d-]')), IntRangeTextInputFormatter(minValue: -99, maxValue: 99)],
         onSubmitted: onWeightUpdated,
       ),
     );
@@ -286,8 +227,7 @@ enum TagSetStatus { watched, hidden, nope }
 class _ColorSettingDialog extends StatefulWidget {
   final Color initialColor;
 
-  const _ColorSettingDialog({Key? key, required this.initialColor})
-      : super(key: key);
+  const _ColorSettingDialog({Key? key, required this.initialColor}) : super(key: key);
 
   @override
   State<_ColorSettingDialog> createState() => _ColorSettingDialogState();
@@ -318,10 +258,7 @@ class _ColorSettingDialogState extends State<_ColorSettingDialog> {
               ColorPickerType.custom: false,
               ColorPickerType.wheel: true,
             },
-            pickerTypeLabels: <ColorPickerType, String>{
-              ColorPickerType.both: 'preset'.tr,
-              ColorPickerType.wheel: 'custom'.tr,
-            },
+            pickerTypeLabels: <ColorPickerType, String>{ColorPickerType.both: 'preset'.tr, ColorPickerType.wheel: 'custom'.tr},
             enableTonalPalette: true,
             showColorCode: true,
             colorCodeHasColor: true,
@@ -337,14 +274,14 @@ class _ColorSettingDialogState extends State<_ColorSettingDialog> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            EHAppleTextButton(child: Text('cancel'.tr), onPressed: backRoute),
-            EHAppleTextButton(
+            TextButton(child: Text('cancel'.tr), onPressed: backRoute),
+            TextButton(
               child: Text('reset'.tr),
               onPressed: () {
                 backRoute(result: 'default');
               },
             ),
-            EHAppleTextButton(
+            TextButton(
               child: Text('OK'.tr),
               onPressed: () {
                 backRoute(result: selectedColor);

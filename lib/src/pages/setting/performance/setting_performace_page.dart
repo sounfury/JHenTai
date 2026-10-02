@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/widget/eh_apple_settings_list_view.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
+import 'package:jhentai/src/extension/widget_extension.dart';
 
 import '../../../config/ui_config.dart';
 import '../../../setting/performance_setting.dart';
@@ -12,29 +11,21 @@ import '../../../utils/toast_util.dart';
 class SettingPerformancePage extends StatelessWidget {
   SettingPerformancePage({super.key});
 
-  final TextEditingController maxGalleryNum4AnimationController =
-      TextEditingController(
-          text: performanceSetting.maxGalleryNum4Animation.value.toString());
+  final TextEditingController maxGalleryNum4AnimationController = TextEditingController(text: performanceSetting.maxGalleryNum4Animation.value.toString());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: Text('performanceSetting'.tr)),
-      body: EHAppleSettingsListView(
-        groups: [
-          EHAppleSettingsGroup(
-            children: [
-              _buildMaxGalleryNum4Animation(context),
-              _buildCoverDecodeOptimization(context),
-            ],
-          ),
-        ],
-      ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 16),
+        children: [_buildMaxGalleryNum4Animation(context), _buildCoverDecodeOptimization(context)],
+      ).withListTileTheme(context),
     );
   }
 
   Widget _buildCoverDecodeOptimization(BuildContext context) {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enableCoverDecodeOptimization'.tr),
       subtitle: Text('enableCoverDecodeOptimizationHint'.tr),
       value: performanceSetting.enableCoverDecodeOptimization.value,
@@ -54,31 +45,25 @@ class SettingPerformancePage extends StatelessWidget {
         children: [
           SizedBox(
             width: 50,
-            child: EHAppleTextField(
+            child: TextField(
               controller: maxGalleryNum4AnimationController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  isDense: true, labelStyle: TextStyle(fontSize: 12)),
+              decoration: const InputDecoration(isDense: true, labelStyle: TextStyle(fontSize: 12)),
               textAlign: TextAlign.center,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                IntRangeTextInputFormatter(minValue: 0),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, IntRangeTextInputFormatter(minValue: 0)],
             ),
           ),
           const SizedBox(width: 8),
-          EHAppleIconButton(
+          IconButton(
             onPressed: () {
-              int? value =
-                  int.tryParse(maxGalleryNum4AnimationController.value.text);
+              int? value = int.tryParse(maxGalleryNum4AnimationController.value.text);
               if (value == null) {
                 return;
               }
               performanceSetting.setMaxGalleryNum4Animation(value);
               toast('saveSuccess'.tr);
             },
-            icon: Icon(Icons.check,
-                color: UIConfig.resumePauseButtonColor(context)),
+            icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context)),
           ),
         ],
       ),

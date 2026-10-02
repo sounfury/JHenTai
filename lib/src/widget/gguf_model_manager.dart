@@ -2,15 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../service/engine/engine_contract.dart';
 import '../service/engine/gguf_model_store.dart';
 import '../service/engine/local_translation_model_catalog.dart';
 import '../service/engine/model_catalog.dart';
-import 'eh_apple_controls.dart';
-import 'eh_apple_glass_toolbar.dart';
-import 'eh_codex_style_dropdown.dart';
 
 /// Renders a byte-rate as a compact human label, e.g. "12.3 MB/s".
 String formatDownloadSpeed(double bytesPerSecond) {
@@ -29,16 +25,13 @@ String formatDownloadSpeed(double bytesPerSecond) {
 /// Long-lived GGUF download state. Navigating away from settings does not
 /// cancel a large model download; reopening the page reconnects to this state.
 class GgufModelManagerController extends GetxController {
-  GgufModelManagerController({
-    GgufModelStore? store,
-    GgufModelDownloadManager? downloads,
-  }) : store = store ?? GgufModelStore.instance,
-       downloads = downloads ?? GgufModelDownloadManager();
+  GgufModelManagerController({GgufModelStore? store, GgufModelDownloadManager? downloads})
+    : store = store ?? GgufModelStore.instance,
+      downloads = downloads ?? GgufModelDownloadManager();
 
   static GgufModelManagerController? _instance;
 
-  static GgufModelManagerController get instance =>
-      _instance ??= GgufModelManagerController();
+  static GgufModelManagerController get instance => _instance ??= GgufModelManagerController();
 
   final GgufModelStore store;
   final GgufModelDownloadManager downloads;
@@ -47,10 +40,8 @@ class GgufModelManagerController extends GetxController {
   final Map<String, String> progressArtifact = <String, String>{};
   final Map<String, double> progressSpeed = <String, double>{};
   final Map<String, String> errors = <String, String>{};
-  final Map<String, EngineTask<ModelInstallResult>> _tasks =
-      <String, EngineTask<ModelInstallResult>>{};
-  final Map<String, StreamSubscription<EngineTaskProgress>> _subscriptions =
-      <String, StreamSubscription<EngineTaskProgress>>{};
+  final Map<String, EngineTask<ModelInstallResult>> _tasks = <String, EngineTask<ModelInstallResult>>{};
+  final Map<String, StreamSubscription<EngineTaskProgress>> _subscriptions = <String, StreamSubscription<EngineTaskProgress>>{};
   bool _initialized = false;
 
   bool isDownloading(String modelId) => _tasks.containsKey(modelId);
@@ -65,11 +56,7 @@ class GgufModelManagerController extends GetxController {
 
   Future<void> refreshStates([String? modelId]) async {
     final Iterable<ModelDescriptor> models =
-        modelId == null
-            ? store.catalog.models
-            : store.catalog.models.where(
-              (ModelDescriptor model) => model.id == modelId,
-            );
+        modelId == null ? store.catalog.models : store.catalog.models.where((ModelDescriptor model) => model.id == modelId);
     for (final ModelDescriptor model in models) {
       try {
         states[model.id] = await store.installState(model.id);
@@ -88,8 +75,7 @@ class GgufModelManagerController extends GetxController {
     errors.remove(modelId);
     progress[modelId] = 0;
     states[modelId] = ModelInstallState.validating;
-    final EngineTask<ModelInstallResult> task =
-        forceUpdate ? downloads.update(modelId) : downloads.download(modelId);
+    final EngineTask<ModelInstallResult> task = forceUpdate ? downloads.update(modelId) : downloads.download(modelId);
     _tasks[modelId] = task;
     _subscriptions[modelId] = task.progress.listen((EngineTaskProgress event) {
       progress[modelId] = event.fraction;
@@ -136,11 +122,7 @@ class GgufModelManagerController extends GetxController {
 }
 
 class GgufModelManagerPanel extends StatefulWidget {
-  const GgufModelManagerPanel({
-    super.key,
-    required this.selectedModelId,
-    required this.onSelectModel,
-  });
+  const GgufModelManagerPanel({super.key, required this.selectedModelId, required this.onSelectModel});
 
   final String selectedModelId;
   final ValueChanged<String> onSelectModel;
@@ -150,8 +132,7 @@ class GgufModelManagerPanel extends StatefulWidget {
 }
 
 class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
-  final GgufModelManagerController _manager =
-      GgufModelManagerController.instance;
+  final GgufModelManagerController _manager = GgufModelManagerController.instance;
 
   @override
   void initState() {
@@ -171,25 +152,16 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
       children: <Widget>[
         ListTile(
           title: Text('imageTranslationLocalModel'.tr),
-          trailing: EHCodexStyleDropdown<String>(
+          trailing: DropdownButton<String>(
             key: const ValueKey('image-translation-local-model'),
             value: selected.id,
-            // The panel lives on the right side of the screen (reader drawer /
-            // right settings pane); the expanded menu must open toward the
-            // bottom-left so it stays inside the panel.
-            menuAlignment: GlassMenuAlignment.topRight,
             onChanged: (String? value) {
               if (value != null) {
                 widget.onSelectModel(value);
               }
             },
             items: models
-                .map(
-                  (ModelDescriptor model) => DropdownMenuItem<String>(
-                    value: model.id,
-                    child: Text(model.displayName),
-                  ),
-                )
+                .map((ModelDescriptor model) => DropdownMenuItem<String>(value: model.id, child: Text(model.displayName)))
                 .toList(growable: false),
           ),
         ),
@@ -199,9 +171,7 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
           global: true,
           autoRemove: false,
           id: selected.id,
-          builder:
-              (GgufModelManagerController manager) =>
-                  _buildDownloadTile(selected, manager),
+          builder: (GgufModelManagerController manager) => _buildDownloadTile(selected, manager),
         ),
         ListTile(
           key: const ValueKey('image-translation-local-ffi-runtime'),
@@ -213,12 +183,8 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
     );
   }
 
-  Widget _buildDownloadTile(
-    ModelDescriptor model,
-    GgufModelManagerController manager,
-  ) {
-    final ModelInstallState state =
-        manager.states[model.id] ?? ModelInstallState.notInstalled;
+  Widget _buildDownloadTile(ModelDescriptor model, GgufModelManagerController manager) {
+    final ModelInstallState state = manager.states[model.id] ?? ModelInstallState.notInstalled;
     final bool downloading = manager.isDownloading(model.id);
     final double value = manager.progress[model.id] ?? 0;
     final String? error = manager.errors[model.id];
@@ -228,8 +194,7 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
               'progress': '${(value * 100).clamp(0, 100).toStringAsFixed(0)}%',
             })
             : switch (state) {
-              ModelInstallState.notInstalled =>
-                'inferenceModelNotDownloaded'.tr,
+              ModelInstallState.notInstalled => 'inferenceModelNotDownloaded'.tr,
               ModelInstallState.validating => 'inferenceModelValidating'.tr,
               ModelInstallState.ready => 'inferenceModelReady'.tr,
               ModelInstallState.invalid => 'inferenceModelInvalid'.tr,
@@ -247,54 +212,31 @@ class _GgufModelManagerPanelState extends State<GgufModelManagerPanel> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Flexible(
-                    child: Text(
-                      manager.progressArtifact[model.id]!,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text(
-                    formatDownloadSpeed(manager.progressSpeed[model.id] ?? 0),
-                  ),
+                  Flexible(child: Text(manager.progressArtifact[model.id]!, overflow: TextOverflow.ellipsis)),
+                  Text(formatDownloadSpeed(manager.progressSpeed[model.id] ?? 0)),
                 ],
               ),
           ],
-          if (error != null)
-            Text(
-              error,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+          if (error != null) Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
       ),
       trailing:
           downloading
-              ? EHAppleIconButton(
-                icon: const Icon(Icons.close),
-                tooltip: 'cancel'.tr,
-                onPressed: () => manager.cancel(model.id),
-              )
+              ? IconButton(icon: const Icon(Icons.close), tooltip: 'cancel'.tr, onPressed: () => manager.cancel(model.id))
               : state == ModelInstallState.ready
-              ? EHAppleGlassToolbar(
-                materialSpacing: 0,
-                items: <EHAppleToolbarItem>[
-                  EHAppleToolbarItem(
+              ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
                     icon: const Icon(Icons.refresh),
                     tooltip: 'inferenceRefresh'.tr,
-                    onPressed:
-                        () => manager.download(model.id, forceUpdate: true),
+                    onPressed: () => manager.download(model.id, forceUpdate: true),
                   ),
-                  EHAppleToolbarItem(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'delete'.tr,
-                    onPressed: () => manager.delete(model.id),
-                  ),
+                  SizedBox(width: 0),
+                  IconButton(icon: const Icon(Icons.delete_outline), tooltip: 'delete'.tr, onPressed: () => manager.delete(model.id)),
                 ],
               )
-              : EHAppleIconButton(
-                icon: const Icon(Icons.download),
-                tooltip: 'download'.tr,
-                onPressed: () => manager.download(model.id),
-              ),
+              : IconButton(icon: const Icon(Icons.download), tooltip: 'download'.tr, onPressed: () => manager.download(model.id)),
     );
   }
 }
@@ -307,10 +249,7 @@ class _ModelDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String sizes = model.artifacts
-        .map(
-          (ModelArtifactDescriptor artifact) =>
-              artifact.sizeLabel ?? _formatBytes(artifact.sizeBytes),
-        )
+        .map((ModelArtifactDescriptor artifact) => artifact.sizeLabel ?? _formatBytes(artifact.sizeBytes))
         .join(' + ');
     return ListTile(
       leading: const Icon(Icons.smart_toy_outlined),

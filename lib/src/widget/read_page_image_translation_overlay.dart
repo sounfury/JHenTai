@@ -3,13 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 /// Inline overlay for the read page. After "recognize and translate this page"
 /// is triggered, the bottom result sheet is no longer shown; instead this
@@ -19,20 +16,14 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
   final ImageTranslationRequest request;
   final Future<void> Function()? onRetry;
 
-  const ReadPageImageTranslationOverlay({
-    super.key,
-    required this.request,
-    this.onRetry,
-  });
+  const ReadPageImageTranslationOverlay({super.key, required this.request, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<ImageTranslationService>(
       id: imageTranslationService.taskId(request.cacheKey),
       builder: (_) {
-        final ImageTranslationResult result = imageTranslationService.resultFor(
-          request.cacheKey,
-        );
+        final ImageTranslationResult result = imageTranslationService.resultFor(request.cacheKey);
         switch (result.status) {
           case ImageTranslationStatus.idle:
             return const SizedBox.shrink();
@@ -81,33 +72,14 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: 12,
-                    height: 12,
-                    child:
-                        ThemeConfig.isApple
-                            ? GlassProgressIndicator.circular(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            )
-                            : const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                  ),
+                  SizedBox(width: 12, height: 12, child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
                   const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
+                  Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
                   const SizedBox(width: 4),
                   InkWell(
                     onTap: imageTranslationService.cancelBatch,
                     borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.all(2),
-                      child: Icon(Icons.close, color: Colors.white, size: 16),
-                    ),
+                    child: const Padding(padding: EdgeInsets.all(2), child: Icon(Icons.close, color: Colors.white, size: 16)),
                   ),
                 ],
               ),
@@ -131,52 +103,28 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
             color: Colors.black87,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.only(
-                left: 12,
-                right: 4,
-                top: 2,
-                bottom: 2,
-              ),
+              padding: const EdgeInsets.only(left: 12, right: 4, top: 2, bottom: 2),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    noText ? Icons.info_outline : Icons.error_outline,
-                    color: noText ? Colors.white70 : Colors.orangeAccent,
-                    size: 16,
-                  ),
+                  Icon(noText ? Icons.info_outline : Icons.error_outline, color: noText ? Colors.white70 : Colors.orangeAccent, size: 16),
                   const SizedBox(width: 6),
                   ConstrainedBox(
                     constraints: BoxConstraints(
                       // Keep the message readable on phones while allowing a
                       // wider, less tall chip on desktop.
-                      maxWidth: math.min(
-                        MediaQuery.sizeOf(context).width - 48,
-                        520,
-                      ),
+                      maxWidth: math.min(MediaQuery.sizeOf(context).width - 48, 520),
                     ),
                     child: Text(
-                      noText
-                          ? 'imageTranslationNoText'.tr
-                          : _errorMessage(result),
+                      noText ? 'imageTranslationNoText'.tr : _errorMessage(result),
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
-                  EHAppleIconButton(
+                  IconButton(
                     onPressed: () {
-                      unawaited(
-                        onRetry?.call() ??
-                            imageTranslationService.translate(
-                              request,
-                              force: true,
-                            ),
-                      );
+                      unawaited(onRetry?.call() ?? imageTranslationService.translate(request, force: true));
                     },
-                    icon: const Icon(
-                      Icons.refresh,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    icon: const Icon(Icons.refresh, color: Colors.white, size: 18),
                     tooltip: 'retry'.tr,
                     visualDensity: VisualDensity.compact,
                   ),
@@ -190,9 +138,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
   }
 
   Widget _buildOverlay(BuildContext context, ImageTranslationResult result) {
-    if (result.blocks.isEmpty ||
-        result.imageWidth == null ||
-        result.imageHeight == null) {
+    if (result.blocks.isEmpty || result.imageWidth == null || result.imageHeight == null) {
       return const SizedBox.shrink();
     }
     return Stack(
@@ -205,32 +151,21 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
           builder: (ImageInpaintingService inpainting) {
             return StreamBuilder<Color>(
               stream: imageTranslationSetting.translationBackgroundColor.stream,
-              initialData:
-                  imageTranslationSetting.translationBackgroundColor.value,
+              initialData: imageTranslationSetting.translationBackgroundColor.value,
               builder:
                   (context, colorSnapshot) => StreamBuilder<double>(
-                    stream:
-                        imageTranslationSetting
-                            .translationBackgroundOpacity
-                            .stream,
-                    initialData:
-                        imageTranslationSetting
-                            .translationBackgroundOpacity
-                            .value,
+                    stream: imageTranslationSetting.translationBackgroundOpacity.stream,
+                    initialData: imageTranslationSetting.translationBackgroundOpacity.value,
                     builder: (context, opacitySnapshot) {
                       final double userOpacity = opacitySnapshot.data ?? 0.9;
                       // Until a repaired background is restored after hydrate,
                       // keep plates opaque so cached text cannot overlap the
                       // original English glyphs (cold-start overlap bug).
-                      final double backgroundOpacity = inpainting
-                          .effectiveOverlayBackgroundOpacity(
-                            request.cacheKey,
-                            userOpacity,
-                            displayModeOverride:
-                                imageTranslationSetting
-                                    .imageProcessingDisplayMode
-                                    .value,
-                          );
+                      final double backgroundOpacity = inpainting.effectiveOverlayBackgroundOpacity(
+                        request.cacheKey,
+                        userOpacity,
+                        displayModeOverride: imageTranslationSetting.imageProcessingDisplayMode.value,
+                      );
                       return IgnorePointer(
                         child: LayoutBuilder(
                           builder:
@@ -239,8 +174,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
                                 painter: _ImageTranslationOverlayPainter(
                                   result: result,
                                   textDirection: Directionality.of(context),
-                                  backgroundColor:
-                                      colorSnapshot.data ?? Colors.white,
+                                  backgroundColor: colorSnapshot.data ?? Colors.white,
                                   backgroundOpacity: backgroundOpacity,
                                 ),
                               ),
@@ -261,28 +195,16 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () {
-                  unawaited(
-                    onRetry?.call() ??
-                        imageTranslationService.translate(request, force: true),
-                  );
+                  unawaited(onRetry?.call() ?? imageTranslationService.translate(request, force: true));
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.refresh, color: Colors.white, size: 14),
                       const SizedBox(width: 5),
-                      Text(
-                        'imageTranslationCachedRetranslate'.tr,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Text('imageTranslationCachedRetranslate'.tr, style: const TextStyle(color: Colors.white, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -292,9 +214,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
         GetBuilder<ImageInpaintingService>(
           id: request.cacheKey,
           builder: (_) {
-            final InpaintingResult repair = imageInpaintingService.resultFor(
-              request.cacheKey,
-            );
+            final InpaintingResult repair = imageInpaintingService.resultFor(request.cacheKey);
             if (!repair.fallbackToOverlay ||
                 repair.errorCode == null ||
                 repair.errorCode == 'canceled' ||
@@ -309,14 +229,9 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
                 color: Colors.orange.shade800.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Text(
-                    'imageTranslationInpaintFallback'.trParams({
-                      'reason': repair.errorCode!,
-                    }),
+                    'imageTranslationInpaintFallback'.trParams({'reason': repair.errorCode!}),
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
@@ -358,10 +273,7 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
       case 'TRANSLATION_UNAVAILABLE':
         return 'imageTranslationTranslationUnavailable'.tr;
       case 'TRANSLATION_NOT_INSTALLED':
-        return (GetPlatform.isIOS
-                ? 'imageTranslationTranslationNotInstalledIos'
-                : 'imageTranslationTranslationNotInstalled')
-            .tr;
+        return (GetPlatform.isIOS ? 'imageTranslationTranslationNotInstalledIos' : 'imageTranslationTranslationNotInstalled').tr;
       case 'TRANSLATION_FAILED':
         return 'imageTranslationTranslationFailed'.tr;
       case 'TRANSLATION_TIMEOUT':
@@ -405,25 +317,12 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
 ///
 /// Keeping this transform explicit makes the reader overlay match exported
 /// images even while a page is still using a placeholder-sized container.
-Rect translationOverlayVisibleImageRect({
-  required Size sourceSize,
-  required Size canvasSize,
-}) {
-  if (sourceSize.width <= 0 ||
-      sourceSize.height <= 0 ||
-      canvasSize.width <= 0 ||
-      canvasSize.height <= 0) {
+Rect translationOverlayVisibleImageRect({required Size sourceSize, required Size canvasSize}) {
+  if (sourceSize.width <= 0 || sourceSize.height <= 0 || canvasSize.width <= 0 || canvasSize.height <= 0) {
     return Rect.zero;
   }
-  final FittedSizes fitted = applyBoxFit(
-    BoxFit.contain,
-    sourceSize,
-    canvasSize,
-  );
-  return Alignment.center.inscribe(
-    fitted.destination,
-    Offset.zero & canvasSize,
-  );
+  final FittedSizes fitted = applyBoxFit(BoxFit.contain, sourceSize, canvasSize);
+  return Alignment.center.inscribe(fitted.destination, Offset.zero & canvasSize);
 }
 
 class _ImageTranslationOverlayPainter extends CustomPainter {
@@ -443,10 +342,7 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final int? imageWidth = result.imageWidth;
     final int? imageHeight = result.imageHeight;
-    if (imageWidth == null ||
-        imageHeight == null ||
-        imageWidth <= 0 ||
-        imageHeight <= 0) {
+    if (imageWidth == null || imageHeight == null || imageWidth <= 0 || imageHeight <= 0) {
       return;
     }
 
@@ -472,12 +368,7 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
       backgroundColor: backgroundColor,
       backgroundOpacity: backgroundOpacity,
     );
-    paintTranslationOverlay(
-      canvas,
-      layout,
-      textDirection: textDirection,
-      backgroundOpacity: backgroundOpacity,
-    );
+    paintTranslationOverlay(canvas, layout, textDirection: textDirection, backgroundOpacity: backgroundOpacity);
   }
 
   @override

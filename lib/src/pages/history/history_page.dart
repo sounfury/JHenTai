@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/service/history_service.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 
 import '../base/base_page.dart';
 import 'history_page_logic.dart';
@@ -30,17 +29,13 @@ class HistoryPage extends BasePage {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<HistoryService>(
-      id: HistoryService.historyUpdateId,
-      init: historyService,
-      builder: (_) => super.build(context),
-    );
+    return GetBuilder<HistoryService>(id: HistoryService.historyUpdateId, init: historyService, builder: (_) => super.build(context));
   }
 
   @override
   List<Widget> buildAppBarActions() {
     return [
-      EHAppleIconButton(icon: const Icon(Icons.delete_outline_outlined, size: 27), onPressed: logic.handleTapDeleteButton),
+      IconButton(icon: const Icon(Icons.delete_outline_outlined, size: 27), onPressed: logic.handleTapDeleteButton),
       if (state.galleries.isNotEmpty) const SizedBox(width: 8),
       ...super.buildAppBarActions(),
     ];

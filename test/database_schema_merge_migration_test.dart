@@ -3,21 +3,35 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jhentai/src/database/database.dart';
+import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/service/path_service.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 void main() {
   late Directory tempDir;
+  late LogService originalLog;
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp(
       'jhentai-schema-merge-migration-',
     );
     pathService.tempDir = tempDir;
+    originalLog = log;
+    log = LogService()..logDirPath = '${tempDir.path}/logs';
   });
 
   tearDown(() async {
-    await tempDir.delete(recursive: true);
+    await log.clear();
+    log = originalLog;
+    for (int attempt = 0; ; attempt++) {
+      try {
+        await tempDir.delete(recursive: true);
+        break;
+      } on FileSystemException catch (error) {
+        if (!Platform.isWindows || error.osError?.errorCode != 32 || attempt >= 9) rethrow;
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    }
   });
 
   Future<File> createCurrentDatabase() async {
@@ -40,12 +54,11 @@ void main() {
           await db
               .customSelect(
                 "SELECT name FROM sqlite_master WHERE type = 'table' "
-                "AND name IN ('smart_cache_stat', 'reader_bookmark')",
+                "AND name = 'smart_cache_stat'",
               )
               .get();
       expect(tables.map((row) => row.data['name']).toSet(), {
         'smart_cache_stat',
-        'reader_bookmark',
       });
 
       final imageColumns =
@@ -60,13 +73,13 @@ void main() {
   }
 
   test(
-    'upstream schema 25 gains Fork tables without duplicating image column',
+    'upstream schema 25 gains smart cache without duplicating image column',
     () async {
       final File file = await createCurrentDatabase();
       final sqlite.Database raw = sqlite.sqlite3.open(file.path);
       try {
         raw.execute('DROP TABLE smart_cache_stat');
-        raw.execute('DROP TABLE reader_bookmark');
+        raw.execute('DROP TABLE IF EXISTS reader_bookmark');
         raw.execute('PRAGMA user_version = 25');
       } finally {
         raw.dispose();
@@ -77,18 +90,33 @@ void main() {
   );
 
   test(
-    'Fork schema 26 gains upstream image column without duplicating tables',
+    'Fork schema 26 gains upstream image column and retains legacy data',
     () async {
       final File file = await createCurrentDatabase();
       final sqlite.Database raw = sqlite.sqlite3.open(file.path);
       try {
         raw.execute('ALTER TABLE image DROP COLUMN originalImageUrl');
+        raw.execute(
+          'CREATE TABLE reader_bookmark (gallery_key TEXT, page_index INTEGER, note TEXT)',
+        );
+        raw.execute(
+          "INSERT INTO reader_bookmark VALUES ('legacy-gallery', 2, 'legacy-note')",
+        );
         raw.execute('PRAGMA user_version = 26');
       } finally {
         raw.dispose();
       }
 
       await expectMergedSchema(file);
+      final sqlite.Database migrated = sqlite.sqlite3.open(file.path);
+      try {
+        expect(
+          migrated.select('SELECT note FROM reader_bookmark').single['note'],
+          'legacy-note',
+        );
+      } finally {
+        migrated.dispose();
+      }
     },
   );
 

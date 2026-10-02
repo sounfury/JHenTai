@@ -14,34 +14,17 @@ import '../../../service/log.dart';
 import '../../../utils/route_util.dart';
 import '../../../utils/text_input_formatter.dart';
 import '../../../utils/toast_util.dart';
-import '../../../utils/app_icons.dart';
-import '../../../widget/eh_apple_settings_list_view.dart';
-import '../../../widget/eh_apple_controls.dart';
-import '../../../widget/eh_apple_expandable_switch_list_tile.dart';
-import '../../../widget/eh_codex_style_dropdown.dart';
 import '../../home_page.dart';
 
 class SettingReadPage extends StatelessWidget {
-  final TextEditingController imageRegionWidthRatioController =
-      TextEditingController(
-        text: readSetting.imageRegionWidthRatio.value.toString(),
-      );
-  final TextEditingController portraitImageRegionWidthRatioController =
-      TextEditingController(
-        text: readSetting.portraitImageRegionWidthRatio.value.toString(),
-      );
+  final TextEditingController imageRegionWidthRatioController = TextEditingController(text: readSetting.imageRegionWidthRatio.value.toString());
+  final TextEditingController portraitImageRegionWidthRatioController = TextEditingController(text: readSetting.portraitImageRegionWidthRatio.value.toString());
   final TextEditingController landscapeImageRegionWidthRatioController =
-      TextEditingController(
-        text: readSetting.landscapeImageRegionWidthRatio.value.toString(),
-      );
-  final TextEditingController gestureRegionWidthRatioController =
-      TextEditingController(
-        text: readSetting.gestureRegionWidthRatio.value.toString(),
-      );
-  final TextEditingController imageMaxKilobytesController =
-      TextEditingController(
-        text: readSetting.maxImageKilobyte.value.toString(),
-      );
+  TextEditingController(text: readSetting.landscapeImageRegionWidthRatio.value.toString());
+  final TextEditingController gestureRegionWidthRatioController = TextEditingController(
+    text: readSetting.gestureRegionWidthRatio.value.toString(),
+  );
+  final TextEditingController imageMaxKilobytesController = TextEditingController(text: readSetting.maxImageKilobyte.value.toString());
 
   SettingReadPage({Key? key}) : super(key: key);
 
@@ -50,161 +33,127 @@ class SettingReadPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: Text('readSetting'.tr)),
       body: Obx(
-        () => EHAppleSettingsListView(
-          safeArea: true,
-          groups: [
-            EHAppleSettingsGroup(
-              children: [
-                if (GetPlatform.isMobile || GetPlatform.isWindows)
-                  _buildEnableImmersiveMode().center(),
-                _buildKeepScreenAwake().center(),
-                if (GetPlatform.isMobile)
-                  EHAppleExpandableSwitchListTile(
-                    title: Text('enableCustomReadBrightness'.tr),
-                    value: readSetting.enableCustomReadBrightness.value,
-                    onChanged: readSetting.saveEnableCustomReadBrightness,
-                    children: [_buildCustomReadBrightness()],
-                  ).center(),
-                _buildShowThumbnails().center(),
-                _buildShowScrollBar().center(),
-                _buildShowStatusInfo().center(),
-                if (GetPlatform.isMobile)
-                  _buildEnableTranslationFloatingBall().center(),
-                if (GetPlatform.isMobile)
-                  _buildEnableBookmarkFloatingBall().center(),
-                if (GetPlatform.isMobile)
-                  _buildEnablePageTurnByVolumeKeys().center(),
-                _buildEnablePageTurnAnime().center(),
-                _buildEnableDoubleTapToScaleUp().center(),
-                _buildEnableTapDragToScaleUp().center(),
-                _buildEnableBottomMenu().center(),
-                _buildReverseTurnPageDirection().center(),
-                _buildDisableTurnPageOnTap().center(),
-                EHAppleExpandableSwitchListTile(
-                  title: Text('enableImageMaxKilobytes'.tr),
-                  value: readSetting.enableMaxImageKilobyte.value,
-                  onChanged: readSetting.saveEnableMaxImageKilobyte,
-                  children: [_buildImageMaxKilobytes(context)],
-                ).center(),
-                _buildGestureRegionWidthRatio(context).center(),
-                if (GetPlatform.isDesktop)
-                  EHAppleExpandableSwitchListTile(
-                    title: Text('useThirdPartyViewer'.tr),
-                    value: readSetting.useThirdPartyViewer.value,
-                    onChanged: readSetting.saveUseThirdPartyViewer,
-                    children: [_buildThirdPartyViewerPath()],
-                  ).center(),
-                if (GetPlatform.isDesktop)
-                  _buildKeyboardShortcuts(context).center(),
-                if (GetPlatform.isMobile) _buildDeviceDirection().center(),
-                if (GetPlatform.isMobile)
-                  EHAppleExpandableSwitchListTile(
-                    title: Text('enableOrientationSpecificReadDirection'.tr),
-                    subtitle: Text(
-                      'enableOrientationSpecificReadDirectionHint'.tr,
+            () =>
+            SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.only(top: 16),
+                children: [
+                  if (GetPlatform.isMobile || GetPlatform.isWindows) _buildEnableImmersiveMode().center(),
+                  _buildKeepScreenAwake().center(),
+              if (GetPlatform.isMobile)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SwitchListTile(
+                      title: Text('enableCustomReadBrightness'.tr),
+                      value: readSetting.enableCustomReadBrightness.value,
+                      onChanged: readSetting.saveEnableCustomReadBrightness,
                     ),
-                    value:
-                        readSetting
-                            .enableOrientationSpecificReadDirection
-                            .value,
-                    onChanged:
-                        readSetting.saveEnableOrientationSpecificReadDirection,
-                    children: [
+                    if (readSetting.enableCustomReadBrightness.value) ...[_buildCustomReadBrightness()],
+                  ],
+                ).center(),
+              _buildShowThumbnails().center(),
+              _buildShowScrollBar().center(),
+              _buildShowStatusInfo().center(),
+              if (GetPlatform.isMobile) _buildEnableTranslationFloatingBall().center(),
+
+              if (GetPlatform.isMobile) _buildEnablePageTurnByVolumeKeys().center(),
+              _buildEnablePageTurnAnime().center(),
+              _buildEnableDoubleTapToScaleUp().center(),
+              _buildEnableTapDragToScaleUp().center(),
+              _buildEnableBottomMenu().center(),
+              _buildReverseTurnPageDirection().center(),
+              _buildDisableTurnPageOnTap().center(),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SwitchListTile(
+                    title: Text('enableImageMaxKilobytes'.tr),
+                    value: readSetting.enableMaxImageKilobyte.value,
+                    onChanged: readSetting.saveEnableMaxImageKilobyte,
+                  ),
+                  if (readSetting.enableMaxImageKilobyte.value) ...[_buildImageMaxKilobytes(context)],
+                ],
+              ).center(),
+              _buildGestureRegionWidthRatio(context).center(),
+              if (GetPlatform.isDesktop)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SwitchListTile(
+                      title: Text('useThirdPartyViewer'.tr),
+                      value: readSetting.useThirdPartyViewer.value,
+                      onChanged: readSetting.saveUseThirdPartyViewer,
+                    ),
+                    if (readSetting.useThirdPartyViewer.value) ...[_buildThirdPartyViewerPath()],
+                  ],
+                ).center(),
+              if (GetPlatform.isDesktop) _buildKeyboardShortcuts(context).center(),
+              if (GetPlatform.isMobile) _buildDeviceDirection().center(),
+              if (GetPlatform.isMobile)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SwitchListTile(
+                      title: Text('enableOrientationSpecificReadDirection'.tr),
+                      subtitle: Text('enableOrientationSpecificReadDirectionHint'.tr),
+                      value: readSetting.enableOrientationSpecificReadDirection.value,
+                      onChanged: readSetting.saveEnableOrientationSpecificReadDirection,
+                    ),
+                    if (readSetting.enableOrientationSpecificReadDirection.value) ...[
                       _buildPortraitReadDirection(),
                       _buildLandscapeReadDirection(),
-                      if (readSetting.portraitReadDirection.value ==
-                          ReadDirection.top2bottomList)
+                      if (readSetting.portraitReadDirection.value == ReadDirection.top2bottomList)
                         _buildPortraitImageRegionWidthRatio(context),
-                      if (readSetting.landscapeReadDirection.value ==
-                          ReadDirection.top2bottomList)
+                      if (readSetting.landscapeReadDirection.value == ReadDirection.top2bottomList)
                         _buildLandscapeImageRegionWidthRatio(context),
                     ],
-                  ).center(),
-                if (!GetPlatform.isMobile ||
-                    readSetting.enableOrientationSpecificReadDirection.isFalse)
-                  _buildReadDirection().center(),
-                if (GetPlatform.isMobile &&
-                        readSetting
-                            .enableOrientationSpecificReadDirection
-                            .isTrue
-                    ? (readSetting.portraitReadDirection.value ==
-                            ReadDirection.top2bottomList ||
-                        readSetting.landscapeReadDirection.value ==
-                            ReadDirection.top2bottomList)
-                    : readSetting.readDirection.value ==
-                        ReadDirection.top2bottomList)
-                  _buildNotchOptimization().center(),
-                if (!GetPlatform.isMobile ||
-                    readSetting.enableOrientationSpecificReadDirection.isFalse)
-                  if (readSetting.readDirection.value ==
-                      ReadDirection.top2bottomList)
-                    _buildImageRegionWidthRatio(context).center(),
-                if (!readSetting.isEveryInListReadDirection)
-                  _buildPreloadPageCount()
-                      .fadeIn(const Key('preloadPageCount'))
-                      .center(),
-                if (!readSetting.isEveryInListReadDirection)
-                  _buildPreloadPageCountInLocalMode()
-                      .fadeIn(const Key('preloadPageCountInLocalMode'))
-                      .center(),
-                _buildFailedImageRetryScope().center(),
-                _buildImageTimeoutRetry().center(),
-                if (GetPlatform.isMobile &&
-                    readSetting
-                        .enableOrientationSpecificReadDirection
-                        .isTrue) ...[
-                  if (readSetting.portraitReadDirection.value ==
-                          ReadDirection.left2rightDoubleColumn ||
-                      readSetting.portraitReadDirection.value ==
-                          ReadDirection.right2leftDoubleColumn)
-                    _buildPortraitDisplayFirstPageAlone()
-                        .fadeIn(const Key('portraitDisplayFirstPageAlone'))
-                        .center(),
-                  if (readSetting.landscapeReadDirection.value ==
-                          ReadDirection.left2rightDoubleColumn ||
-                      readSetting.landscapeReadDirection.value ==
-                          ReadDirection.right2leftDoubleColumn)
-                    _buildLandscapeDisplayFirstPageAlone()
-                        .fadeIn(const Key('landscapeDisplayFirstPageAlone'))
-                        .center(),
-                ],
-                if (!GetPlatform.isMobile ||
-                    readSetting.enableOrientationSpecificReadDirection.isFalse)
-                  if (readSetting.isInDoubleColumnReadDirection)
-                    _buildDisplayFirstPageAlone()
-                        .fadeIn(const Key('displayFirstPageAloneGlobally'))
-                        .center(),
-                if (readSetting.isInListReadDirection)
-                  _buildAutoModeStyle()
-                      .fadeIn(const Key('autoModeStyle'))
-                      .center(),
-                if (readSetting.isInListReadDirection)
-                  _buildTurnPageMode()
-                      .fadeIn(const Key('turnPageMode'))
-                      .center(),
-                _buildImageSpace().center(),
+                  ],
+                ).center(),
+              if (!GetPlatform.isMobile || readSetting.enableOrientationSpecificReadDirection.isFalse) _buildReadDirection().center(),
+              if (GetPlatform.isMobile && readSetting.enableOrientationSpecificReadDirection.isTrue
+                  ? (readSetting.portraitReadDirection.value == ReadDirection.top2bottomList ||
+                  readSetting.landscapeReadDirection.value == ReadDirection.top2bottomList)
+                  : readSetting.readDirection.value == ReadDirection.top2bottomList)
+                _buildNotchOptimization().center(),
+              if (!GetPlatform.isMobile || readSetting.enableOrientationSpecificReadDirection.isFalse)
+                if (readSetting.readDirection.value == ReadDirection.top2bottomList) _buildImageRegionWidthRatio(context).center(),
+              if (!readSetting.isEveryInListReadDirection) _buildPreloadPageCount().fadeIn(const Key('preloadPageCount')).center(),
+              if (!readSetting.isEveryInListReadDirection)
+                _buildPreloadPageCountInLocalMode().fadeIn(const Key('preloadPageCountInLocalMode')).center(),
+              _buildFailedImageRetryScope().center(),
+              _buildImageTimeoutRetry().center(),
+              if (GetPlatform.isMobile && readSetting.enableOrientationSpecificReadDirection.isTrue) ...[
+                if (readSetting.portraitReadDirection.value == ReadDirection.left2rightDoubleColumn ||
+                    readSetting.portraitReadDirection.value == ReadDirection.right2leftDoubleColumn)
+                  _buildPortraitDisplayFirstPageAlone().fadeIn(const Key('portraitDisplayFirstPageAlone')).center(),
+                if (readSetting.landscapeReadDirection.value == ReadDirection.left2rightDoubleColumn ||
+                    readSetting.landscapeReadDirection.value == ReadDirection.right2leftDoubleColumn)
+                  _buildLandscapeDisplayFirstPageAlone().fadeIn(const Key('landscapeDisplayFirstPageAlone')).center(),
               ],
-            ),
-          ],
-        ),
+              if (!GetPlatform.isMobile || readSetting.enableOrientationSpecificReadDirection.isFalse)
+                if (readSetting.isInDoubleColumnReadDirection) _buildDisplayFirstPageAlone().fadeIn(const Key('displayFirstPageAloneGlobally')).center(),
+              if (readSetting.isInListReadDirection) _buildAutoModeStyle().fadeIn(const Key('autoModeStyle')).center(),
+              if (readSetting.isInListReadDirection) _buildTurnPageMode().fadeIn(const Key('turnPageMode')).center(),
+              _buildImageSpace().center(),
+            ],
+          ),
+        ).withListTileTheme(context),
       ),
     );
   }
 
   Widget _buildEnableImmersiveMode() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enableImmersiveMode'.tr),
-      subtitle:
-          GetPlatform.isMobile
-              ? Text('enableImmersiveHint'.tr)
-              : Text('enableImmersiveHint4Windows'.tr),
+      subtitle: GetPlatform.isMobile ? Text('enableImmersiveHint'.tr) : Text('enableImmersiveHint4Windows'.tr),
       value: readSetting.enableImmersiveMode.value,
       onChanged: readSetting.saveEnableImmersiveMode,
     );
   }
 
   Widget _buildKeepScreenAwake() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('keepScreenAwakeWhenReading'.tr),
       value: readSetting.keepScreenAwakeWhenReading.value,
       onChanged: readSetting.saveKeepScreenAwakeWhenReading,
@@ -212,7 +161,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildShowThumbnails() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('showThumbnails'.tr),
       value: readSetting.showThumbnails.value,
       onChanged: readSetting.saveShowThumbnails,
@@ -220,7 +169,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildShowScrollBar() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('showScrollBar'.tr),
       value: readSetting.showScrollBar.value,
       onChanged: readSetting.saveShowScrollBar,
@@ -235,11 +184,9 @@ class SettingReadPage extends StatelessWidget {
         const SizedBox(width: 16),
         Text(readSetting.customBrightness.value.toString()),
         Expanded(
-          child: EHAppleSlider(
+          child: Slider(
             value: readSetting.customBrightness.value.toDouble(),
-            onChanged:
-                (double value) =>
-                    readSetting.saveCustomBrightness(value.toInt()),
+            onChanged: (double value) => readSetting.saveCustomBrightness(value.toInt()),
             min: 0,
             max: 100,
           ),
@@ -252,43 +199,52 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildImageSpace() {
     return ListTile(
       title: Text('spaceBetweenImages'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: readSetting.imageSpace.value,
         elevation: 4,
         onChanged: (int? newValue) {
           readSetting.saveImageSpace(newValue!);
         },
         items: const [
-          DropdownMenuItem(child: Text('0'), value: 0),
-          DropdownMenuItem(child: Text('2'), value: 2),
-          DropdownMenuItem(child: Text('4'), value: 4),
-          DropdownMenuItem(child: Text('6'), value: 6),
-          DropdownMenuItem(child: Text('8'), value: 7),
-          DropdownMenuItem(child: Text('10'), value: 10),
+          DropdownMenuItem(
+            child: Text('0'),
+            value: 0,
+          ),
+          DropdownMenuItem(
+            child: Text('2'),
+            value: 2,
+          ),
+          DropdownMenuItem(
+            child: Text('4'),
+            value: 4,
+          ),
+          DropdownMenuItem(
+            child: Text('6'),
+            value: 6,
+          ),
+          DropdownMenuItem(
+            child: Text('8'),
+            value: 7,
+          ),
+          DropdownMenuItem(
+            child: Text('10'),
+            value: 10,
+          ),
         ],
       ),
     ).marginOnly(right: 12);
   }
 
   Widget _buildShowStatusInfo() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('showStatusInfo'.tr),
       value: readSetting.showStatusInfo.value,
       onChanged: readSetting.saveShowStatusInfo,
     );
   }
 
-  Widget _buildEnableBookmarkFloatingBall() {
-    return EHAppleSwitchListTile(
-      title: Text('enableBookmarkFloatingBall'.tr),
-      subtitle: Text('enableBookmarkFloatingBallHint'.tr),
-      value: readSetting.enableBookmarkFloatingBall.value,
-      onChanged: readSetting.saveEnableBookmarkFloatingBall,
-    );
-  }
-
   Widget _buildEnableTranslationFloatingBall() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enableTranslationFloatingBall'.tr),
       subtitle: Text('enableTranslationFloatingBallHint'.tr),
       value: readSetting.enableTranslationFloatingBall.value,
@@ -297,17 +253,16 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildEnablePageTurnByVolumeKeys() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enablePageTurnByVolumeKeys'.tr),
-      subtitle:
-          GetPlatform.isIOS ? Text('enablePageTurnByVolumeKeysHint'.tr) : null,
+      subtitle: GetPlatform.isIOS ? Text('enablePageTurnByVolumeKeysHint'.tr) : null,
       value: readSetting.enablePageTurnByVolumeKeys.value,
       onChanged: readSetting.saveEnablePageTurnByVolumeKeys,
     );
   }
 
   Widget _buildEnablePageTurnAnime() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enablePageTurnAnime'.tr),
       value: readSetting.enablePageTurnAnime.value,
       onChanged: readSetting.saveEnablePageTurnAnime,
@@ -315,7 +270,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildEnableDoubleTapToScaleUp() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enableDoubleTapToScaleUp'.tr),
       value: readSetting.enableDoubleTapToScaleUp.value,
       onChanged: readSetting.saveEnableDoubleTapToScaleUp,
@@ -323,7 +278,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildEnableTapDragToScaleUp() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enableTapDragToScaleUp'.tr),
       value: readSetting.enableTapDragToScaleUp.value,
       onChanged: readSetting.saveEnableTapDragToScaleUp,
@@ -331,7 +286,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildEnableBottomMenu() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('enableBottomMenu'.tr),
       value: readSetting.enableBottomMenu.value,
       onChanged: readSetting.saveEnableBottomMenu,
@@ -339,7 +294,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildReverseTurnPageDirection() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('reverseTurnPageDirection'.tr),
       value: readSetting.reverseTurnPageDirection.value,
       onChanged: readSetting.saveReverseTurnPageDirection,
@@ -347,7 +302,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildDisableTurnPageOnTap() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('disablePageTurningOnTap'.tr),
       value: readSetting.disablePageTurningOnTap.value,
       onChanged: readSetting.saveDisablePageTurningOnTap,
@@ -362,26 +317,17 @@ class SettingReadPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 50,
-            child: EHAppleTextField(
+            child: TextField(
               controller: imageMaxKilobytesController,
-              decoration: const InputDecoration(
-                isDense: true,
-                labelStyle: TextStyle(fontSize: 12),
-              ),
+              decoration: const InputDecoration(isDense: true, labelStyle: TextStyle(fontSize: 12)),
               textAlign: TextAlign.center,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                IntRangeTextInputFormatter(minValue: 1),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, IntRangeTextInputFormatter(minValue: 1)],
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            'KB',
-            style: UIConfig.settingPageListTileTrailingTextStyle(context),
-          ),
+          Text('KB', style: UIConfig.settingPageListTileTrailingTextStyle(context)),
           const SizedBox(width: 8),
-          EHAppleIconButton(
+          IconButton(
             onPressed: () {
               int? value = int.tryParse(imageMaxKilobytesController.value.text);
               if (value == null) {
@@ -390,10 +336,7 @@ class SettingReadPage extends StatelessWidget {
               readSetting.saveMaxImageKilobyte(value);
               toast('saveSuccess'.tr);
             },
-            icon: Icon(
-              Icons.check,
-              color: UIConfig.resumePauseButtonColor(context),
-            ),
+            icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context)),
           ),
         ],
       ),
@@ -403,25 +346,14 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildDeviceDirection() {
     return ListTile(
       title: Text('deviceOrientation'.tr),
-      trailing: EHCodexStyleDropdown<DeviceDirection>(
+      trailing: DropdownButton<DeviceDirection>(
         value: readSetting.deviceDirection.value,
         elevation: 4,
-        onChanged:
-            (DeviceDirection? newValue) =>
-                readSetting.saveDeviceDirection(newValue!),
+        onChanged: (DeviceDirection? newValue) => readSetting.saveDeviceDirection(newValue!),
         items: [
-          DropdownMenuItem(
-            child: Text('followSystem'.tr),
-            value: DeviceDirection.followSystem,
-          ),
-          DropdownMenuItem(
-            child: Text('landscape'.tr),
-            value: DeviceDirection.landscape,
-          ),
-          DropdownMenuItem(
-            child: Text('portrait'.tr),
-            value: DeviceDirection.portrait,
-          ),
+          DropdownMenuItem(child: Text('followSystem'.tr), value: DeviceDirection.followSystem),
+          DropdownMenuItem(child: Text('landscape'.tr), value: DeviceDirection.landscape),
+          DropdownMenuItem(child: Text('portrait'.tr), value: DeviceDirection.portrait),
         ],
       ).marginOnly(right: 12),
     );
@@ -430,16 +362,11 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildPortraitReadDirection() {
     return ListTile(
       title: Text('portraitReadDirection'.tr),
-      trailing: EHCodexStyleDropdown<ReadDirection>(
+      trailing: DropdownButton<ReadDirection>(
         value: readSetting.portraitReadDirection.value,
         elevation: 4,
-        onChanged:
-            (ReadDirection? newValue) =>
-                readSetting.savePortraitReadDirection(newValue!),
-        items:
-            ReadDirection.values
-                .map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e))
-                .toList(),
+        onChanged: (ReadDirection? newValue) => readSetting.savePortraitReadDirection(newValue!),
+        items: ReadDirection.values.map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e)).toList(),
       ).marginOnly(right: 12),
     );
   }
@@ -447,16 +374,11 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildLandscapeReadDirection() {
     return ListTile(
       title: Text('landscapeReadDirection'.tr),
-      trailing: EHCodexStyleDropdown<ReadDirection>(
+      trailing: DropdownButton<ReadDirection>(
         value: readSetting.landscapeReadDirection.value,
         elevation: 4,
-        onChanged:
-            (ReadDirection? newValue) =>
-                readSetting.saveLandscapeReadDirection(newValue!),
-        items:
-            ReadDirection.values
-                .map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e))
-                .toList(),
+        onChanged: (ReadDirection? newValue) => readSetting.saveLandscapeReadDirection(newValue!),
+        items: ReadDirection.values.map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e)).toList(),
       ).marginOnly(right: 12),
     );
   }
@@ -464,16 +386,11 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildReadDirection() {
     return ListTile(
       title: Text('readDirection'.tr),
-      trailing: EHCodexStyleDropdown<ReadDirection>(
+      trailing: DropdownButton<ReadDirection>(
         value: readSetting.readDirection.value,
         elevation: 4,
-        onChanged:
-            (ReadDirection? newValue) =>
-                readSetting.saveReadDirection(newValue!),
-        items:
-            ReadDirection.values
-                .map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e))
-                .toList(),
+        onChanged: (ReadDirection? newValue) => readSetting.saveReadDirection(newValue!),
+        items: ReadDirection.values.map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e)).toList(),
       ).marginOnly(right: 12),
     );
   }
@@ -482,29 +399,26 @@ class SettingReadPage extends StatelessWidget {
     return ListTile(
       title: Text('failedImageRetryScope'.tr),
       subtitle: Text('failedImageRetryScopeHint'.tr),
-      trailing: EHCodexStyleDropdown<FailedImageRetryScope>(
+      trailing: DropdownButton<FailedImageRetryScope>(
         value: readSetting.failedImageRetryScope.value,
         elevation: 4,
-        onChanged:
-            (FailedImageRetryScope? newValue) =>
-                readSetting.saveFailedImageRetryScope(newValue!),
-        items:
-            FailedImageRetryScope.values
-                .map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e))
-                .toList(),
+        onChanged: (FailedImageRetryScope? newValue) => readSetting.saveFailedImageRetryScope(newValue!),
+        items: FailedImageRetryScope.values.map((e) => DropdownMenuItem(child: Text(e.name.tr), value: e)).toList(),
       ).marginOnly(right: 12),
     );
   }
 
   Widget _buildImageTimeoutRetry() {
-    return EHAppleExpandableSwitchListTile(
-      title: Text('imageTimeoutRetry'.tr),
-      subtitle: Text('imageTimeoutRetryHint'.tr),
-      value: readSetting.enableImageTimeoutRetry.value,
-      onChanged: readSetting.saveEnableImageTimeoutRetry,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _buildImageTimeoutRetryCount(),
-        _buildImageTimeoutRetryInterval(),
+        SwitchListTile(
+          title: Text('imageTimeoutRetry'.tr),
+          subtitle: Text('imageTimeoutRetryHint'.tr),
+          value: readSetting.enableImageTimeoutRetry.value,
+          onChanged: readSetting.saveEnableImageTimeoutRetry,
+        ),
+        if (readSetting.enableImageTimeoutRetry.value) ...[_buildImageTimeoutRetryCount(), _buildImageTimeoutRetryInterval()],
       ],
     );
   }
@@ -512,16 +426,11 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildImageTimeoutRetryCount() {
     return ListTile(
       title: Text('imageTimeoutRetryCount'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: readSetting.imageTimeoutRetryCount.value,
         elevation: 4,
-        onChanged:
-            (int? value) => readSetting.saveImageTimeoutRetryCount(value!),
-        items: List<DropdownMenuItem<int>>.generate(
-          5,
-          (int index) =>
-              DropdownMenuItem(value: index + 1, child: Text('${index + 1}')),
-        ),
+        onChanged: (int? value) => readSetting.saveImageTimeoutRetryCount(value!),
+        items: List<DropdownMenuItem<int>>.generate(5, (int index) => DropdownMenuItem(value: index + 1, child: Text('${index + 1}'))),
       ).marginOnly(right: 12),
     );
   }
@@ -530,20 +439,11 @@ class SettingReadPage extends StatelessWidget {
     const List<int> intervals = <int>[500, 1000, 1500, 2000];
     return ListTile(
       title: Text('imageTimeoutRetryInterval'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: readSetting.imageTimeoutRetryInterval.value,
         elevation: 4,
-        onChanged:
-            (int? value) => readSetting.saveImageTimeoutRetryInterval(value!),
-        items:
-            intervals
-                .map(
-                  (int value) => DropdownMenuItem(
-                    value: value,
-                    child: Text('${value / 1000}s'),
-                  ),
-                )
-                .toList(),
+        onChanged: (int? value) => readSetting.saveImageTimeoutRetryInterval(value!),
+        items: intervals.map((int value) => DropdownMenuItem(value: value, child: Text('${value / 1000}s'))).toList(),
       ).marginOnly(right: 12),
     );
   }
@@ -552,10 +452,7 @@ class SettingReadPage extends StatelessWidget {
     return ListTile(
       title: Text('notchOptimization'.tr),
       subtitle: Text('notchOptimizationHint'.tr),
-      trailing: EHAppleSwitch(
-        value: readSetting.notchOptimization.value,
-        onChanged: readSetting.saveNotchOptimization,
-      ),
+      trailing: Switch(value: readSetting.notchOptimization.value, onChanged: readSetting.saveNotchOptimization),
     );
   }
 
@@ -567,18 +464,12 @@ class SettingReadPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 50,
-            child: EHAppleTextField(
+            child: TextField(
               controller: imageRegionWidthRatioController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                isDense: true,
-                labelStyle: TextStyle(fontSize: 12),
-              ),
+              decoration: const InputDecoration(isDense: true, labelStyle: TextStyle(fontSize: 12)),
               textAlign: TextAlign.center,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                IntRangeTextInputFormatter(minValue: 1, maxValue: 100),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, IntRangeTextInputFormatter(minValue: 1, maxValue: 100)],
               onSubmitted: (_) {
                 _saveImageRegionWidthRatio();
               },
@@ -587,13 +478,7 @@ class SettingReadPage extends StatelessWidget {
           const SizedBox(width: 8),
           const Text('%'),
           const SizedBox(width: 8),
-          EHAppleIconButton(
-            onPressed: _saveImageRegionWidthRatio,
-            icon: Icon(
-              Icons.check,
-              color: UIConfig.resumePauseButtonColor(context),
-            ),
-          ),
+          IconButton(onPressed: _saveImageRegionWidthRatio, icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context))),
         ],
       ),
     ).marginOnly(right: 12);
@@ -616,30 +501,21 @@ class SettingReadPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 50,
-            child: EHAppleTextField(
+            child: TextField(
               controller: portraitImageRegionWidthRatioController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                isDense: true,
-                labelStyle: TextStyle(fontSize: 12),
-              ),
+              decoration: const InputDecoration(isDense: true, labelStyle: TextStyle(fontSize: 12)),
               textAlign: TextAlign.center,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                IntRangeTextInputFormatter(minValue: 1, maxValue: 100),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, IntRangeTextInputFormatter(minValue: 1, maxValue: 100)],
               onSubmitted: (_) => _savePortraitImageRegionWidthRatio(),
             ),
           ),
           const SizedBox(width: 8),
           const Text('%'),
           const SizedBox(width: 8),
-          EHAppleIconButton(
+          IconButton(
             onPressed: _savePortraitImageRegionWidthRatio,
-            icon: Icon(
-              Icons.check,
-              color: UIConfig.resumePauseButtonColor(context),
-            ),
+            icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context)),
           ),
         ],
       ),
@@ -647,9 +523,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   void _savePortraitImageRegionWidthRatio() {
-    int? value = int.tryParse(
-      portraitImageRegionWidthRatioController.value.text,
-    );
+    int? value = int.tryParse(portraitImageRegionWidthRatioController.value.text);
     if (value == null) {
       return;
     }
@@ -665,30 +539,21 @@ class SettingReadPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 50,
-            child: EHAppleTextField(
+            child: TextField(
               controller: landscapeImageRegionWidthRatioController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                isDense: true,
-                labelStyle: TextStyle(fontSize: 12),
-              ),
+              decoration: const InputDecoration(isDense: true, labelStyle: TextStyle(fontSize: 12)),
               textAlign: TextAlign.center,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                IntRangeTextInputFormatter(minValue: 1, maxValue: 100),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, IntRangeTextInputFormatter(minValue: 1, maxValue: 100)],
               onSubmitted: (_) => _saveLandscapeImageRegionWidthRatio(),
             ),
           ),
           const SizedBox(width: 8),
           const Text('%'),
           const SizedBox(width: 8),
-          EHAppleIconButton(
+          IconButton(
             onPressed: _saveLandscapeImageRegionWidthRatio,
-            icon: Icon(
-              Icons.check,
-              color: UIConfig.resumePauseButtonColor(context),
-            ),
+            icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context)),
           ),
         ],
       ),
@@ -696,9 +561,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   void _saveLandscapeImageRegionWidthRatio() {
-    int? value = int.tryParse(
-      landscapeImageRegionWidthRatioController.value.text,
-    );
+    int? value = int.tryParse(landscapeImageRegionWidthRatioController.value.text);
     if (value == null) {
       return;
     }
@@ -714,18 +577,12 @@ class SettingReadPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 50,
-            child: EHAppleTextField(
+            child: TextField(
               controller: gestureRegionWidthRatioController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                isDense: true,
-                labelStyle: TextStyle(fontSize: 12),
-              ),
+              decoration: const InputDecoration(isDense: true, labelStyle: TextStyle(fontSize: 12)),
               textAlign: TextAlign.center,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                IntRangeTextInputFormatter(minValue: 0, maxValue: 100),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, IntRangeTextInputFormatter(minValue: 0, maxValue: 100)],
               onSubmitted: (_) {
                 _saveGestureRegionWidthRatio();
               },
@@ -734,13 +591,7 @@ class SettingReadPage extends StatelessWidget {
           const SizedBox(width: 8),
           const Text('%'),
           const SizedBox(width: 8),
-          EHAppleIconButton(
-            onPressed: _saveGestureRegionWidthRatio,
-            icon: Icon(
-              Icons.check,
-              color: UIConfig.resumePauseButtonColor(context),
-            ),
-          ),
+          IconButton(onPressed: _saveGestureRegionWidthRatio, icon: Icon(Icons.check, color: UIConfig.resumePauseButtonColor(context))),
         ],
       ),
     ).marginOnly(right: 12);
@@ -767,7 +618,7 @@ class SettingReadPage extends StatelessWidget {
     return ListTile(
       title: Text('thirdPartyViewerPath'.tr),
       subtitle: Text(readSetting.thirdPartyViewerPath.value ?? ''),
-      trailing: Icon(AppIcons.chevronRight),
+      trailing: const Icon(Icons.keyboard_arrow_right),
       onTap: () async {
         FilePickerResult? result;
         try {
@@ -790,7 +641,7 @@ class SettingReadPage extends StatelessWidget {
     return ListTile(
       title: Text('keyboardShortcuts'.tr),
       subtitle: Text('keyboardShortcutsHint'.tr),
-      trailing: Icon(AppIcons.chevronRight),
+      trailing: const Icon(Icons.keyboard_arrow_right),
       onTap: () {
         final rootNav = Navigator.of(context, rootNavigator: true);
         final nearestNav = Navigator.of(context);
@@ -801,29 +652,21 @@ class SettingReadPage extends StatelessWidget {
             nearestNav.widget.key != Get.keys[rightV2]) {
           nearestNav.push(
             PageRouteBuilder(
-              pageBuilder:
-                  (context, animation, secondaryAnimation) =>
-                      const SettingKeyboardShortcutsPage(),
-              transitionsBuilder:
-                  preferenceSetting.enableSwipeBackGesture.isTrue &&
-                          styleSetting.isInMobileLayout
-                      ? (context, animation, secondaryAnimation, child) =>
-                          SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(1, 0),
-                              end: Offset.zero,
-                            ).animate(
-                              CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeInOut,
-                              ),
-                            ),
-                            child: child,
-                          )
-                      : (context, animation, secondaryAnimation, child) =>
-                          FadeTransition(opacity: animation, child: child),
-              transitionDuration: UIConfig.defaultPageRouteTransitionDuration,
-            ),
+                pageBuilder: (context, animation, secondaryAnimation) => const SettingKeyboardShortcutsPage(),
+                transitionsBuilder: preferenceSetting.enableSwipeBackGesture.isTrue && styleSetting.isInMobileLayout
+                    ? (context, animation, secondaryAnimation, child) =>
+                    SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(1, 0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeInOut,
+                      )),
+                      child: child,
+                    )
+                    : (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+                transitionDuration: UIConfig.defaultPageRouteTransitionDuration),
           );
         } else {
           toRoute(Routes.settingKeyboardShortcuts);
@@ -835,7 +678,7 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildPreloadPageCount() {
     return ListTile(
       title: Text('preloadPageCount'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: readSetting.preloadPageCount.value,
         elevation: 4,
         onChanged: (int? newValue) {
@@ -857,7 +700,7 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildPreloadPageCountInLocalMode() {
     return ListTile(
       title: Text('preloadPageCountInLocalMode'.tr),
-      trailing: EHCodexStyleDropdown<int>(
+      trailing: DropdownButton<int>(
         value: readSetting.preloadPageCountLocal.value,
         elevation: 4,
         onChanged: (int? newValue) {
@@ -877,7 +720,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildDisplayFirstPageAlone() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('displayFirstPageAloneGlobally'.tr),
       value: readSetting.displayFirstPageAlone.value,
       onChanged: readSetting.saveDisplayFirstPageAlone,
@@ -885,7 +728,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildPortraitDisplayFirstPageAlone() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('portraitDisplayFirstPageAlone'.tr),
       value: readSetting.portraitDisplayFirstPageAlone.value,
       onChanged: readSetting.savePortraitDisplayFirstPageAlone,
@@ -893,7 +736,7 @@ class SettingReadPage extends StatelessWidget {
   }
 
   Widget _buildLandscapeDisplayFirstPageAlone() {
-    return EHAppleSwitchListTile(
+    return SwitchListTile(
       title: Text('landscapeDisplayFirstPageAlone'.tr),
       value: readSetting.landscapeDisplayFirstPageAlone.value,
       onChanged: readSetting.saveLandscapeDisplayFirstPageAlone,
@@ -903,22 +746,14 @@ class SettingReadPage extends StatelessWidget {
   Widget _buildAutoModeStyle() {
     return ListTile(
       title: Text('autoModeStyle'.tr),
-      trailing: EHCodexStyleDropdown<AutoModeStyle>(
+      trailing: DropdownButton<AutoModeStyle>(
         value: readSetting.autoModeStyle.value,
         elevation: 4,
         alignment: AlignmentDirectional.centerEnd,
-        onChanged:
-            (AutoModeStyle? newValue) =>
-                readSetting.saveAutoModeStyle(newValue!),
+        onChanged: (AutoModeStyle? newValue) => readSetting.saveAutoModeStyle(newValue!),
         items: [
-          DropdownMenuItem(
-            child: Text('scroll'.tr),
-            value: AutoModeStyle.scroll,
-          ),
-          DropdownMenuItem(
-            child: Text('turnPage'.tr),
-            value: AutoModeStyle.turnPage,
-          ),
+          DropdownMenuItem(child: Text('scroll'.tr), value: AutoModeStyle.scroll),
+          DropdownMenuItem(child: Text('turnPage'.tr), value: AutoModeStyle.turnPage),
         ],
       ).marginOnly(right: 12),
     );
@@ -928,21 +763,14 @@ class SettingReadPage extends StatelessWidget {
     return ListTile(
       title: Text('turnPageMode'.tr),
       subtitle: Text('turnPageModeHint'.tr),
-      trailing: EHCodexStyleDropdown<TurnPageMode>(
+      trailing: DropdownButton<TurnPageMode>(
         value: readSetting.turnPageMode.value,
         elevation: 4,
-        onChanged:
-            (TurnPageMode? newValue) => readSetting.saveTurnPageMode(newValue!),
+        onChanged: (TurnPageMode? newValue) => readSetting.saveTurnPageMode(newValue!),
         items: [
           DropdownMenuItem(child: Text('image'.tr), value: TurnPageMode.image),
-          DropdownMenuItem(
-            child: Text('screen'.tr),
-            value: TurnPageMode.screen,
-          ),
-          DropdownMenuItem(
-            child: Text('adaptive'.tr),
-            value: TurnPageMode.adaptive,
-          ),
+          DropdownMenuItem(child: Text('screen'.tr), value: TurnPageMode.screen),
+          DropdownMenuItem(child: Text('adaptive'.tr), value: TurnPageMode.adaptive),
         ],
       ).marginOnly(right: 12),
     );

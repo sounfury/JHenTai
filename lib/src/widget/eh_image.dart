@@ -4,20 +4,17 @@ import 'package:animate_do/animate_do.dart';
 import 'package:extended_image/extended_image.dart';
 
 // ignore: implementation_imports
-import 'package:extended_image_library/src/network/network_image_io.dart'
-    as network_image_io;
+import 'package:extended_image_library/src/network/network_image_io.dart' as network_image_io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/config/ui_config.dart';
 import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/model/gallery_image.dart';
 import 'package:jhentai/src/setting/advanced_setting.dart';
 import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/image_cache_util.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'dart:io' as io;
 
 import 'dart:ui' as ui;
@@ -179,8 +176,7 @@ class _EHImageState extends State<EHImage> {
   @override
   void didUpdateWidget(covariant EHImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if ((oldWidget.galleryImage.path ?? oldWidget.galleryImage.url) !=
-        _imageKey) {
+    if ((oldWidget.galleryImage.path ?? oldWidget.galleryImage.url) != _imageKey) {
       _gate?.setPaused(false);
       _gate = null;
       _gateKey = null;
@@ -190,9 +186,7 @@ class _EHImageState extends State<EHImage> {
   @override
   void initState() {
     super.initState();
-    if (widget.animateOnlyWhenVisible &&
-        !widget.disableAnimation &&
-        _canBeAnimated) {
+    if (widget.animateOnlyWhenVisible && !widget.disableAnimation && _canBeAnimated) {
       _startVisibilityCheck();
     }
   }
@@ -224,15 +218,10 @@ class _EHImageState extends State<EHImage> {
 
   bool _isVisible() {
     final RenderObject? renderObject = context.findRenderObject();
-    if (renderObject == null ||
-        !renderObject.attached ||
-        renderObject is! RenderBox ||
-        !renderObject.hasSize) {
+    if (renderObject == null || !renderObject.attached || renderObject is! RenderBox || !renderObject.hasSize) {
       return true;
     }
-    final RenderAbstractViewport? viewport = RenderAbstractViewport.maybeOf(
-      renderObject,
-    );
+    final RenderAbstractViewport? viewport = RenderAbstractViewport.maybeOf(renderObject);
     if (viewport == null || viewport is! RenderBox) {
       return true;
     }
@@ -249,8 +238,8 @@ class _EHImageState extends State<EHImage> {
     Widget child = advancedSetting.inNoImageMode.isTrue
         ? const SizedBox()
         : widget.galleryImage.path == null
-        ? buildNetworkImage(context)
-        : buildFileImage(context);
+            ? buildNetworkImage(context)
+            : buildFileImage(context);
 
     if (widget.heroTag != null && styleSetting.isInMobileLayout) {
       child = Hero(tag: widget.heroTag!, child: child);
@@ -261,10 +250,7 @@ class _EHImageState extends State<EHImage> {
         builder: (_, constraints) => Container(
           height: constraints.maxHeight,
           width: constraints.maxWidth,
-          decoration: BoxDecoration(
-            color: widget.containerColor,
-            borderRadius: widget.borderRadius,
-          ),
+          decoration: BoxDecoration(color: widget.containerColor, borderRadius: widget.borderRadius),
           child: child,
         ),
       );
@@ -273,47 +259,39 @@ class _EHImageState extends State<EHImage> {
     return Container(
       height: widget.containerHeight,
       width: widget.containerWidth,
-      decoration: BoxDecoration(
-        color: widget.containerColor,
-        borderRadius: widget.borderRadius,
-      ),
+      decoration: BoxDecoration(color: widget.containerColor, borderRadius: widget.borderRadius),
       child: child,
     );
   }
 
   Widget buildNetworkImage(BuildContext context) {
     final String url = effectiveEHImageUrl(widget.galleryImage.url);
-    final bool useGate =
-        widget.animateOnlyWhenVisible && !widget.disableAnimation;
+    final bool useGate = widget.animateOnlyWhenVisible && !widget.disableAnimation;
     final int? timeLimit = widget.timeLimit;
 
     return ExtendedImage(
       image: ExtendedResizeImage.resizeIfNeeded(
         provider: useGate
-            ? _GateExtendedNetworkImageProvider(
-                url,
-                cache: true,
-                printError: kDebugMode,
-                // Key the disk cache by the stable image identity so it
-                // survives EH's rotating keystamp token (and can be reused by
-                // the downloader later).
-                cacheKey: normalizedImageCacheKey(url),
-                cancelToken: widget.cancelToken,
-                timeLimit: timeLimit == null
-                    ? null
-                    : Duration(milliseconds: timeLimit),
-                gate: gate,
-              )
-            : ExtendedNetworkImageProvider(
-                url,
-                cache: true,
-                printError: kDebugMode,
-                cacheKey: normalizedImageCacheKey(url),
-                cancelToken: widget.cancelToken,
-                timeLimit: timeLimit == null
-                    ? null
-                    : Duration(milliseconds: timeLimit),
-              ),
+                ? _GateExtendedNetworkImageProvider(
+                  url,
+                  cache: true,
+                  printError: kDebugMode,
+                  // Key the disk cache by the stable image identity so it
+                  // survives EH's rotating keystamp token (and can be reused by
+                  // the downloader later).
+                  cacheKey: normalizedImageCacheKey(url),
+                  cancelToken: widget.cancelToken,
+                  timeLimit: timeLimit == null ? null : Duration(milliseconds: timeLimit),
+                  gate: gate,
+                )
+                : ExtendedNetworkImageProvider(
+                  url,
+                  cache: true,
+                  printError: kDebugMode,
+                  cacheKey: normalizedImageCacheKey(url),
+                  cancelToken: widget.cancelToken,
+                  timeLimit: timeLimit == null ? null : Duration(milliseconds: timeLimit),
+                ),
         maxBytes: widget.maxBytes,
         cacheWidth: widget.cacheWidth,
         cacheHeight: widget.cacheHeight,
@@ -330,57 +308,31 @@ class _EHImageState extends State<EHImage> {
           case LoadState.loading:
             widget.onLoading?.call(state);
             return widget.loadingProgressWidgetBuilder != null
-                ? widget.loadingProgressWidgetBuilder!.call(
-                    _computeLoadingProgress(
-                      state.loadingProgress,
-                      state.extendedImageInfo,
-                    ),
-                  )
+                ? widget.loadingProgressWidgetBuilder!.call(_computeLoadingProgress(state.loadingProgress, state.extendedImageInfo))
                 : Center(child: UIConfig.loadingAnimation(context));
           case LoadState.failed:
             widget.onFailed?.call(state);
             return widget.failedWidgetBuilder?.call(state) ??
-                Center(
-                  child: GestureDetector(
-                    child: const Icon(Icons.sentiment_very_dissatisfied),
-                    onTap: state.reLoadImage,
-                  ),
-                );
+                Center(child: GestureDetector(child: const Icon(Icons.sentiment_very_dissatisfied), onTap: state.reLoadImage));
           case LoadState.completed:
             widget.onCompleted?.call(state);
             state.returnLoadStateChangedWidget = true;
 
-            Widget child =
-                widget.completedWidgetBuilder?.call(state) ??
-                _buildExtendedRawImage(state);
+            Widget child = widget.completedWidgetBuilder?.call(state) ?? _buildExtendedRawImage(state);
 
             if (widget.borderRadius != BorderRadius.zero) {
-              child = ClipRRect(
-                child: child,
-                borderRadius: widget.borderRadius,
-              );
+              child = ClipRRect(child: child, borderRadius: widget.borderRadius);
             }
 
             if (state.slidePageState != null) {
-              child = ExtendedImageSlidePageHandler(
-                child: child,
-                extendedImageSlidePageState: state.slidePageState,
-              );
+              child = ExtendedImageSlidePageHandler(child: child, extendedImageSlidePageState: state.slidePageState);
             }
 
             child = Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: widget.shadows,
-                  borderRadius: widget.borderRadius,
-                ),
-                child: child,
-              ),
+              child: Container(decoration: BoxDecoration(boxShadow: widget.shadows, borderRadius: widget.borderRadius), child: child),
             );
 
-            return widget.forceFadeIn || !state.wasSynchronouslyLoaded
-                ? child.fadeIn()
-                : child;
+            return widget.forceFadeIn || !state.wasSynchronouslyLoaded ? child.fadeIn() : child;
         }
       },
     );
@@ -388,35 +340,23 @@ class _EHImageState extends State<EHImage> {
 
   Widget buildFileImage(BuildContext context) {
     if (widget.galleryImage.downloadStatus == DownloadStatus.paused) {
-      return widget.pausedWidgetBuilder?.call() ??
-          (ThemeConfig.isApple
-              ? GlassProgressIndicator.circular()
-              : const Center(child: CircularProgressIndicator()));
+      return widget.pausedWidgetBuilder?.call() ?? (const Center(child: CircularProgressIndicator()));
     }
 
     if (widget.galleryImage.downloadStatus == DownloadStatus.downloading) {
-      return widget.downloadingWidgetBuilder?.call() ??
-          (ThemeConfig.isApple
-              ? GlassProgressIndicator.circular()
-              : const Center(child: CircularProgressIndicator()));
+      return widget.downloadingWidgetBuilder?.call() ?? (const Center(child: CircularProgressIndicator()));
     }
 
     final io.File file = io.File(
-      widget.absoluteFilePath ??
-          DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(
-            widget.galleryImage.path!,
-          ),
+      widget.absoluteFilePath ?? DownloadPathResolver.computeImageDownloadAbsolutePathFromRelativePath(widget.galleryImage.path!),
     );
     final String lowerPath = widget.galleryImage.path!.toLowerCase();
-    final bool isAnimatedFile =
-        lowerPath.endsWith('.webp') || lowerPath.endsWith('.gif');
+    final bool isAnimatedFile = lowerPath.endsWith('.webp') || lowerPath.endsWith('.gif');
 
     final ImageProvider provider;
     if (widget.disableAnimation && isAnimatedFile) {
       provider = _SingleFrameExtendedFileImageProvider(file);
-    } else if (widget.animateOnlyWhenVisible &&
-        !widget.disableAnimation &&
-        isAnimatedFile) {
+    } else if (widget.animateOnlyWhenVisible && !widget.disableAnimation && isAnimatedFile) {
       provider = _GateExtendedFileImageProvider(file, gate);
     } else {
       provider = ExtendedFileImageProvider(file);
@@ -432,10 +372,7 @@ class _EHImageState extends State<EHImage> {
       fit: widget.fit,
       height: widget.containerHeight,
       width: widget.containerWidth,
-      enableLoadState:
-          widget.loadingWidgetBuilder != null ||
-          widget.failedWidgetBuilder != null ||
-          widget.completedWidgetBuilder != null,
+      enableLoadState: widget.loadingWidgetBuilder != null || widget.failedWidgetBuilder != null || widget.completedWidgetBuilder != null,
       enableSlideOutPage: widget.enableSlideOutPage,
       borderRadius: widget.borderRadius,
       shape: BoxShape.rectangle,
@@ -444,44 +381,26 @@ class _EHImageState extends State<EHImage> {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
             widget.onLoading?.call(state);
-            return widget.loadingWidgetBuilder != null
-                ? widget.loadingWidgetBuilder!.call()
-                : Center(child: UIConfig.loadingAnimation(context));
+            return widget.loadingWidgetBuilder != null ? widget.loadingWidgetBuilder!.call() : Center(child: UIConfig.loadingAnimation(context));
           case LoadState.failed:
             widget.onFailed?.call(state);
             return widget.failedWidgetBuilder?.call(state) ??
-                Center(
-                  child: GestureDetector(
-                    child: const Icon(Icons.sentiment_very_dissatisfied),
-                    onTap: state.reLoadImage,
-                  ),
-                );
+                Center(child: GestureDetector(child: const Icon(Icons.sentiment_very_dissatisfied), onTap: state.reLoadImage));
           case LoadState.completed:
             widget.onCompleted?.call(state);
             state.returnLoadStateChangedWidget = true;
 
-            Widget child =
-                widget.completedWidgetBuilder?.call(state) ??
-                _buildExtendedRawImage(state);
+            Widget child = widget.completedWidgetBuilder?.call(state) ?? _buildExtendedRawImage(state);
 
             child = ClipRRect(child: child, borderRadius: widget.borderRadius);
 
             if (state.slidePageState != null) {
-              child = ExtendedImageSlidePageHandler(
-                child: child,
-                extendedImageSlidePageState: state.slidePageState,
-              );
+              child = ExtendedImageSlidePageHandler(child: child, extendedImageSlidePageState: state.slidePageState);
             }
 
             return FadeIn(
               child: Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: widget.shadows,
-                    borderRadius: widget.borderRadius,
-                  ),
-                  child: child,
-                ),
+                child: Container(decoration: BoxDecoration(boxShadow: widget.shadows, borderRadius: widget.borderRadius), child: child),
               ),
             );
         }
@@ -490,10 +409,7 @@ class _EHImageState extends State<EHImage> {
     );
   }
 
-  double _computeLoadingProgress(
-    ImageChunkEvent? loadingProgress,
-    ImageInfo? extendedImageInfo,
-  ) {
+  double _computeLoadingProgress(ImageChunkEvent? loadingProgress, ImageInfo? extendedImageInfo) {
     if (loadingProgress == null) {
       return 0.01;
     }
@@ -507,24 +423,14 @@ class _EHImageState extends State<EHImage> {
   Widget _buildExtendedRawImage(ExtendedImageState state) {
     FittedSizes fittedSizes = applyBoxFit(
       widget.fit,
-      Size(
-        state.extendedImageInfo!.image.width.toDouble(),
-        state.extendedImageInfo!.image.height.toDouble(),
-      ),
-      Size(
-        widget.containerWidth ?? double.infinity,
-        widget.containerHeight ?? double.infinity,
-      ),
+      Size(state.extendedImageInfo!.image.width.toDouble(), state.extendedImageInfo!.image.height.toDouble()),
+      Size(widget.containerWidth ?? double.infinity, widget.containerHeight ?? double.infinity),
     );
 
     return ExtendedRawImage(
       image: state.extendedImageInfo?.image,
-      height: fittedSizes.destination.height == 0
-          ? null
-          : fittedSizes.destination.height,
-      width: fittedSizes.destination.width == 0
-          ? null
-          : fittedSizes.destination.width,
+      height: fittedSizes.destination.height == 0 ? null : fittedSizes.destination.height,
+      width: fittedSizes.destination.width == 0 ? null : fittedSizes.destination.width,
       scale: state.extendedImageInfo?.scale ?? 1.0,
       fit: widget.fit,
     );
@@ -623,10 +529,7 @@ class _SingleFrameExtendedFileImageProvider extends ExtendedFileImageProvider {
   const _SingleFrameExtendedFileImageProvider(super.file);
 
   @override
-  Future<ui.Codec> instantiateImageCodec(
-    Uint8List data,
-    ImageDecoderCallback decode,
-  ) async {
+  Future<ui.Codec> instantiateImageCodec(Uint8List data, ImageDecoderCallback decode) async {
     final ui.Codec codec = await super.instantiateImageCodec(data, decode);
     if (codec.frameCount > 1) {
       return _SingleFrameCodec(codec);
@@ -650,8 +553,7 @@ class _PausableCodec implements ui.Codec {
   /// Never completes. Returned once the codec has been disposed so the image
   /// completer's decode loop just stays parked instead of throwing on a
   /// disposed native codec (which would surface in the debug console).
-  static final Future<ui.FrameInfo> _neverCompletes =
-      Completer<ui.FrameInfo>().future;
+  static final Future<ui.FrameInfo> _neverCompletes = Completer<ui.FrameInfo>().future;
 
   @override
   int get frameCount => _inner.frameCount;
@@ -694,17 +596,13 @@ class _GateExtendedFileImageProvider extends ExtendedFileImageProvider {
   final EHImageAnimationGate gate;
 
   @override
-  Future<ui.Codec> instantiateImageCodec(
-    Uint8List data,
-    ImageDecoderCallback decode,
-  ) async {
+  Future<ui.Codec> instantiateImageCodec(Uint8List data, ImageDecoderCallback decode) async {
     final ui.Codec codec = await super.instantiateImageCodec(data, decode);
     return codec.frameCount > 1 ? _PausableCodec(codec, gate) : codec;
   }
 }
 
-class _GateExtendedNetworkImageProvider
-    extends network_image_io.ExtendedNetworkImageProvider {
+class _GateExtendedNetworkImageProvider extends network_image_io.ExtendedNetworkImageProvider {
   _GateExtendedNetworkImageProvider(
     super.url, {
     super.cache,
@@ -718,10 +616,7 @@ class _GateExtendedNetworkImageProvider
   final EHImageAnimationGate gate;
 
   @override
-  Future<ui.Codec> instantiateImageCodec(
-    Uint8List data,
-    ImageDecoderCallback decode,
-  ) async {
+  Future<ui.Codec> instantiateImageCodec(Uint8List data, ImageDecoderCallback decode) async {
     final ui.Codec codec = await super.instantiateImageCodec(data, decode);
     return codec.frameCount > 1 ? _PausableCodec(codec, gate) : codec;
   }

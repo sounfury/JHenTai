@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/setting/download_setting.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
-import 'package:jhentai/src/widget/eh_apple_settings_list_view.dart';
 import 'package:jhentai/src/widget/eh_alert_dialog.dart';
 
 import '../../../../service/log.dart';
 import '../../../../utils/permission_util.dart';
 import '../../../../utils/toast_util.dart';
+
+import 'package:jhentai/src/extension/widget_extension.dart';
 
 class ExtraGalleryScanPathPage extends StatelessWidget {
   const ExtraGalleryScanPathPage({Key? key}) : super(key: key);
@@ -20,23 +20,15 @@ class ExtraGalleryScanPathPage extends StatelessWidget {
       appBar: AppBar(
         centerTitle: true,
         title: Text('extraGalleryScanPath'.tr),
-        actions: [
-          EHAppleIconButton(onPressed: _handleAddPath, icon: const Icon(Icons.add)),
-        ],
+        actions: [IconButton(onPressed: _handleAddPath, icon: const Icon(Icons.add))],
       ),
       body: Obx(
-        () => EHAppleSettingsListView(
-          groups: [
-            EHAppleSettingsGroup(
-              children: downloadSetting.extraGalleryScanPath
-                  .map(
-                    (path) => ListTile(
-                        title: Text(path), onTap: () => _handleDelete(path)),
-                  )
-                  .toList(),
-            ),
+        () => ListView(
+          padding: const EdgeInsets.only(top: 16),
+          children: [
+            ...downloadSetting.extraGalleryScanPath.map((path) => ListTile(title: Text(path), onTap: () => _handleDelete(path))).toList(),
           ],
-        ),
+        ).withListTileTheme(context),
       ),
     );
   }

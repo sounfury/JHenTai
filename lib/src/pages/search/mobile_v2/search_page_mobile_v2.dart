@@ -7,7 +7,6 @@ import 'package:jhentai/src/routes/routes.dart';
 import 'package:jhentai/src/setting/preference_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/utils/uuid_util.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 
 import '../../../service/quick_search_service.dart';
 import '../../base/base_page.dart';
@@ -39,16 +38,9 @@ class SearchPageMobileV2 extends BasePage<SearchPageMobileV2Logic, SearchPageMob
         () => Scaffold(
           key: scaffoldKey,
           appBar: buildAppBar(context),
-          drawerEdgeDragWidth:
-              preferenceSetting.drawerGestureEdgeWidth.value.toDouble(),
-          endDrawer: Drawer(
-            width: 278,
-            child: QuickSearchPage(
-              scrollController: quickSearchService.drawerScrollController,
-            ),
-          ),
-          endDrawerEnableOpenDragGesture:
-              preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
+          drawerEdgeDragWidth: preferenceSetting.drawerGestureEdgeWidth.value.toDouble(),
+          endDrawer: Drawer(width: 278, child: QuickSearchPage(scrollController: quickSearchService.drawerScrollController)),
+          endDrawerEnableOpenDragGesture: preferenceSetting.enableQuickSearchDrawerGesture.isTrue,
           body: SafeArea(child: buildBody(context)),
           floatingActionButton: buildFloatingActionButton(),
           resizeToAvoidBottomInset: false,
@@ -61,7 +53,7 @@ class SearchPageMobileV2 extends BasePage<SearchPageMobileV2Logic, SearchPageMob
   AppBar? buildAppBar(BuildContext context) {
     return AppBar(
       leading: GestureDetector(
-        child: EHAppleIconButton(
+        child: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => backRoute(currentRoute: Routes.mobileV2Search),
         ),

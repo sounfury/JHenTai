@@ -25,7 +25,7 @@ class MobileLayoutPageV2Logic extends GetxController with DoubleTapToRefreshLogi
 
     /// If user hideBottomBar, reset the selected navigation index to 0
     hideBottomBarLister = ever(preferenceSetting.hideBottomBar, (_) {
-      if (preferenceSetting.effectiveHideBottomBar) {
+      if (preferenceSetting.hideBottomBar.value) {
         handleTapNavigationBarButton(0);
       }
     });

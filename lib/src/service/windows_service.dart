@@ -1,29 +1,22 @@
-import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
-import 'package:jhentai/src/config/theme_config.dart';
 import 'package:jhentai/src/service/local_config_service.dart';
 import 'package:jhentai/src/utils/screen_size_util.dart';
-import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:throttling/throttling.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../setting/preference_setting.dart';
-import '../setting/style_setting.dart';
 import 'app_update_service.dart';
 import 'jh_service.dart';
 import 'log.dart';
 
 WindowService windowService = WindowService();
 
-class WindowService
-    with JHLifeCircleBeanErrorCatch, WidgetsBindingObserver
-    implements JHLifeCircleBean {
+class WindowService with JHLifeCircleBeanErrorCatch implements JHLifeCircleBean {
   bool windowManagerInited = false;
 
   double windowWidth = 1280;
@@ -33,38 +26,20 @@ class WindowService
 
   double leftColumnWidthRatio = 1 - 0.618;
 
-  final Debouncing windowResizedDebouncing =
-      Debouncing(duration: const Duration(milliseconds: 300));
-  final Debouncing columnResizedDebouncing =
-      Debouncing(duration: const Duration(milliseconds: 300));
+  final Debouncing windowResizedDebouncing = Debouncing(duration: const Duration(milliseconds: 300));
+  final Debouncing columnResizedDebouncing = Debouncing(duration: const Duration(milliseconds: 300));
 
   @override
-  List<JHLifeCircleBean> get initDependencies => super.initDependencies
-    ..addAll([
-      localConfigService,
-      preferenceSetting,
-      styleSetting,
-      appUpdateService,
-    ]);
+  List<JHLifeCircleBean> get initDependencies => super.initDependencies..addAll([localConfigService, preferenceSetting, appUpdateService]);
 
   @override
   Future<void> doInitBean() async {
-    windowWidth = await localConfigService
-        .read(configKey: ConfigEnum.windowWidth)
-        .then((value) => value != null ? double.parse(value) : windowWidth);
-    windowHeight = await localConfigService
-        .read(configKey: ConfigEnum.windowHeight)
-        .then((value) => value != null ? double.parse(value) : windowHeight);
-    isMaximized = await localConfigService
-        .read(configKey: ConfigEnum.windowMaximize)
-        .then((value) => value != null ? value == 'true' : isMaximized);
-    isFullScreen = await localConfigService
-        .read(configKey: ConfigEnum.windowFullScreen)
-        .then((value) => value != null ? value == 'true' : isFullScreen);
-    leftColumnWidthRatio = await localConfigService
-        .read(configKey: ConfigEnum.leftColumnWidthRatio)
-        .then((value) =>
-            value != null ? double.parse(value) : leftColumnWidthRatio);
+    windowWidth = await localConfigService.read(configKey: ConfigEnum.windowWidth).then((value) => value != null ? double.parse(value) : windowWidth);
+    windowHeight = await localConfigService.read(configKey: ConfigEnum.windowHeight).then((value) => value != null ? double.parse(value) : windowHeight);
+    isMaximized = await localConfigService.read(configKey: ConfigEnum.windowMaximize).then((value) => value != null ? value == 'true' : isMaximized);
+    isFullScreen = await localConfigService.read(configKey: ConfigEnum.windowFullScreen).then((value) => value != null ? value == 'true' : isFullScreen);
+    leftColumnWidthRatio =
+        await localConfigService.read(configKey: ConfigEnum.leftColumnWidthRatio).then((value) => value != null ? double.parse(value) : leftColumnWidthRatio);
     leftColumnWidthRatio = max(0.01, leftColumnWidthRatio);
 
     if (GetPlatform.isDesktop) {
@@ -76,23 +51,13 @@ class WindowService
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
         title: 'JHenTai',
-        titleBarStyle: GetPlatform.isWindows || ThemeConfig.isApple
-            ? TitleBarStyle.hidden
-            : TitleBarStyle.normal,
+        titleBarStyle: GetPlatform.isWindows ? TitleBarStyle.hidden : TitleBarStyle.normal,
       );
 
       windowManager.waitUntilReadyToShow(windowOptions, () async {
         await windowManager.show();
         await windowManager.focus();
         windowManagerInited = true;
-        if (GetPlatform.isMacOS && ThemeConfig.isApple) {
-          /// Let the sidebar's native material extend beneath the traffic
-          /// lights while the Flutter content reaches the top edge.
-          await WindowManipulator.makeTitlebarTransparent();
-          await WindowManipulator.enableFullSizeContentView();
-          await WindowManipulator.setWindowBackgroundColorToClear();
-          await _syncMacOSAppearance();
-        }
         if (preferenceSetting.launchInFullScreen.isTrue) {
           await windowManager.setFullScreen(true);
         }
@@ -104,48 +69,7 @@ class WindowService
   }
 
   @override
-  Future<void> doAfterBeanReady() async {
-    WidgetsBinding.instance.addObserver(this);
-    ever(styleSetting.appleVisualStyle, applyAppleVisualStyle);
-    ever(styleSetting.themeMode, (_) => unawaited(_syncMacOSAppearance()));
-  }
-
-  @override
-  void didChangePlatformBrightness() {
-    if (styleSetting.themeMode.value == ThemeMode.system) {
-      unawaited(_syncMacOSAppearance());
-    }
-  }
-
-  Future<void> _syncMacOSAppearance() async {
-    if (!GetPlatform.isMacOS || !windowManagerInited) {
-      return;
-    }
-    final Brightness brightness = styleSetting.themeMode.value == ThemeMode.system
-        ? PlatformDispatcher.instance.platformBrightness
-        : styleSetting.currentBrightness();
-    await WindowManipulator.overrideMacOSBrightness(
-      dark: brightness == Brightness.dark,
-    );
-  }
-
-  Future<void> applyAppleVisualStyle(bool enabled) async {
-    if (!GetPlatform.isMacOS || !windowManagerInited) {
-      return;
-    }
-    await windowManager.setTitleBarStyle(
-        enabled ? TitleBarStyle.hidden : TitleBarStyle.normal);
-    if (enabled) {
-      await WindowManipulator.makeTitlebarTransparent();
-      await WindowManipulator.enableFullSizeContentView();
-      await WindowManipulator.setWindowBackgroundColorToClear();
-    } else {
-      await WindowManipulator.makeTitlebarOpaque();
-      await WindowManipulator.disableFullSizeContentView();
-      await WindowManipulator.setWindowBackgroundColorToDefaultColor();
-    }
-    await _syncMacOSAppearance();
-  }
+  Future<void> doAfterBeanReady() async {}
 
   void handleDoubleColumnResized(UnmodifiableListView<double> ratios) {
     if (leftColumnWidthRatio == ratios[0]) {
@@ -156,9 +80,7 @@ class WindowService
       leftColumnWidthRatio = max(0.01, ratios[0]);
 
       log.info('Resize left column ratio to: $leftColumnWidthRatio');
-      localConfigService.write(
-          configKey: ConfigEnum.leftColumnWidthRatio,
-          value: leftColumnWidthRatio.toString());
+      localConfigService.write(configKey: ConfigEnum.leftColumnWidthRatio, value: leftColumnWidthRatio.toString());
     });
   }
 
@@ -169,10 +91,8 @@ class WindowService
 
       log.info('Resize window to: $windowWidth x $windowHeight');
 
-      localConfigService.write(
-          configKey: ConfigEnum.windowWidth, value: windowWidth.toString());
-      localConfigService.write(
-          configKey: ConfigEnum.windowHeight, value: windowHeight.toString());
+      localConfigService.write(configKey: ConfigEnum.windowWidth, value: windowWidth.toString());
+      localConfigService.write(configKey: ConfigEnum.windowHeight, value: windowHeight.toString());
     });
   }
 
@@ -180,15 +100,13 @@ class WindowService
     log.info(isMaximized ? 'Maximized window' : 'Restored window');
 
     this.isMaximized = isMaximized;
-    return localConfigService.write(
-        configKey: ConfigEnum.windowMaximize, value: isMaximized.toString());
+    return localConfigService.write(configKey: ConfigEnum.windowMaximize, value: isMaximized.toString());
   }
 
   Future<int> saveFullScreen(bool isFullScreen) {
     log.info(isFullScreen ? 'Enter full screen' : 'Leave full screen');
 
     this.isFullScreen = isFullScreen;
-    return localConfigService.write(
-        configKey: ConfigEnum.windowFullScreen, value: isFullScreen.toString());
+    return localConfigService.write(configKey: ConfigEnum.windowFullScreen, value: isFullScreen.toString());
   }
 }

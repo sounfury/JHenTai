@@ -3,10 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jhentai/src/model/image_translation.dart';
-import 'package:jhentai/src/model/reader_bookmark.dart';
 import 'package:jhentai/src/model/reader_floating_ball_position.dart';
 import 'package:jhentai/src/service/reader_action_persistence.dart';
-import 'package:jhentai/src/service/reader_bookmark_service.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 
 class _MemoryKeyValueStore implements ReaderActionKeyValueStore {
@@ -17,21 +15,6 @@ class _MemoryKeyValueStore implements ReaderActionKeyValueStore {
 
   @override
   Future<void> write(String key, String value) async => values[key] = value;
-}
-
-class _MemoryBookmarkRepository implements ReaderBookmarkRepository {
-  final Map<String, ReaderBookmark> values = <String, ReaderBookmark>{};
-
-  @override
-  Future<List<ReaderBookmark>> list(String galleryKey) async =>
-      values.values
-          .where((bookmark) => bookmark.galleryKey == galleryKey)
-          .toList();
-
-  @override
-  Future<void> save(ReaderBookmark bookmark) async {
-    values['${bookmark.galleryKey}:${bookmark.pageIndex}'] = bookmark;
-  }
 }
 
 void main() {
@@ -59,36 +42,6 @@ void main() {
         await store.load(Orientation.landscape),
         const ReaderFloatingBallPosition(x: 1, y: 0.75),
       );
-    },
-  );
-
-  test(
-    'bookmark toggle supports multiple pages and restart recovery',
-    () async {
-      final _MemoryBookmarkRepository repository = _MemoryBookmarkRepository();
-      final ReaderBookmarkService first = ReaderBookmarkService(
-        repository: repository,
-      );
-
-      expect(await first.toggle(galleryKey: 'gallery', pageIndex: 2), isTrue);
-      expect(await first.toggle(galleryKey: 'gallery', pageIndex: 5), isTrue);
-      expect(
-        (await first.load('gallery')).map((bookmark) => bookmark.pageIndex),
-        containsAll(<int>[2, 5]),
-      );
-      expect(await first.toggle(galleryKey: 'gallery', pageIndex: 2), isFalse);
-
-      final ReaderBookmarkService restarted = ReaderBookmarkService(
-        repository: repository,
-      );
-      expect(
-        (await restarted.load('gallery')).map((bookmark) => bookmark.pageIndex),
-        <int>[5],
-      );
-
-      final ReaderBookmark bookmark = repository.values['gallery:2']!;
-      expect(ReaderBookmark.decode(bookmark.encode()).deletedAt, isNotNull);
-      expect(ReaderBookmark.decode(bookmark.encode()).note, isNull);
     },
   );
 

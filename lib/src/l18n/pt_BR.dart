@@ -35,8 +35,7 @@ class pt_BR {
       'archiveError': 'Download Archive Error',
       'edit': 'Edit',
       'confirmDestructiveActions': 'Confirmar ações destrutivas',
-      'confirmDestructiveActionsHint':
-          'Mostrar um diálogo de confirmação antes de ações destrutivas, como excluir tarefas ou baixar novamente na página de downloads',
+      'confirmDestructiveActionsHint': 'Mostrar um diálogo de confirmação antes de ações destrutivas, como excluir tarefas ou baixar novamente na página de downloads',
 
       'home': "Home",
       'mainSite': 'Site principal',
@@ -94,8 +93,7 @@ class pt_BR {
       'userName': 'Nome de usuário',
       'EHUser': 'Usuário EH',
       'password': 'Senha',
-      'needCaptcha':
-          'Precisa do captcha, por favor fassa login via cookie ou pela web de novo.',
+      'needCaptcha': 'Precisa do captcha, por favor fassa login via cookie ou pela web de novo.',
       'userNameOrPasswordMismatch': 'Nome de usuáriio e/ou senha incorreto(s)',
       'copyCookies': 'Copiar cookies',
       'tap2Copy': 'Toque para copiar',
@@ -108,10 +106,8 @@ class pt_BR {
       'refreshIgneousFailed': 'Refresh Igneous Failed',
 
       /// request
-      'sadPanda':
-          'Sad Panda(no data). Refer: https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
-      'sadPandaReferLink':
-          'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
+      'sadPanda': 'Sad Panda(no data). Refer: https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
+      'sadPandaReferLink': 'https://github.com/jiangtian616/JHenTai/wiki/Common-Questions',
 
       /// gallery card
       'filtered': 'Filtered',
@@ -123,8 +119,7 @@ class pt_BR {
       'jumpPageTo': 'Pular para à página',
       'range': 'Alcance',
       'current': 'Atual',
-      'galleryUrlDetected':
-          'URL de galeria encontrada na área de transferência',
+      'galleryUrlDetected': 'URL de galeria encontrada na área de transferência',
       'galleryUrlDetectedHint': 'Toque para entrar na página de detalhes',
 
       /// details page
@@ -151,12 +146,10 @@ class pt_BR {
       'noComments': 'Sem comentários',
       'lastEditedOn': 'Última edição em',
       'getGalleryDetailFailed': 'Falha ao obter detalhes da galeria',
-      'cloudflare403':
-          'You have been restricted by Cloudflare from making network requests. Please try switching networks or using another login method.',
+      'cloudflare403': 'You have been restricted by Cloudflare from making network requests. Please try switching networks or using another login method.',
       'invisible2User': 'Esta Galeria é invisível para você',
       'invisibleHints': 'Esta galeria está indisponível ou foi removida.',
-      'copyRightHints':
-          'Esta galeria está indisponível devido a uma reivindicação de direitos autorais por ',
+      'copyRightHints': 'Esta galeria está indisponível devido a uma reivindicação de direitos autorais por ',
       'refreshGalleryDetailsFailed': 'Falha ao atualizar detalhes da galeria',
       'failToGetThumbnails': "Falha ao obter miniaturas",
       'favoriteGallerySuccess': "Favorite Gallery Success",
@@ -164,8 +157,7 @@ class pt_BR {
       'removeFavoriteSuccess': "Remove Favorite Success",
       'removeFavoriteFailed': "Remove Favorite Failed",
       'getGalleryFavoriteInfoFailed': 'Get gallery favorite info failed',
-      'favoriteNoteSlotFullHint':
-          'Favorite note slot is full, please delete some notes first',
+      'favoriteNoteSlotFullHint': 'Favorite note slot is full, please delete some notes first',
       'ratingSuccess': 'Rating Success',
       'ratingFailed': 'Falha na avaliação',
       'voteTagFailed': 'Falha na tag de votação',
@@ -173,16 +165,12 @@ class pt_BR {
       'resumeDownload': 'Retomar',
       'pauseDownload': 'Pausar',
       'addNewTagSetSuccess': 'Novo conjunto de tags adicionado com sucesso',
-      'addNewWatchedTagSetSuccess':
-          'Novo conjunto de tags adicionado com sucesso',
-      'addNewHiddenTagSetSuccess':
-          'Novo conjunto de tags ocultas adicionado com sucesso',
-      'addNewTagSetSuccessHint':
-          'Você pode verificar suas tags em Configurações->EH->My Tags',
+      'addNewWatchedTagSetSuccess': 'Novo conjunto de tags adicionado com sucesso',
+      'addNewHiddenTagSetSuccess': 'Novo conjunto de tags ocultas adicionado com sucesso',
+      'addNewTagSetSuccessHint': 'Você pode verificar suas tags em Configurações->EH->My Tags',
       'addNewTagSetFailed': 'Falha ao adicionar novo conjunto de tags',
       'VisitorStatistics': 'Estatísticas do visitante',
-      'invisible2UserWithoutDonation':
-          'As estatísticas desta galeria são invisíveis para os usuários sem doação',
+      'invisible2UserWithoutDonation': 'As estatísticas desta galeria são invisíveis para os usuários sem doação',
       'getGalleryStatisticsFailed': 'Falha ao obter estatísticas da galeria',
       'totalVisits': 'Total de visitas',
       'visits': 'Visitas',
@@ -192,29 +180,23 @@ class pt_BR {
       'score': 'Pontuação',
       'NotOnTheList': 'Não está na lista',
       'getGalleryArchiveFailed': 'Falha ao obter arquivo da galeria',
-      'parseGalleryArchiveFailed':
-          'Falha na análise, certifique-se de que seu [Archiver Settings] em e-hentai é [Manual Select, Manual Start (Default)]',
+      'parseGalleryArchiveFailed': 'Falha na análise, certifique-se de que seu [Archiver Settings] em e-hentai é [Manual Select, Manual Start (Default)]',
       'original': 'Original',
       'resample': 'Redimensionamento',
       'beginToDownloadArchive': 'Começar a baixar o arquivo',
-      'beginToDownloadArchiveHint':
-          'Você pode verificar o progresso em Baixar -> Arquivo',
+      'beginToDownloadArchiveHint': 'Você pode verificar o progresso em Baixar -> Arquivo',
       'updateGalleryError': 'Erro ao atualizar galeria',
       'thisGalleryHasANewVersion': 'Nova versão desta galeria disponível',
       'hasUpdated': 'Atualizado',
       'unpackingArchiveError': 'Unpacking archive error',
       'failedToDealWith': 'Falha ao lidar com',
       'hasDownloaded': 'Baixado',
-      '410Hints':
-          'Você registrou muitos bytes baixados neste arquivo e precisa desbloquear novamente este arquivo para continuar.',
-      '429Hints':
-          'Too many download requests! You\'d better decrease your archive download concurrency.',
-      'getUnpackedImagesFailedMsg':
-          'JHenTai não pode carregar imagens deste arquivo, por favor verifique seu arquivo local.',
+      '410Hints': 'Você registrou muitos bytes baixados neste arquivo e precisa desbloquear novamente este arquivo para continuar.',
+      '429Hints': 'Too many download requests! You\'d better decrease your archive download concurrency.',
+      'getUnpackedImagesFailedMsg': 'JHenTai não pode carregar imagens deste arquivo, por favor verifique seu arquivo local.',
       'getGalleryTorrentsFailed': 'Falha ao obter torrents',
       'chooseArchive': 'Escolher Arquivo',
-      'tagSetExceedLimit':
-          'No more tags can be added because you have reach the limit',
+      'tagSetExceedLimit': 'No more tags can be added because you have reach the limit',
       'useTranslation': 'Use Translation',
       'addTagSuccess': 'Add Tag Success',
       'addTagFailed': 'Add Tag Failed',
@@ -238,8 +220,7 @@ class pt_BR {
       'commentTooShort': 'O comentário é muito curto',
       'sendCommentFailed': 'Falha ao enviar comentário',
       'voteCommentFailed': 'Falha ao votar cometário',
-      'voteCommentFailedHint':
-          'Tente puxar para baixo para atualizar a página de detalhes primeiro',
+      'voteCommentFailedHint': 'Tente puxar para baixo para atualizar a página de detalhes primeiro',
       'unknownUser': 'Usuário desconhecido',
       'atLeast3Characters': 'Pelo menos 3 caracteres',
       'noJHenTaiHints': 'Please don\'t mention JHenTai, thanks',
@@ -256,10 +237,8 @@ class pt_BR {
       'loading': "Caregando",
       'paused': 'Pausar',
       'exceedImageLimits': "Limite de imagens excedido",
-      'ehServerError':
-          'An error occurred due to EH\'s server, please try again later',
-      'unsupportedImagePageStyle':
-          "JHenTai não suporta Multi-Page Viewer (MPV), por favor mude para o estilo padrão em e-hentai.org",
+      'ehServerError': 'An error occurred due to EH\'s server, please try again later',
+      'unsupportedImagePageStyle': "JHenTai não suporta Multi-Page Viewer (MPV), por favor mude para o estilo padrão em e-hentai.org",
       'toNext': 'Para o próximo',
       'toPrev': 'Para anterior',
       'back': 'Voltar',
@@ -297,8 +276,7 @@ class pt_BR {
       /// eh setting page
       'site': 'Site',
       'redirect2Eh': 'Redirecionar para EH, se disponível',
-      'redirect2EhHint':
-          'Try to load gallery detail page from EH site first to get better network performance',
+      'redirect2EhHint': 'Try to load gallery detail page from EH site first to get better network performance',
       'redirectAllGallery': 'Redirect all gallery to EH',
       'imDonorHint': 'If you are a donor, you can turn this on to help you access galleries in EX site',
       'profileSetting': 'Profile Setting',
@@ -349,25 +327,19 @@ class pt_BR {
       'tabletLayoutName': 'Tablet(antigo)',
       'tabletLayoutDesc': 'Manutenção interrompida',
       'desktopLayoutName': 'Desktop',
-      'desktopLayoutDesc':
-          'Duas colunas com barra de abas na esquerda, suporte a teclado',
+      'desktopLayoutDesc': 'Duas colunas com barra de abas na esquerda, suporte a teclado',
 
       /// style setting page
       'enableTagZHTranslation': 'Traduzir nome da tag para Chinês',
       'version': 'Versão',
       'downloadTagTranslationHint': 'Baixando dados..., baixado: ',
-      'zhTagSearchOrderOptimization':
-          'Chinese Tag Auto-Completion Ordering Rule',
-      'zhTagSearchOrderOptimizationHint':
-          'Intelligent sorting by default and sort by frequency if enabled',
+      'zhTagSearchOrderOptimization': 'Chinese Tag Auto-Completion Ordering Rule',
+      'zhTagSearchOrderOptimizationHint': 'Intelligent sorting by default and sort by frequency if enabled',
       'themeMode': 'Tema',
       'dark': 'Escuro',
       'light': 'Claro',
       'followSystem': 'Seguir o sistema',
       'themeColor': 'Theme Color',
-      'themeColorFixedOnApple': 'Cor de destaque fixa no macOS / iOS',
-      'appleVisualStyle': 'Estilo visual Apple',
-      'appleVisualStyleHint': 'Ativar a interface redesenhada no estilo Apple',
       'listStyle': 'Estilo da lista da galeria',
       'flat': 'Reto',
       'flatWithoutTags': 'Reto(Sem tags)',
@@ -378,10 +350,8 @@ class pt_BR {
       'waterfallFlowBig': 'Waterfall Flow (Big)',
       'crossAxisCountInWaterFallFlow': 'Waterfall Flow Column count',
       'pageListStyle': 'Gallery List Style (Page)',
-      'crossAxisCountInGridDownloadPageForGroup':
-          'Download Page Grid Column Count(Group)',
-      'crossAxisCountInGridDownloadPageForGallery':
-          'Download Page Grid Column Count(Gallery)',
+      'crossAxisCountInGridDownloadPageForGroup': 'Download Page Grid Column Count(Group)',
+      'crossAxisCountInGridDownloadPageForGallery': 'Download Page Grid Column Count(Gallery)',
       'crossAxisCountInDetailPage': 'Detail Page Thumbnail Column Count',
       'global': 'Global',
       'auto': 'Auto',
@@ -396,15 +366,12 @@ class pt_BR {
       'whenScrollUp': 'When Scroll Up',
       'whenScrollDown': 'When Scroll Down',
       'preloadGalleryCover': 'Preload gallery cover',
-      'preloadGalleryCoverHint':
-          'Preload the covers of galleries that are not yet displayed on the page',
+      'preloadGalleryCoverHint': 'Preload the covers of galleries that are not yet displayed on the page',
       'enableSwipeBackGesture': 'Enable Swipe Back Gesture',
       'enableLeftMenuDrawerGesture': 'Enable Left Menu Drawer Gesture',
-      'enableQuickSearchDrawerGesture':
-          'Ativar pesquisa rápida com gesto de gaveta',
+      'enableQuickSearchDrawerGesture': 'Ativar pesquisa rápida com gesto de gaveta',
       'drawerGestureEdgeWidth': 'Drawer Gesture Edge Width',
-      'alwaysShowScroll2TopButton':
-          'Sempre mostrar o botão de rolagem para cima',
+      'alwaysShowScroll2TopButton': 'Sempre mostrar o botão de rolagem para cima',
       'enableDefaultFavorite': 'Enable Default Favorite',
       'enableDefaultFavoriteHint': 'Long press to re-select',
       'enableDefaultTagSet': 'Enable Default Tag Set',
@@ -417,26 +384,21 @@ class pt_BR {
       'inheritAll': 'Inherit All',
       'inheritAllHint': 'Use last search options for next search',
       'inheritPartially': 'Inherit Partially',
-      'inheritPartiallyHint':
-          'Use last search options for next search(except language and category)',
+      'inheritPartiallyHint': 'Use last search options for next search(except language and category)',
       'none': 'None',
       'noneHint': 'Use default search options for next search',
       'showAllGalleryTitles': 'Show All Gallery Titles',
-      'showAllGalleryTitlesHint':
-          'Show both original and japanese titles if available',
+      'showAllGalleryTitlesHint': 'Show both original and japanese titles if available',
       'showGalleryTagVoteStatus': 'Show Gallery Tag Vote Status',
-      'showGalleryTagVoteStatusHint':
-          'Include confidence, skepticism and incorrect',
+      'showGalleryTagVoteStatusHint': 'Include confidence, skepticism and incorrect',
       'showComments': 'Show Comments',
       'showAllComments': 'Show All Comments',
-      'showAllCommentsHint':
-          'By default only the 45 highest scoring and 5 most recent comments will be shown',
+      'showAllCommentsHint': 'By default only the 45 highest scoring and 5 most recent comments will be shown',
       'addTag': 'Add Tag',
       'addTagHint': 'Enter new tags, separated with comma',
 
       /// theme color setting page
-      'themeColorSettingHint':
-          'Assign different color for light and dark theme',
+      'themeColorSettingHint': 'Assign different color for light and dark theme',
       'preview': 'Preview',
       'preset': 'Preset',
       'custom': 'Custom',
@@ -458,8 +420,7 @@ class pt_BR {
       'hostMapping': 'Mapeamento de host',
       'hostMappingHint': 'Usado para frente de domínio',
       'proxyAddress': 'Endereço de proxy',
-      'proxyAddressHint':
-          'Se você usa servidor proxy, certifique-se de configurá-lo corretamente',
+      'proxyAddressHint': 'Se você usa servidor proxy, certifique-se de configurá-lo corretamente',
       'saveSuccess': 'Salvo com sucesso',
       'saveFailed': 'Save failed',
       'updateSuccess': 'Atualizado com sucesso',
@@ -469,14 +430,11 @@ class pt_BR {
       'enableSmartCacheHint':
           "Quando ativado, mantém as páginas e imagens vistas pelo período definido; desativado mantém apenas um cache de curta duração",
       'smartCacheRetention': "Retenção do cache",
-      'smartCacheRetentionHint':
-          "Caches mais antigos que isso são limpos automaticamente",
+      'smartCacheRetentionHint': "Caches mais antigos que isso são limpos automaticamente",
       'smartCacheMaxSize': "Limite de espaço do cache",
-      'smartCacheMaxSizeHint':
-          "O cache é limpo automaticamente ao exceder este limite",
+      'smartCacheMaxSizeHint': "O cache é limpo automaticamente ao exceder este limite",
       'smartCacheEvictPolicy': "Política de limpeza",
-      'smartCacheEvictPolicyHint':
-          "Quais entradas são removidas primeiro ao atingir o limite",
+      'smartCacheEvictPolicyHint': "Quais entradas são removidas primeiro ao atingir o limite",
       'smartCacheEvictByAddedDate': "Por data de adição",
       'smartCacheEvictByUsageFrequency': "Por frequência de uso",
       'unlimited': "Ilimitado",
@@ -492,8 +450,7 @@ class pt_BR {
       'clearLogs': 'Limpar registros(logs)',
       'longPress2Clear': 'Pressione e segure para limpar',
       'checkUpdateAfterLaunchingApp': 'Buscar atualizações após abrir o app',
-      'checkClipboard':
-          'Verificar se há URL de Galeria na área de transferência',
+      'checkClipboard': 'Verificar se há URL de Galeria na área de transferência',
       'clearSuccess': 'Limpado com Sucesso',
       'superResolution': 'Image Super Resolution',
       'inferenceBackend': 'Backend de inferência',
@@ -507,38 +464,28 @@ class pt_BR {
       'inferenceModeCpu': 'CPU',
       'inferencePreferredBackend': 'Backend preferido',
       'inferenceDetectedDevice': 'Dispositivo detectado',
-      'inferenceDeviceNotDetected':
-          'Não detectado (preenchido após integrar modelos)',
+      'inferenceDeviceNotDetected': 'Não detectado (preenchido após integrar modelos)',
       'inferenceDomainOcr': 'Tradução de imagem (OCR)',
       'inferenceEnableNnapi': 'Ativar aceleração NNAPI',
-      'inferenceEnableNnapiHint':
-          'Usa NPU/GPU/DSP em aparelhos Android compatíveis; volta para CPU automaticamente.',
+      'inferenceEnableNnapiHint': 'Usa NPU/GPU/DSP em aparelhos Android compatíveis; volta para CPU automaticamente.',
       'inferenceEnableCpuFallback': 'Fallback para CPU',
-      'inferenceEnableCpuFallbackHint':
-          'Usa CPU quando o backend selecionado não estiver disponível.',
+      'inferenceEnableCpuFallbackHint': 'Usa CPU quando o backend selecionado não estiver disponível.',
       'inferenceEngineOcr': 'Tradução de imagem/texto',
       'inferenceModelReady': 'Pronto',
-      'inferenceModelNotIntegrated':
-          'A inferência não está pronta; veja os detalhes nas configurações',
+      'inferenceModelNotIntegrated': 'A inferência não está pronta; veja os detalhes nas configurações',
       'inferenceOcrModel': 'OCR multilíngue PP-OCRv6 small',
-      'inferenceOcrLanguageAuto':
-          'Reconhece automaticamente chinês, japonês, inglês e 50 idiomas',
+      'inferenceOcrLanguageAuto': 'Reconhece automaticamente chinês, japonês, inglês e 50 idiomas',
       'inferenceModelNotDownloaded': 'Não baixado',
       'inferenceModelValidating': 'Validando a integridade do modelo',
       'inferenceModelVerified': 'Baixado e com integridade verificada',
       'inferenceModelInvalid': 'Modelo corrompido ou inválido; baixe novamente',
       'inferenceSessionStatus': 'Status da Session',
-      'inferenceSessionBackendUnavailable':
-          'O runtime de inferência ou o backend selecionado está indisponível',
-      'inferenceSessionWaitingForModel':
-          'Aguardando um modelo baixado e verificado',
-      'inferenceSessionNotTested':
-          'Ainda não criada; será verificada na primeira inferência',
+      'inferenceSessionBackendUnavailable': 'O runtime de inferência ou o backend selecionado está indisponível',
+      'inferenceSessionWaitingForModel': 'Aguardando um modelo baixado e verificado',
+      'inferenceSessionNotTested': 'Ainda não criada; será verificada na primeira inferência',
       'inferenceSessionReady': 'Criada com sucesso e pronta para inferência',
-      'inferenceSessionFailed':
-          'A última criação falhou; verifique os logs ou altere o backend',
-      'inferenceFrameworkNote':
-          'Provedores, integridade do modelo e Session são detectados separadamente.',
+      'inferenceSessionFailed': 'A última criação falhou; verifique os logs ou altere o backend',
+      'inferenceFrameworkNote': 'Provedores, integridade do modelo e Session são detectados separadamente.',
       'inferenceBackendAuto': 'Automático',
       'inferenceBackendCpu': 'CPU',
       'inferenceBackendDirectml': 'DirectML (GPU)',
@@ -549,30 +496,25 @@ class pt_BR {
       'inferenceBackendVulkan': 'Vulkan',
       'inferenceBackendXnnpack': 'XNNPACK',
       'imageTranslationOcrEngineOnnx': 'ONNX (no dispositivo)',
-      'imageTranslationOcrNotConfigured':
-          'O motor OCR ONNX ainda não está configurado. Integre modelos no backend de inferência.',
+      'imageTranslationOcrNotConfigured': 'O motor OCR ONNX ainda não está configurado. Integre modelos no backend de inferência.',
       'onnxModelDescRapidOcrSmall':
           'Dicionário multilíngue completo do PP-OCRv6 com alta precisão de reconhecimento em tamanho e velocidade moderados. Bom para a maioria dos quadrinhos e imagens.',
       'onnxModelDescRapidOcrTiny':
           'Dicionário reduzido e redes leves: a camada mais rápida e menor, mas com um conjunto de caracteres menor e precisão ligeiramente menor em glifos complexos. Ideal para dispositivos fracos ou uso focado em velocidade.',
       'stopSuperResolution': 'Stop Super Resolution',
       'deleteSuperResolvedImage': 'Delete Super Resolved Image',
-      'superResolveOriginalImageHint':
-          'Process original image cost more time, space and performance, are you sure to continue?',
+      'superResolveOriginalImageHint': 'Process original image cost more time, space and performance, are you sure to continue?',
       'verityAppLinks4Android12': 'Verity App Links(Android 12+)',
-      'verityAppLinks4Android12Hint':
-          'For Android 12+, you need to manually add link to verified links in order to open JHenTai in 3-rd apps',
+      'verityAppLinks4Android12Hint': 'For Android 12+, you need to manually add link to verified links in order to open JHenTai in 3-rd apps',
       'noImageMode': 'No Image Mode',
       'exportData': 'Export Data',
       'exportDataHint': 'Export configs, block rules and history',
       'selectExportItems': 'Select Export Items',
       'importData': 'Import Data',
-      'importDataHint':
-          'App will shutdown automatically after importing to apply the latest configuration',
+      'importDataHint': 'App will shutdown automatically after importing to apply the latest configuration',
 
       /// host mapping page
-      'hostDataSource':
-          'Não há necessidade de alterar por padrão.\nFonte de dados: https://dns.google/',
+      'hostDataSource': 'Não há necessidade de alterar por padrão.\nFonte de dados: https://dns.google/',
 
       /// proxy page
       'proxySetting': 'Proxy Setting',
@@ -589,11 +531,9 @@ class pt_BR {
       'enableBiometricAuth': 'Ativar autenticação biométrica',
       'enableAuthOnResume': 'Enable Auth on Resume',
       'enableAuthOnResumeHints': '3 segundos de atraso',
-      'enableBlurBackgroundApp':
-          'Ative a página de desfoque ao alternar para o plano de fundo',
+      'enableBlurBackgroundApp': 'Ative a página de desfoque ao alternar para o plano de fundo',
       'hideImagesInAlbum': 'Hide Images in Album',
-      'hideImagesInAlbumHints':
-          'If you changed default download path, you need to create .nomedia manually',
+      'hideImagesInAlbumHints': 'If you changed default download path, you need to create .nomedia manually',
 
       /// read setting page
       'enableImmersiveMode': 'Habilitar modo imersivo',
@@ -606,24 +546,19 @@ class pt_BR {
       'landscape': 'Landscape',
       'portrait': 'Portrait',
       'readDirection': 'Direção da leitura',
-      'enableOrientationSpecificReadDirection':
-          'Direção de leitura por orientação',
-      'enableOrientationSpecificReadDirectionHint':
-          'Definir direções de leitura diferentes para orientações retrato e paisagem',
+      'enableOrientationSpecificReadDirection': 'Direção de leitura por orientação',
+      'enableOrientationSpecificReadDirectionHint': 'Definir direções de leitura diferentes para orientações retrato e paisagem',
       'portraitReadDirection': 'Direção de leitura (retrato)',
       'landscapeReadDirection': 'Direção de leitura (paisagem)',
-      'autoSwitchedReadDirection':
-          'Direção de leitura alterada automaticamente',
+      'autoSwitchedReadDirection': 'Direção de leitura alterada automaticamente',
       'notchOptimization': 'Notch Optimization',
-      'notchOptimizationHint':
-          'Add padding before the first image to avoid the notch and status bar',
+      'notchOptimizationHint': 'Add padding before the first image to avoid the notch and status bar',
       'imageRegionWidthRatio': 'Image Region Width Ratio',
       'portraitImageRegionWidthRatio': 'Portrait Image Width Ratio',
       'landscapeImageRegionWidthRatio': 'Landscape Image Width Ratio',
       'gestureRegionWidthRatio': 'Gesture Region Width Ratio',
       'useThirdPartyViewer': 'Usar visualizador personaliado',
-      'thirdPartyViewerPath':
-          'Localização do visualizador personalizado(Arquivo executável)',
+      'thirdPartyViewerPath': 'Localização do visualizador personalizado(Arquivo executável)',
       'showThumbnails': 'Mostrar miniaturas',
       'showScrollBar': 'Show Scroll Bar',
       'showStatusInfo': 'Mostrar status na parte inferior',
@@ -641,8 +576,7 @@ class pt_BR {
       'left2rightList': 'Left to Right (Continuous)',
       'right2leftList': 'Right to Left (Continuous)',
       'enablePageTurnByVolumeKeys': 'Use volume key to turn page',
-      'enablePageTurnByVolumeKeysHint':
-          'No iOS, se o volume estiver em 0 ou 100%, ele será ajustado automaticamente ao entrar no leitor para suportar a virada de página e restaurado ao sair',
+      'enablePageTurnByVolumeKeysHint': 'No iOS, se o volume estiver em 0 ou 100%, ele será ajustado automaticamente ao entrar no leitor para suportar a virada de página e restaurado ao sair',
       'enablePageTurnAnime': 'Ativar animação de virada',
       'enableDoubleTapToScaleUp': 'Ativar toque duplo para aumentar a escala',
       'enableTapDragToScaleUp': 'Enable Tap Drag to Scale up',
@@ -654,8 +588,7 @@ class pt_BR {
       'turnPageModeHint': 'Para a próxima tela ou próxima imagem',
       'enableImageMaxKilobytes': 'Enable Image Compression',
       'imageMaxKilobytes': 'Image Max Size',
-      'imageMaxKilobytesHint':
-          'Images larger than this size will be compressed',
+      'imageMaxKilobytesHint': 'Images larger than this size will be compressed',
       'image': 'Imagem',
       'screen': 'Tela',
       'preloadDistanceInOnlineMode': 'Preload Distance(Online)',
@@ -664,11 +597,9 @@ class pt_BR {
       'preloadPageCount': 'Preload Page Count(Online)',
       'preloadPageCountInLocalMode': 'Preload Page Count(Local)',
       'failedImageRetryScope': "Escopo de repetição de imagens com falha",
-      'failedImageRetryScopeHint':
-          "Escopo ao tocar em uma imagem online com falha para recarregá-la",
+      'failedImageRetryScopeHint': "Escopo ao tocar em uma imagem online com falha para recarregá-la",
       'imageTimeoutRetry': 'Repetir por tempo esgotado',
-      'imageTimeoutRetryHint':
-          'Tentar novamente quando uma imagem online não responder ou o progresso travar',
+      'imageTimeoutRetryHint': 'Tentar novamente quando uma imagem online não responder ou o progresso travar',
       'imageTimeoutRetryCount': 'Número de tentativas',
       'imageTimeoutRetryInterval': 'Limite de tempo',
       'retrySingleImage': "Apenas a imagem tocada",
@@ -683,8 +614,7 @@ class pt_BR {
       'landscapeDisplayFirstPageAlone': 'Landscape Display First Page Alone',
       'toggleFullScreen': 'Toggle Full Screen',
       'keyboardShortcuts': 'Atalhos de Teclado',
-      'keyboardShortcutsHint':
-          'Personalizar atalhos de teclado da página de leitura',
+      'keyboardShortcutsHint': 'Personalizar atalhos de teclado da página de leitura',
       'pressAnyKey': 'Pressione qualquer tecla...',
       'unboundKey': 'Sem vínculo',
       'clearKey': 'Limpar',
@@ -692,16 +622,13 @@ class pt_BR {
       'resetSuccess': 'Redefinido para padrão',
       'keyConflict': 'Conflito de tecla',
       'fixedKeyHint': 'Tecla fixa, não personalizável',
-      'pressAnyKeyOrMouseSideButton':
-          'Pressione qualquer tecla ou botão lateral do mouse...',
+      'pressAnyKeyOrMouseSideButton': 'Pressione qualquer tecla ou botão lateral do mouse...',
       'mouseButton4Name': 'Mouse Avançar',
       'mouseButton5Name': 'Mouse Voltar',
       'toLeft': 'Virar à esquerda',
       'toRight': 'Virar à direita',
-      'enableAutoScaleUp':
-          'Ativar dimensionamento automático de imagens grandes',
-      'enableAutoScaleUpHints':
-          'Tornar a largura da imagem igual à largura da tela',
+      'enableAutoScaleUp': 'Ativar dimensionamento automático de imagens grandes',
+      'enableAutoScaleUpHints': 'Tornar a largura da imagem igual à largura da tela',
 
       /// preference setting page
       'showR18GImageDirectly': 'Show R18G Image Directly',
@@ -817,8 +744,7 @@ class pt_BR {
       'pageAtLeast': 'Página no mínimo',
       'pageAtMost': 'Página no máximo',
       'pagesBetween': 'Páginas entre',
-      'pageRangeSelectHint':
-          'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
+      'pageRangeSelectHint': 'min <= 1000, max >= 10\nmin/max <= 0.8, max-min >= 20',
       'to': 'para',
       'minimumRating': 'Classificação mínima',
       'disableFilterForLanguage': 'Desativar filtro para idioma',
@@ -872,17 +798,14 @@ class pt_BR {
       'originalImage': 'Original',
       'resampleImage': 'Redimensionada',
       'defaultGalleryGroup': 'Default Gallery Group',
-      'prioritizeRecentGalleryGroups':
-          'Priorizar grupos de galeria usados recentemente',
+      'prioritizeRecentGalleryGroups': 'Priorizar grupos de galeria usados recentemente',
       'defaultArchiveGroup': 'Default Archive Group',
       'never': 'Nunca',
       'manual': 'Manual',
       'always': 'Sempre',
       'longPress2Reset': 'Pressione e segure para redefinir',
-      'needPermissionToChangeDownloadPath':
-          'Precisa de permissão para alterar o caminho de download',
-      'invalidPath':
-          'Caminho inválido. Evite usar o caminho do sistema, caminho raiz ou caminho do cartão SD.',
+      'needPermissionToChangeDownloadPath': 'Precisa de permissão para alterar o caminho de download',
+      'invalidPath': 'Caminho inválido. Evite usar o caminho do sistema, caminho raiz ou caminho do cartão SD.',
       'downloadTaskConcurrency': 'Download simultâneo',
       'needRestart': 'Precisa reiniciar',
       'speedLimit': 'Limite de velocidade',
@@ -893,32 +816,23 @@ class pt_BR {
       'downloadAllGalleriesOfSamePriority': 'Download All Galleries of Same Priority',
       'downloadAllGalleriesOfSamePriorityHint': 'Download only 1 gallery simultaneously in 1 group with highest priority by default',
       'alwaysUseDefaultGroup': 'Sempre usar o grupo padrão',
-      'enableStoreMetadataForRestore':
-          'Ativar metadados da loja para restauração',
-      'enableStoreMetadataForRestoreHint':
-          'Se desabilitar isso, você não poderá restaurar as tarefas de download',
+      'enableStoreMetadataForRestore': 'Ativar metadados da loja para restauração',
+      'enableStoreMetadataForRestoreHint': 'Se desabilitar isso, você não poderá restaurar as tarefas de download',
       'archiveDownloadIsolateCount': 'Archive Download Thread Count',
-      'archiveDownloadIsolateCountHint':
-          'Sum of threads for all tasks needs to be less than 10, otherwise the download will fail',
+      'archiveDownloadIsolateCountHint': 'Sum of threads for all tasks needs to be less than 10, otherwise the download will fail',
       'manageArchiveDownloadConcurrency': 'Manage Archive Download Concurrency',
-      'manageArchiveDownloadConcurrencyHint':
-          'Archive will wait until there are enough threads to download',
-      'deleteArchiveFileAfterDownload':
-          'Delete Archive .zip File After Download',
+      'manageArchiveDownloadConcurrencyHint': 'Archive will wait until there are enough threads to download',
+      'deleteArchiveFileAfterDownload': 'Delete Archive .zip File After Download',
       'restoreDownloadTasks': 'Restaurar tarefas de download',
       'restoreDownloadTasksHint': 'Restaurar tarefas de download por metadados',
-      'restoreDownloadTasksSuccess':
-          'Tarefas de download restauradas com sucesso',
+      'restoreDownloadTasksSuccess': 'Tarefas de download restauradas com sucesso',
       'restoredCount': 'Contagem de tarefas restaurada',
       'restoredGalleryCount': 'Contagem de galerias restaurada',
       'restoredArchiveCount': 'Contagem de arquivos restaurada',
       'restoreTasksAutomatically': 'Restore Tasks Automatically',
-      'restoreTasksAutomaticallyHint':
-          'Restore tasks automatically when app launched',
-      'brokenDownloadPathHint':
-          'Parece que seu caminho de download está quebrado, a função de download pode ser ineficaz',
-      'brokenExtraScanPathHint':
-          'Seems your default local gallery path is broken, local gallery may be not recognized',
+      'restoreTasksAutomaticallyHint': 'Restore tasks automatically when app launched',
+      'brokenDownloadPathHint': 'Parece que seu caminho de download está quebrado, a função de download pode ser ineficaz',
+      'brokenExtraScanPathHint': 'Seems your default local gallery path is broken, local gallery may be not recognized',
       'useJH2UpdateGallery': 'Use JH server to accelerate gallery updates',
 
       /// archive bot settings
@@ -935,8 +849,7 @@ class pt_BR {
       'checkInFailed': 'Check-in failed',
       'checkInSuccess': 'Check-in success',
       'checkInSuccessHint': 'Got GP: %s, current total GP: %s.',
-      'pauseDownloadByInvalidArchiveBotKey':
-          'Archive bot settings is invalid, download paused',
+      'pauseDownloadByInvalidArchiveBotKey': 'Archive bot settings is invalid, download paused',
       'chooseArchiveParseSource': 'Change Parse Source',
       'official': 'Official',
       'archiveBot': 'Archive Bot',
@@ -965,8 +878,7 @@ class pt_BR {
       'upload2cloud': 'Upload to Cloud',
       'upload2cloudHint': 'Upload your current local configuration',
       'tap2upload': 'Tap to upload',
-      'copyIdentificationCodeSuccess':
-          'Upload successfully. Identification code has been copied',
+      'copyIdentificationCodeSuccess': 'Upload successfully. Identification code has been copied',
       'copyShareCode': 'Copy Share Code',
       'import': 'Import',
       'save2Local': 'Save to Local',
@@ -980,8 +892,7 @@ class pt_BR {
       'inputNumberHint': 'Please input a correct number',
       'inputRegexHint': 'Please input a correct regex',
       'useBuiltInBlockedUsers': 'Enable Built-in User Blocklist',
-      'useBuiltInBlockedUsersHint':
-          'Filter out gallery comments from users on the blocklist',
+      'useBuiltInBlockedUsersHint': 'Filter out gallery comments from users on the blocklist',
       'blockingRules': 'Block Rules',
       'blockingRulesHint': 'Additional blocking rules for galleries and comments',
       'blockingTarget': 'Blocking Target',
@@ -997,8 +908,7 @@ class pt_BR {
       'content': 'Content',
       'incompleteInformation': 'Incomplete information',
       'noBlockingRuleHint': 'Add at least 1 rule',
-      'notSameBlockingRuleTargetHint':
-          'All sub-rules should have the same blocking target',
+      'notSameBlockingRuleTargetHint': 'All sub-rules should have the same blocking target',
       'blockingRuleHelp': '''
 Blocking Target: Filter galleries on the list page or filter comments on the details page. All sub-rules under the same rule must have the same blocking target.
 Blocking Attribute: Specify the attribute of the target based on which the rule is written to block.
@@ -1048,8 +958,6 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       /// image text translation
       'imageTextTranslation': 'Tradução de texto da imagem',
       'translateImageText': 'Reconhecer e traduzir esta página',
-      'addBookmark': 'Adicionar marcador',
-      'removeBookmark': 'Remover marcador',
       'recognizingImageText': 'Reconhecendo texto da imagem…',
       'translatingImageText': 'Traduzindo texto da imagem…',
       'showTranslation': 'Mostrar tradução',
@@ -1061,53 +969,38 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationNoResult': 'Nenhum resultado para exibir',
       'imageTranslationConfigureHint':
           'O texto original foi reconhecido. Primeiro configure um provedor de tradução nas configurações avançadas.',
-      'imageTranslationUnsupportedPlatform':
-          'OCR de imagem ainda não está disponível nesta plataforma.',
-      'imageTranslationOcrUnavailable':
-          'Executável OCR não encontrado. Instale ou configure o Tesseract no desktop.',
-      'imageTranslationOcrFailed':
-          'O reconhecimento de texto falhou. Verifique os pacotes de idioma do OCR e o formato da imagem.',
+      'imageTranslationUnsupportedPlatform': 'OCR de imagem ainda não está disponível nesta plataforma.',
+      'imageTranslationOcrUnavailable': 'Executável OCR não encontrado. Instale ou configure o Tesseract no desktop.',
+      'imageTranslationOcrFailed': 'O reconhecimento de texto falhou. Verifique os pacotes de idioma do OCR e o formato da imagem.',
       'imageTranslationNoText': 'Nenhum texto foi reconhecido nesta imagem.',
       'imageTranslationAlreadyTranslated': 'Esta página já foi traduzida.',
       'imageTranslationCancelled': 'Tradução cancelada.',
-      'imageTranslationRequestFailed':
-          'A solicitação de tradução falhou. Verifique o endpoint, a chave e a rede.',
-      'imageTranslationInvalidResponse':
-          'O provedor de tradução retornou um resultado inválido.',
+      'imageTranslationRequestFailed': 'A solicitação de tradução falhou. Verifique o endpoint, a chave e a rede.',
+      'imageTranslationInvalidResponse': 'O provedor de tradução retornou um resultado inválido.',
       'imageTranslationFailed': 'A tradução de texto da imagem falhou.',
       'imageTranslationPaddleNotReady':
           'O ambiente de execução do PaddleOCR não está instalado. Instale-o nas configurações avançadas primeiro.',
-      'imageTranslationDeletePaddleRuntime':
-          'Excluir ambiente de execução do PaddleOCR',
-      'imageTranslationDeletePaddleHint':
-          'Remove o ambiente virtual e os modelos baixados.',
-      'imageTranslationDeletePaddleConfirm':
-          'Excluir o ambiente de execução do PaddleOCR?',
+      'imageTranslationDeletePaddleRuntime': 'Excluir ambiente de execução do PaddleOCR',
+      'imageTranslationDeletePaddleHint': 'Remove o ambiente virtual e os modelos baixados.',
+      'imageTranslationDeletePaddleConfirm': 'Excluir o ambiente de execução do PaddleOCR?',
       'imageTranslationEnableThinking': 'Usar raciocínio',
-      'imageTranslationEnableThinkingHint':
-          'Desativado traduz mais rápido; ativado raciocina mais profundamente.',
-      'imageTranslationAutoMergeText':
-          'Mesclar blocos de texto automaticamente',
+      'imageTranslationEnableThinkingHint': 'Desativado traduz mais rápido; ativado raciocina mais profundamente.',
+      'imageTranslationAutoMergeText': 'Mesclar blocos de texto automaticamente',
       'imageTranslationAutoMergeTextHint':
           'Quando ativado, linhas do mesmo balão ou caixa de texto são traduzidas e inseridas como um bloco.',
       'imageTranslationTranslateScope': 'Escopo da tradução',
       'imageTranslationScopeCurrent': 'Apenas a página atual',
       'imageTranslationScopeSubsequent': 'Página atual e seguintes',
       'enableAutoTranslate': 'Tradução automática',
-      'enableAutoTranslateHint':
-          'Ao começar a ler ou virar páginas, traduz automaticamente a página atual e a seguinte.',
+      'enableAutoTranslateHint': 'Ao começar a ler ou virar páginas, traduz automaticamente a página atual e a seguinte.',
       'preTranslatePageCount': 'Páginas de pré-tradução',
-      'preTranslatePageCountHint':
-          'Após ativar a pré-tradução na página de detalhes, traduz as primeiras N páginas em segundo plano.',
+      'preTranslatePageCountHint': 'Após ativar a pré-tradução na página de detalhes, traduz as primeiras N páginas em segundo plano.',
       'preTranslate': 'Pré-traduzir',
       'preTranslateEnabled': 'Pré-tradução on',
-      'preTranslateHint':
-          'Quando ativado, as primeiras @count páginas desta galeria são pré-traduzidas imediatamente em segundo plano.',
-      'preTranslateEnabledToast':
-          'Pré-tradução ativada (primeiras @count páginas). Iniciando em segundo plano agora.',
+      'preTranslateHint': 'Quando ativado, as primeiras @count páginas desta galeria são pré-traduzidas imediatamente em segundo plano.',
+      'preTranslateEnabledToast': 'Pré-tradução ativada (primeiras @count páginas). Iniciando em segundo plano agora.',
       'preTranslateDisabledToast': 'Pré-tradução desativada para esta galeria.',
-      'preTranslateAlreadyTargetLanguageToast':
-          'Esta galeria já está no idioma de destino; a pré-tradução não é necessária.',
+      'preTranslateAlreadyTargetLanguageToast': 'Esta galeria já está no idioma de destino; a pré-tradução não é necessária.',
       'preTranslateConcurrency': 'Traduções simultâneas',
       'preTranslateConcurrencyHint': 'Páginas traduzidas ao mesmo tempo. Padrão: 5.',
       'preTranslateMonitorTitle': 'Monitor de pré-tradução',
@@ -1139,20 +1032,17 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'preTranslateMonitorAllDone': 'Tudo traduzido',
       'imageTranslationContextPages': 'Páginas por solicitação de contexto',
       'imageTranslationContextPagesValue': '@count página(s)',
-      'imageTranslationContextAppleUnsupported':
-          'A Tradução da Apple atualmente aceita uma página por solicitação.',
+      'imageTranslationContextAppleUnsupported': 'A Tradução da Apple atualmente aceita uma página por solicitação.',
       'imageTranslationCachedRetranslate': 'Em cache · Retraduzir',
       'translationProgress': 'Traduzindo @current/@total · @stage',
       'translationStageIdle': 'Preparando',
       'translationStageRecognizing': 'Reconhecendo',
       'translationStageTranslating': 'Traduzindo',
       'translationStageDone': 'Concluído',
-      'imageTranslationSourceUnavailable':
-          'A imagem atual não está disponível.',
+      'imageTranslationSourceUnavailable': 'A imagem atual não está disponível.',
       'imageTranslationSettingHint': 'Configurar OCR e provedor de tradução',
       'imageTranslationOcrSection': 'Reconhecimento de texto',
-      'imageTranslationOcrHint':
-          'No desktop, o Tesseract local é usado por padrão. Instale os pacotes de idioma necessários.',
+      'imageTranslationOcrHint': 'No desktop, o Tesseract local é usado por padrão. Instale os pacotes de idioma necessários.',
       'imageTranslationOcrExecutable': 'Executável OCR',
       'imageTranslationOcrLanguage': 'Idiomas OCR',
       'imageTranslationTranslatorSection': 'Provedor de tradução',
@@ -1160,32 +1050,25 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationTranslatorEngineApi': 'API de terceiros',
       'imageTranslationTranslatorEngineApple': 'Apple no dispositivo',
       'imageTranslationTranslatorEngineLocal': 'GGUF local',
-      'imageTranslationLocalGgufHint':
-          'Usa o modelo GGUF baixado e o runtime local llama.cpp configurado.',
+      'imageTranslationLocalGgufHint': 'Usa o modelo GGUF baixado e o runtime local llama.cpp configurado.',
       'imageTranslationLocalModel': 'Modelo de tradução local',
       'imageTranslationLocalModelDownloading': 'Baixando @progress',
       'imageTranslationLocalFfiRuntime': 'Runtime llama.cpp no dispositivo',
-      'imageTranslationLocalFfiRuntimeHint':
-          'Usa o runtime Flutter FFI integrado quando disponível neste dispositivo.',
+      'imageTranslationLocalFfiRuntimeHint': 'Usa o runtime Flutter FFI integrado quando disponível neste dispositivo.',
       'imageTranslationBrowseRuntime': 'Selecionar runtime',
-      'imageTranslationTranslatorHint':
-          'Usa um endpoint OpenAI-compatible Chat Completions. A chave fica somente neste dispositivo.',
+      'imageTranslationTranslatorHint': 'Usa um endpoint OpenAI-compatible Chat Completions. A chave fica somente neste dispositivo.',
       'imageTranslationEndpoint': 'Endpoint',
       'imageTranslationModel': 'Modelo',
       'imageTranslationTargetLanguage': 'Idioma de destino',
-      'imageTranslationApiTestHint':
-          'Informe a URL base e a chave da API e teste para carregar os modelos disponíveis.',
+      'imageTranslationApiTestHint': 'Informe a URL base e a chave da API e teste para carregar os modelos disponíveis.',
       'imageTranslationProvider': 'Formato da API',
       'imageTranslationOpenAICompatible': 'Compatível com OpenAI',
       'imageTranslationApiBaseUrl': 'URL base da API',
       'imageTranslationTestAndFetchModels': 'Testar e buscar modelos',
-      'imageTranslationFetchModelsFirst':
-          'Teste a API e busque os modelos primeiro',
-      'imageTranslationApiTestSuccess':
-          'Conexão bem-sucedida; @count modelos encontrados',
+      'imageTranslationFetchModelsFirst': 'Teste a API e busque os modelos primeiro',
+      'imageTranslationApiTestSuccess': 'Conexão bem-sucedida; @count modelos encontrados',
       'imageTranslationApiTestFailed': 'Falha no teste da API: @error',
-      'imageTranslationOcrDownloadHint':
-          'Baixe modelos de idioma tessdata_fast para o diretório de dados do Tesseract.',
+      'imageTranslationOcrDownloadHint': 'Baixe modelos de idioma tessdata_fast para o diretório de dados do Tesseract.',
       'imageTranslationOcrDataDirectory': 'Diretório de dados OCR',
       'imageTranslationChooseDirectory': 'Escolher diretório de dados',
       'imageTranslationDetectOcr': 'Detectar OCR local',
@@ -1194,52 +1077,40 @@ Example 2: Block comments with a score not exceeding 10————Comment Score
       'imageTranslationGithubOfficial': 'Fonte oficial do GitHub',
       'imageTranslationOcrInstalled': 'Instalado',
       'imageTranslationOcrNotInstalled': 'Não instalado',
-      'imageTranslationOcrDetectFailed':
-          'Falha ao detectar OCR. Verifique o caminho do executável.',
-      'imageTranslationOcrDirectoryRequired':
-          'Escolha ou detecte o diretório de dados OCR primeiro.',
+      'imageTranslationOcrDetectFailed': 'Falha ao detectar OCR. Verifique o caminho do executável.',
+      'imageTranslationOcrDirectoryRequired': 'Escolha ou detecte o diretório de dados OCR primeiro.',
       'imageTranslationOcrDownloadSuccess': 'Modelo OCR baixado.',
-      'imageTranslationOcrDownloadFailed':
-          'Falha ao baixar o modelo OCR. Tente outra fonte.',
+      'imageTranslationOcrDownloadFailed': 'Falha ao baixar o modelo OCR. Tente outra fonte.',
       'imageTranslationOcrEngineAppleLiveText': 'Apple Live Text',
-      'imageTranslationAppleLiveTextLanguage':
-          'Idioma de reconhecimento do Apple Live Text',
-      'imageTranslationAppleLiveTextHint':
-          'OCR no dispositivo via Apple Vision. Disponível em iOS e macOS, sem download de modelo.',
-      'imageTranslationAppleLiveTextUnavailable':
-          'O Apple Live Text está disponível apenas em iOS e macOS.',
+      'imageTranslationAppleLiveTextLanguage': 'Idioma de reconhecimento do Apple Live Text',
+      'imageTranslationAppleLiveTextHint': 'OCR no dispositivo via Apple Vision. Disponível em iOS e macOS, sem download de modelo.',
+      'imageTranslationAppleLiveTextUnavailable': 'O Apple Live Text está disponível apenas em iOS e macOS.',
       'imageTranslationMethodSection': 'Método de tradução',
       'onnxModelDescComicTextDetector':
           'Detecta texto em quadrinhos e gera máscaras precisas. O modelo é baixado separadamente sob GPL-3.0.',
       'imageTranslationImageProcessingSection': 'Processamento de imagem',
       'imageTranslationImageProcessingMode': 'Exibição da tradução',
-      'imageTranslationImageProcessingHint':
-          'A imagem original é sempre preservada. Falhas usam automaticamente a sobreposição.',
+      'imageTranslationImageProcessingHint': 'A imagem original é sempre preservada. Falhas usam automaticamente a sobreposição.',
       'imageTranslationDisplayOverlay': 'Sobreposição de texto',
       'imageTranslationDisplayCtdMigan': 'Fundo restaurado com CTD + LaMa Large',
       'imageTranslationCtdModel': 'Detector de texto de quadrinhos (CTD)',
       'imageTranslationMiganModel': 'Modelo de restauração de fundo (LaMa Large)',
-      'imageTranslationCtdLicenseNotice':
-          'O modelo CTD GPL-3.0 é baixado em tempo de execução e não acompanha o app',
-      'imageTranslationCtdFallbackHint':
-          'CTD e LaMa Large são necessários. Qualquer falha retorna com segurança à sobreposição.',
+      'imageTranslationCtdLicenseNotice': 'O modelo CTD GPL-3.0 é baixado em tempo de execução e não acompanha o app',
+      'imageTranslationCtdFallbackHint': 'CTD e LaMa Large são necessários. Qualquer falha retorna com segurança à sobreposição.',
       'imageTranslationInpaintFallback': 'Background repair unavailable (@reason); fell back to text boxes instead of CTD/LaMa Large.',
       'imageTranslationMethodAppleLiveText': 'Apple Live Text',
       'imageTranslationMethodCustom': 'Personalizado',
-      'imageTranslationAppleLiveTextUseApi':
-          'Usar API de terceiros para tradução',
+      'imageTranslationAppleLiveTextUseApi': 'Usar API de terceiros para tradução',
       'imageTranslationAppleLiveTextUseApiHint':
           'Reutiliza a mesma API compatível com OpenAI / Anthropic do modo personalizado em vez da tradução no dispositivo da Apple.',
       'imageTranslationAppleLiveTextOnDeviceHint':
           'A tradução é feita no dispositivo pela Apple, independentemente do OCR. Exige iOS 26 / macOS 26 ou superior.',
-      'autoTranslateGalleryText':
-          'Traduzir títulos e comentários automaticamente',
+      'autoTranslateGalleryText': 'Traduzir títulos e comentários automaticamente',
       'autoTranslateGalleryTextHint':
           'Quando ativado, títulos e comentários de galerias visíveis são traduzidos no dispositivo (requer tradução on-device da Apple).',
       'imageTranslationTranslationUnavailable':
           'A tradução no dispositivo da Apple exige iOS 26 / macOS 26 ou superior. Selecione a API de terceiros neste sistema.',
-      'imageTranslationTranslationFailed':
-          'Falha na tradução do texto. Tente novamente.',
+      'imageTranslationTranslationFailed': 'Falha na tradução do texto. Tente novamente.',
       'imageTranslationShow': 'Mostrar tradução',
       'imageTranslationHide': 'Ocultar tradução',
       'imageTranslationRetranslate': 'Retraduzir',

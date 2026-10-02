@@ -22,7 +22,6 @@ import 'package:jhentai/src/database/table/image.dart';
 import 'package:jhentai/src/database/table/local_config.dart';
 import 'package:jhentai/src/database/table/smart_cache_stat.dart';
 import 'package:jhentai/src/database/table/super_resolution_info.dart';
-import 'package:jhentai/src/database/table/reader_bookmark.dart';
 import 'package:jhentai/src/database/table/tag.dart';
 import 'package:jhentai/src/database/table/tag_count.dart';
 import 'package:jhentai/src/enum/config_enum.dart';
@@ -63,7 +62,6 @@ part 'database.g.dart';
     BlockRule,
     LocalConfig,
     SmartCacheStat,
-    ReaderBookmarkTable,
   ],
 )
 class AppDb extends _$AppDb {
@@ -229,20 +227,11 @@ class AppDb extends _$AppDb {
             }
             if (from < 27) {
               /// Fork and upstream assigned different changes to schema 25/26.
-              /// An upstream-v25 database has neither Fork table, while a
-              /// Fork-v26 database has both. Reconcile both histories by
-              /// creating each table idempotently before adding the upstream
-              /// image column.
+              /// An upstream-v25 database has no smart-cache table.
+              /// Reconcile both histories by creating it idempotently before
+              /// adding the upstream image column.
               try {
                 await m.createTable(smartCacheStat);
-              } on SqliteException catch (e) {
-                if (!(e.extendedResultCode == SqlError.SQLITE_ERROR &&
-                    e.message.contains('already exists'))) {
-                  rethrow;
-                }
-              }
-              try {
-                await m.createTable(readerBookmarkTable);
               } on SqliteException catch (e) {
                 if (!(e.extendedResultCode == SqlError.SQLITE_ERROR &&
                     e.message.contains('already exists'))) {

@@ -4,16 +4,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/service/inference/onnx_model_store.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
-import 'package:jhentai/src/widget/eh_codex_style_dropdown.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 
 class OnnxModelTile extends StatelessWidget {
-  const OnnxModelTile({
-    super.key,
-    required this.manifestId,
-    required this.title,
-  });
+  const OnnxModelTile({super.key, required this.manifestId, required this.title});
 
   final String manifestId;
   final String title;
@@ -23,20 +17,12 @@ class OnnxModelTile extends StatelessWidget {
     return GetBuilder<OnnxModelStore>(
       builder: (OnnxModelStore store) {
         final OnnxModelManifest manifest = store.manifestOf(manifestId)!;
-        final List<OnnxModelSource> sources = store.availableSources(
-          manifestId,
-        );
+        final List<OnnxModelSource> sources = store.availableSources(manifestId);
         final OnnxModelSource selected = store.preferredSource(manifestId);
         final bool downloaded = store.isManifestDownloaded(manifestId);
-        final bool downloading =
-            store.downloadState.value == LoadingState.loading &&
-            store.downloadingManifestId.value == manifestId;
-        final bool anotherDownload =
-            store.downloadState.value == LoadingState.loading &&
-            store.downloadingManifestId.value != manifestId;
-        final OnnxModelInstallState state =
-            store.installStates[manifestId] ??
-            OnnxModelInstallState.notInstalled;
+        final bool downloading = store.downloadState.value == LoadingState.loading && store.downloadingManifestId.value == manifestId;
+        final bool anotherDownload = store.downloadState.value == LoadingState.loading && store.downloadingManifestId.value != manifestId;
+        final OnnxModelInstallState state = store.installStates[manifestId] ?? OnnxModelInstallState.notInstalled;
         final String status =
             downloading
                 ? '${store.downloadingFileId.value ?? ''} ${store.downloadProgress.value}'
@@ -46,8 +32,7 @@ class OnnxModelTile extends StatelessWidget {
                 ? 'inferenceRefresh'.tr
                 : state == OnnxModelInstallState.invalid
                 ? (store.lastError.value ?? 'failed'.tr)
-                : store.downloadState.value == LoadingState.error &&
-                    store.lastError.value != null
+                : store.downloadState.value == LoadingState.error && store.lastError.value != null
                 ? store.lastError.value!
                 : 'inferenceModelNotDownloaded'.tr;
         return ListTile(
@@ -61,53 +46,37 @@ class OnnxModelTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               if (sources.length > 1)
-                EHCodexStyleDropdown<OnnxModelSource>(
+                DropdownButton<OnnxModelSource>(
                   value: selected,
                   items: sources
-                      .map(
-                        (OnnxModelSource source) => DropdownMenuItem(
-                          value: source,
-                          child: Text(source.displayName),
-                        ),
-                      )
+                      .map((OnnxModelSource source) => DropdownMenuItem(value: source, child: Text(source.displayName)))
                       .toList(growable: false),
-                  enabled: !downloading && !anotherDownload,
-                  onChanged: (OnnxModelSource? source) {
-                    if (source != null) {
-                      store.selectSource(manifestId, source);
-                    }
-                  },
+
+                  onChanged:
+                      !downloading && !anotherDownload
+                          ? (OnnxModelSource? source) {
+                            if (source != null) {
+                              store.selectSource(manifestId, source);
+                            }
+                          }
+                          : null,
                 ),
               if (downloading)
-                EHAppleIconButton(
-                  tooltip: 'cancel'.tr,
-                  icon: const Icon(Icons.close),
-                  onPressed: store.cancelDownload,
-                )
+                IconButton(tooltip: 'cancel'.tr, icon: const Icon(Icons.close), onPressed: store.cancelDownload)
               else if (state == OnnxModelInstallState.validating)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: CupertinoActivityIndicator(),
-                )
+                const Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: CupertinoActivityIndicator())
               else if (downloaded)
-                EHAppleIconButton(
+                IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  onPressed:
-                      anotherDownload
-                          ? null
-                          : () => store.deleteManifest(manifestId),
+                  onPressed: anotherDownload ? null : () => store.deleteManifest(manifestId),
                 )
               else
-                EHAppleIconButton(
+                IconButton(
                   icon: const Icon(Icons.download),
                   onPressed:
                       anotherDownload
                           ? null
-                          : () => unawaited(
-                            store
-                                .downloadManifest(manifestId, source: selected)
-                                .catchError((Object _) {}),
-                          ),
+                          : () => unawaited(store.downloadManifest(manifestId, source: selected).catchError((Object _) {})),
                 ),
             ],
           ),
@@ -122,12 +91,7 @@ class OnnxModelTile extends StatelessWidget {
 /// name, and a radio marking the currently active one. Tapping a row selects it
 /// via [onSelect].
 class OnnxModelPicker extends StatelessWidget {
-  const OnnxModelPicker({
-    super.key,
-    required this.kind,
-    required this.activeId,
-    required this.onSelect,
-  });
+  const OnnxModelPicker({super.key, required this.kind, required this.activeId, required this.onSelect});
 
   final String kind;
   final String activeId;
@@ -135,8 +99,7 @@ class OnnxModelPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<OnnxModelManifest> models =
-        OnnxModelStore.instance.manifestsOfKind(kind);
+    final List<OnnxModelManifest> models = OnnxModelStore.instance.manifestsOfKind(kind);
     if (models.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -154,9 +117,7 @@ class OnnxModelPicker extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
                     child: Icon(
-                      model.id == activeId
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_off,
+                      model.id == activeId ? Icons.radio_button_checked : Icons.radio_button_off,
                       size: 20,
                       color: scheme.primary,
                     ),
@@ -168,13 +129,7 @@ class OnnxModelPicker extends StatelessWidget {
                       children: <Widget>[
                         Text(model.displayName),
                         const SizedBox(height: 2),
-                        Text(
-                          model.description.tr,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
+                        Text(model.description.tr, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
                       ],
                     ),
                   ),

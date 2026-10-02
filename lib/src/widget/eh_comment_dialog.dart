@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jhentai/src/extension/dio_exception_extension.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 
 import '../exception/eh_site_exception.dart';
 import '../network/eh_request.dart';
@@ -53,7 +51,7 @@ class EHCommentDialogState extends State<EHCommentDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.title),
-      content: EHAppleTextField(
+      content: TextField(
         autofocus: true,
         controller: controller,
         minLines: 1,
@@ -68,7 +66,7 @@ class EHCommentDialogState extends State<EHCommentDialog> {
       ),
       actions: [
         if (sendCommentState == LoadingState.loading) const CupertinoActivityIndicator(radius: 10),
-        EHAppleTextButton(child: const Icon(Icons.send, size: 24), onPressed: _sendComment)
+        TextButton(child: const Icon(Icons.send, size: 24), onPressed: _sendComment)
       ],
     );
   }

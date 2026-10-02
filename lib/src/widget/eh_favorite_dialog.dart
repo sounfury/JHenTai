@@ -8,8 +8,6 @@ import 'package:jhentai/src/extension/dio_exception_extension.dart';
 import 'package:jhentai/src/model/gallery_note.dart';
 import 'package:jhentai/src/setting/preference_setting.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 
 import '../exception/eh_site_exception.dart';
@@ -84,130 +82,120 @@ class _EHFavoriteDialogState extends State<EHFavoriteDialog> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         selected: selectedIndex == index,
                         selectedTileColor: UIConfig.favoriteDialogTileColor(context),
-                        leading: Text(
-                          tagName,
-                          style: const TextStyle(fontSize: UIConfig.favoriteDialogLeadingTextSize),
-                        ),
-                        trailing: Text(
-                          favoriteSetting.favoriteCounts[index].toString(),
-                          style: TextStyle(fontSize: UIConfig.favoriteDialogTrailingTextSize, color: UIConfig.favoriteDialogCountTextColor(context)),
-                        ),
-                        onTap: () {
-                          // Pop via this dialog's own navigator: Get.back() only
-                          // closes a (possibly stale) snackbar when one is open.
-                          Navigator.of(context).pop(
-                            (
-                              isDelete: index == selectedIndex,
-                              favIndex: index,
-                              note: _controller.text,
-                              remember: remember,
+                            leading: Text(tagName, style: const TextStyle(fontSize: UIConfig.favoriteDialogLeadingTextSize)),
+                            trailing: Text(
+                              favoriteSetting.favoriteCounts[index].toString(),
+                              style: TextStyle(
+                                fontSize: UIConfig.favoriteDialogTrailingTextSize,
+                                color: UIConfig.favoriteDialogCountTextColor(context),
+                              ),
                             ),
-                          );
-                        },
-                      ),
-                    )
-                    .toList(),
-                const Divider(height: 12),
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.only(left: 12, right: 12),
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (preferenceSetting.enableDefaultFavorite.isTrue) Text('asYourDefault'.tr),
-                      if (preferenceSetting.enableDefaultFavorite.isTrue) EHAppleCheckbox(value: remember, onChanged: (value) => setState(() => remember = value!)),
-                    ],
-                  ),
-                  trailing: EHAppleIconButton(
-                    icon: const Icon(Icons.edit_note),
-                    onPressed: () {
-                      setState(() {
-                        inNoteMode = !inNoteMode;
-                      });
-                    },
-                  ),
-                ).marginOnly(top: 4),
-                if (inNoteMode)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 160),
-                          child: EHAppleTextField(
-                            controller: _controller,
-                            inputFormatters: [LengthLimitingTextInputFormatter(200)],
-                            style: const TextStyle(fontSize: 12),
-                            minLines: 1,
-                            maxLines: 4,
-                            decoration: const InputDecoration(isDense: true),
+                            onTap: () {
+                              // Pop via this dialog's own navigator: Get.back() only
+                              // closes a (possibly stale) snackbar when one is open.
+                              Navigator.of(
+                                context,
+                              ).pop((isDelete: index == selectedIndex, favIndex: index, note: _controller.text, remember: remember));
+                            },
                           ),
-                        ).paddingOnly(left: 8),
+                        )
+                        .toList(),
+                    const Divider(height: 12),
+                    ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.only(left: 12, right: 12),
+                      leading: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (preferenceSetting.enableDefaultFavorite.isTrue) Text('asYourDefault'.tr),
+                          if (preferenceSetting.enableDefaultFavorite.isTrue) Checkbox(value: remember, onChanged: (value) => setState(() => remember = value!)),
+                        ],
                       ),
-                      EHAppleTextButton(
-                        child: Text('OK'.tr),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit_note),
                         onPressed: () {
-                          if (selectedIndex == null) {
-                            toast('addNoteHint'.tr);
-                            return;
-                          }
-
-                          // Pop via this dialog's own navigator: Get.back() only
-                          // closes a (possibly stale) snackbar when one is open.
-                          Navigator.of(context).pop(
-                            (
-                              isDelete: false,
-                              favIndex: selectedIndex,
-                              note: _controller.text,
-                              remember: remember,
-                            ),
-                          );
+                          setState(() {
+                            inNoteMode = !inNoteMode;
+                          });
                         },
                       ),
-                    ],
-                  ).marginOnly(top: 4, bottom: 4),
-              ],
+                    ).marginOnly(top: 4),
+                    if (inNoteMode)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 160),
+                              child: TextField(
+                                controller: _controller,
+                                inputFormatters: [LengthLimitingTextInputFormatter(200)],
+                                style: const TextStyle(fontSize: 12),
+                                minLines: 1,
+                                maxLines: 4,
+                                decoration: const InputDecoration(isDense: true),
+                              ),
+                            ).paddingOnly(left: 8),
+                          ),
+                          TextButton(
+                            child: Text('OK'.tr),
+                            onPressed: () {
+                              if (selectedIndex == null) {
+                                toast('addNoteHint'.tr);
+                                return;
+                              }
+
+                              // Pop via this dialog's own navigator: Get.back() only
+                              // closes a (possibly stale) snackbar when one is open.
+                              Navigator.of(
+                                context,
+                              ).pop((isDelete: false, favIndex: selectedIndex, note: _controller.text, remember: remember));
+                            },
+                          ),
+                        ],
+                      ).marginOnly(top: 4, bottom: 4),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
-      contentPadding: const EdgeInsets.only(top: 18, left: 12, right: 12, bottom: 12),
-    );
-  }
+          ],
+          contentPadding: const EdgeInsets.only(top: 18, left: 12, right: 12, bottom: 12),
+        );
+      }
 
-  Future<void> _initFavoriteNote() async {
-    assert(widget.initNoteFuture != null);
+      Future<void> _initFavoriteNote() async {
+        assert(widget.initNoteFuture != null);
 
-    if (_loadingState == LoadingState.loading) {
-      return;
-    }
-    setState(() => _loadingState = LoadingState.loading);
-
-    log.info('Get gallery favorite info');
-    GalleryNote note;
-    try {
-      note = await widget.initNoteFuture!();
-      _controller.text = note.note;
-      setState(() {
-        if (_controller.text.isNotEmpty) {
-          inNoteMode = true;
+        if (_loadingState == LoadingState.loading) {
+          return;
         }
-        _loadingState = LoadingState.success;
-      });
-    } on DioException catch (e) {
-      log.error('getGalleryFavoriteInfoFailed'.tr, e.errorMsg);
-      snack('getGalleryFavoriteInfoFailed'.tr, e.errorMsg ?? '', isShort: true);
-      setState(() => _loadingState = LoadingState.error);
-      return;
-    } on EHSiteException catch (e) {
-      log.error('getGalleryFavoriteInfoFailed'.tr, e.message);
-      snack('getGalleryFavoriteInfoFailed'.tr, e.message, isShort: true);
-      setState(() => _loadingState = LoadingState.error);
-      return;
-    } catch (e, s) {
-      log.error('getGalleryFavoriteInfoFailed'.tr, e, s);
-      snack('getGalleryFavoriteInfoFailed'.tr, e.toString(), isShort: true);
-      setState(() => _loadingState = LoadingState.error);
-      return;
+        setState(() => _loadingState = LoadingState.loading);
+
+        log.info('Get gallery favorite info');
+        GalleryNote note;
+        try {
+          note = await widget.initNoteFuture!();
+          _controller.text = note.note;
+          setState(() {
+            if (_controller.text.isNotEmpty) {
+              inNoteMode = true;
+            }
+            _loadingState = LoadingState.success;
+          });
+        } on DioException catch (e) {
+          log.error('getGalleryFavoriteInfoFailed'.tr, e.errorMsg);
+          snack('getGalleryFavoriteInfoFailed'.tr, e.errorMsg ?? '', isShort: true);
+          setState(() => _loadingState = LoadingState.error);
+          return;
+        } on EHSiteException catch (e) {
+          log.error('getGalleryFavoriteInfoFailed'.tr, e.message);
+          snack('getGalleryFavoriteInfoFailed'.tr, e.message, isShort: true);
+          setState(() => _loadingState = LoadingState.error);
+          return;
+        } catch (e, s) {
+          log.error('getGalleryFavoriteInfoFailed'.tr, e, s);
+          snack('getGalleryFavoriteInfoFailed'.tr, e.toString(), isShort: true);
+          setState(() => _loadingState = LoadingState.error);
+          return;
+        }
+      }
     }
-  }
-}

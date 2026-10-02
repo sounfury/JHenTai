@@ -8,8 +8,6 @@ import 'package:jhentai/src/pages/setting/style/theme_color/preview_page/detail_
 import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
-import 'package:jhentai/src/widget/eh_apple_button.dart';
-import 'package:jhentai/src/widget/eh_apple_controls.dart';
 
 class SettingThemeColorPage extends StatefulWidget {
   const SettingThemeColorPage({Key? key}) : super(key: key);
@@ -46,13 +44,13 @@ class _SettingThemeColorPageState extends State<SettingThemeColorPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                EHAppleIconButton(
+                IconButton(
                   icon: Icon(selectedBrightness == Brightness.light ? Icons.sunny : Icons.nightlight),
                   onPressed: () {
                     setState(() => selectedBrightness = selectedBrightness == Brightness.light ? Brightness.dark : Brightness.light);
                   },
                 ),
-                EHAppleIconButton(
+                IconButton(
                   icon: Container(
                     width: 24,
                     height: 24,
@@ -154,17 +152,17 @@ class _ColorSettingDialogState extends State<_ColorSettingDialog> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            EHAppleTextButton(
+            TextButton(
               child: Text('cancel'.tr),
               onPressed: backRoute,
             ),
-            EHAppleTextButton(
+            TextButton(
               child: Text('reset'.tr),
               onPressed: () {
                 setState(() => selectedColor = widget.resetColor);
               },
             ),
-            EHAppleTextButton(
+            TextButton(
               child: Text('OK'.tr),
               onPressed: () {
                 backRoute(result: selectedColor);

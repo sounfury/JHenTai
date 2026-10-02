@@ -6,9 +6,7 @@ import 'package:jhentai/src/extension/widget_extension.dart';
 import 'package:jhentai/src/network/archive_bot_request.dart';
 import 'package:jhentai/src/service/log.dart';
 import 'package:jhentai/src/setting/archive_bot_setting.dart';
-import 'package:jhentai/src/utils/app_icons.dart';
 import 'package:jhentai/src/utils/snack_util.dart';
-import 'package:jhentai/src/widget/eh_apple_settings_list_view.dart';
 import 'package:jhentai/src/widget/eh_archive_bot_setting_dialog.dart';
 import 'package:jhentai/src/widget/loading_state_indicator.dart';
 
@@ -44,29 +42,22 @@ class _ArchiveBotSettingsPageState extends State<ArchiveBotSettingsPage> {
         title: Text('archiveBotSettings'.tr),
         actions: const [],
       ),
-      body: EHAppleSettingsListView(
-        groups: [
-          EHAppleSettingsGroup(
-            children: [
-              _buildApiKeySetting(),
-              if (archiveBotSetting.isReady) _buildBalance(),
-              if (archiveBotSetting.isReady &&
-                  archiveBotSetting.botType.value.supportsCheckIn)
-                _buildCheckin(),
-            ],
-          ),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 16),
+        children: [
+          _buildApiKeySetting(),
+          if (archiveBotSetting.isReady) _buildBalance(),
+          if (archiveBotSetting.isReady && archiveBotSetting.botType.value.supportsCheckIn) _buildCheckin(),
         ],
-      ),
+      ).withListTileTheme(context),
     );
   }
 
   Widget _buildApiKeySetting() {
     return ListTile(
       title: Text('apiSetting'.tr),
-      subtitle: Text(archiveBotSetting.apiKey.value == null
-          ? 'apiKeyHint'.tr
-          : archiveBotSetting.apiKey.value.toString()),
-      trailing: Icon(AppIcons.chevronRight),
+      subtitle: Text(archiveBotSetting.apiKey.value == null ? 'apiKeyHint'.tr : archiveBotSetting.apiKey.value.toString()),
+      trailing: const Icon(Icons.keyboard_arrow_right),
       onTap: _showApiKeyDialog,
     );
   }
@@ -80,8 +71,7 @@ class _ArchiveBotSettingsPageState extends State<ArchiveBotSettingsPage> {
           LoadingStateIndicator(
             loadingState: _balanceState,
             useCupertinoIndicator: true,
-            successWidgetBuilder: () =>
-                Text(_balance.value == null ? '' : '${_balance.value} GP'),
+            successWidgetBuilder: () => Text(_balance.value == null ? '' : '${_balance.value} GP'),
             errorWidgetBuilder: () => const Icon(Icons.error_outline),
           ),
         ],
@@ -99,7 +89,7 @@ class _ArchiveBotSettingsPageState extends State<ArchiveBotSettingsPage> {
           LoadingStateIndicator(
             loadingState: _checkinState,
             useCupertinoIndicator: true,
-            idleWidgetBuilder: () => Icon(AppIcons.chevronRight),
+            idleWidgetBuilder: () => const Icon(Icons.keyboard_arrow_right),
             successWidgetBuilder: () => const Icon(Icons.check_circle_outline),
             errorWidgetBuilder: () => const Icon(Icons.error_outline),
           ),
@@ -147,8 +137,7 @@ class _ArchiveBotSettingsPageState extends State<ArchiveBotSettingsPage> {
       if (response.isSuccess) {
         setStateSafely(() {
           _balanceState = LoadingState.success;
-          _balance.value =
-              archiveBotSetting.botType.value.parseBalance(response.data).gp;
+          _balance.value = archiveBotSetting.botType.value.parseBalance(response.data).gp;
         });
       } else {
         snack('checkBalanceFailed'.tr, response.errorMessage);
@@ -186,16 +175,12 @@ class _ArchiveBotSettingsPageState extends State<ArchiveBotSettingsPage> {
       );
       log.info('Checkin response: $response');
       if (response.isSuccess) {
-        final checkInVO =
-            archiveBotSetting.botType.value.parseCheckIn(response.data);
+        final checkInVO = archiveBotSetting.botType.value.parseCheckIn(response.data);
         setStateSafely(() {
           _checkinState = LoadingState.success;
           _balance.value = checkInVO.currentGP;
         });
-        snack(
-            'checkInSuccess'.tr,
-            'checkInSuccessHint'.trArgs(
-                [checkInVO.getGP.toString(), checkInVO.currentGP.toString()]));
+        snack('checkInSuccess'.tr, 'checkInSuccessHint'.trArgs([checkInVO.getGP.toString(), checkInVO.currentGP.toString()]));
       } else {
         snack('checkInFailed'.tr, response.errorMessage);
         setStateSafely(() => _checkinState = LoadingState.error);
