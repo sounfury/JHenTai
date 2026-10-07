@@ -34,4 +34,11 @@ mixin SearchPageStateMixin on BasePageState {
   ScrollController suggestionBodyController = ScrollController();
 
   FocusNode searchFieldFocusNode = FocusNode();
+
+  /// only show galleries without a Chinese translation
+  bool hideTranslatedGalleries = false;
+
+  /// normalized titles of the Chinese galleries of [translatedTitleKeysQuery], used to hide their raw galleries
+  Set<String> translatedTitleKeys = {};
+  String? translatedTitleKeysQuery;
 }

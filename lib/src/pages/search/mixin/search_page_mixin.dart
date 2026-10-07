@@ -55,6 +55,16 @@ mixin SearchPageMixin<L extends SearchPageLogicMixin, S extends SearchPageStateM
         padding: buttonPadding,
       ),
       IconButton(
+        icon: const Icon(Icons.translate),
+        selectedIcon: const Icon(Icons.g_translate),
+        isSelected: state.hideTranslatedGalleries,
+        tooltip: 'hideTranslatedGalleries'.tr,
+        onPressed: logic.toggleHideTranslatedGalleries,
+        visualDensity: visualDensity,
+        constraints: buttonConstraints,
+        padding: buttonPadding,
+      ),
+      IconButton(
         icon: const Icon(Icons.filter_alt_outlined),
         onPressed: () => logic.handleTapFilterButton(EHSearchConfigDialogType.filter),
         visualDensity: visualDensity,

@@ -24,6 +24,7 @@ import '../../../exception/eh_site_exception.dart';
 import '../../../model/eh_raw_tag.dart';
 import '../../../model/gallery.dart';
 import '../../../model/gallery_page.dart';
+import '../../../model/search_config.dart';
 import '../../../network/eh_request.dart';
 import '../../../service/local_config_service.dart';
 import '../../../service/quick_search_service.dart';
@@ -31,6 +32,7 @@ import '../../../service/tag_translation_service.dart';
 import '../../../utils/eh_spider_parser.dart';
 import '../../../service/log.dart';
 import '../../../utils/snack_util.dart';
+import '../../../utils/translated_gallery_filter.dart';
 import '../../../widget/eh_alert_dialog.dart';
 import '../../../widget/loading_state_indicator.dart';
 
@@ -264,6 +266,10 @@ mixin SearchPageLogicMixin on BasePageLogic {
 
   @override
   Future<GalleryPageInfo> getGalleryPage({String? prevGid, String? nextGid, DateTime? seek, bool useCacheIfAvailable = true}) {
+    if (state.redirectUrl == null && state.hideTranslatedGalleries && state.searchConfig.searchType == SearchType.gallery) {
+      return _getUntranslatedGalleryPage(prevGid: prevGid, nextGid: nextGid, seek: seek, useCacheIfAvailable: useCacheIfAvailable);
+    }
+
     if (state.redirectUrl == null) {
       return super.getGalleryPage(prevGid: prevGid, nextGid: nextGid, seek: seek, useCacheIfAvailable: useCacheIfAvailable);
     }
@@ -277,6 +283,93 @@ mixin SearchPageLogicMixin on BasePageLogic {
       useCacheIfAvailable: useCacheIfAvailable,
       parser: EHSpiderParser.galleryPage2GalleryPageInfo,
     );
+  }
+
+  Future<void> toggleHideTranslatedGalleries() async {
+    await state.searchConfigInitCompleter.future;
+
+    state.hideTranslatedGalleries = !state.hideTranslatedGalleries;
+    toast((state.hideTranslatedGalleries ? 'hideTranslatedGalleriesOn' : 'hideTranslatedGalleriesOff').tr);
+
+    if (state.hasSearched) {
+      handleClearAndRefresh();
+    } else {
+      updateSafely();
+    }
+  }
+
+  Future<GalleryPageInfo> _getUntranslatedGalleryPage({String? prevGid, String? nextGid, DateTime? seek, required bool useCacheIfAvailable}) async {
+    await state.searchConfigInitCompleter.future;
+
+    Set<String> translatedTitleKeys = await _loadTranslatedTitleKeys(
+      state.searchConfig,
+      forceReload: !useCacheIfAvailable && prevGid == null && nextGid == null,
+    );
+    SearchConfig searchConfig = untranslatedSearchConfig(state.searchConfig);
+
+    Future<GalleryPageInfo> request({String? prevGid, String? nextGid, DateTime? seek}) => ehRequest.requestGalleryPage(
+          prevGid: prevGid,
+          nextGid: nextGid,
+          seek: seek,
+          searchConfig: searchConfig,
+          useCacheIfAvailable: useCacheIfAvailable,
+          parser: EHSpiderParser.galleryPage2GalleryPageInfo,
+        );
+
+    bool backward = prevGid != null;
+    GalleryPageInfo firstPage = await request(prevGid: prevGid, nextGid: nextGid, seek: seek);
+    GalleryPageInfo lastPage = firstPage;
+    List<Gallery> galleries = filterUntranslatedGalleries(firstPage.galleries, translatedTitleKeys);
+
+    /// a page filtered to empty never builds its last card, which is what triggers loading more, so skip ahead
+    for (int i = 0; galleries.isEmpty && i < 10; i++) {
+      String? cursor = backward ? lastPage.prevGid : lastPage.nextGid;
+      if (cursor == null) {
+        break;
+      }
+      lastPage = backward ? await request(prevGid: cursor) : await request(nextGid: cursor);
+      galleries = filterUntranslatedGalleries(lastPage.galleries, translatedTitleKeys);
+    }
+
+    return GalleryPageInfo(
+      galleries: galleries,
+      totalCount: lastPage.totalCount,
+      favoriteSortOrder: lastPage.favoriteSortOrder,
+      prevGid: backward ? lastPage.prevGid : firstPage.prevGid,
+      nextGid: backward ? firstPage.nextGid : lastPage.nextGid,
+    );
+  }
+
+  /// collect the titles of every Chinese gallery of the current search (up to 20 pages)
+  Future<Set<String>> _loadTranslatedTitleKeys(SearchConfig searchConfig, {required bool forceReload}) async {
+    SearchConfig chineseConfig = chineseTranslationSearchConfig(searchConfig);
+    String query = chineseConfig.toQueryParameters().toString();
+    if (!forceReload && state.translatedTitleKeysQuery == query) {
+      return state.translatedTitleKeys;
+    }
+
+    Set<String> keys = {};
+    String? nextGid;
+    int pageCount = 0;
+    do {
+      GalleryPageInfo page = await ehRequest.requestGalleryPage(
+        nextGid: nextGid,
+        searchConfig: chineseConfig,
+        useCacheIfAvailable: !forceReload,
+        parser: EHSpiderParser.galleryPage2GalleryPageInfo,
+      );
+      for (Gallery gallery in page.galleries) {
+        keys.addAll(galleryTitleMatchKeys(gallery.title));
+      }
+      nextGid = page.nextGid;
+      pageCount++;
+    } while (nextGid != null && pageCount < 20);
+
+    log.info('Loaded ${keys.length} translated title keys from $pageCount pages${nextGid == null ? '' : ' (truncated)'} for $query');
+
+    state.translatedTitleKeys = keys;
+    state.translatedTitleKeysQuery = query;
+    return keys;
   }
 
   @override
