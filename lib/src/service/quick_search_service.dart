@@ -51,7 +51,10 @@ class QuickSearchService extends GetxController with JHLifeCircleBeanWithConfigS
 
     Map<String, dynamic> queryParameters = searchConfig.toQueryParameters();
     for (MapEntry<String, SearchConfig> entry in quickSearchConfigs.entries) {
-      if (mapEquals(entry.value.toQueryParameters(), queryParameters)) {
+      if (entry.value.searchType == searchConfig.searchType &&
+          mapEquals(entry.value.toQueryParameters(), queryParameters) &&
+          (searchConfig.searchType != SearchType.favorite ||
+              listEquals(entry.value.effectiveFavoriteCategoryIndices, searchConfig.effectiveFavoriteCategoryIndices))) {
         toast('${'sameConfigExists'.tr}: ${entry.key}', isShort: false);
         return;
       }

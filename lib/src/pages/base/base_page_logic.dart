@@ -25,6 +25,7 @@ import '../../service/local_block_rule_service.dart';
 import '../../service/tag_translation_service.dart';
 import '../../setting/user_setting.dart';
 import '../../utils/eh_spider_parser.dart';
+import '../../utils/favorite_search_util.dart';
 import '../../service/log.dart';
 import '../../utils/route_util.dart';
 import '../../utils/snack_util.dart';
@@ -424,13 +425,21 @@ abstract class BasePageLogic extends GetxController with Scroll2TopLogicMixin {
 
     await state.searchConfigInitCompleter.future;
 
-    return ehRequest.requestGalleryPage(
+    return searchFavoriteCategories(
       prevGid: prevGid,
       nextGid: nextGid,
       seek: seek,
       searchConfig: state.searchConfig,
       useCacheIfAvailable: useCacheIfAvailable,
-      parser: EHSpiderParser.galleryPage2GalleryPageInfo,
+      loadPage: ({prevGid, nextGid, seek, required searchConfig, required useCacheIfAvailable}) =>
+          ehRequest.requestGalleryPage(
+            prevGid: prevGid,
+            nextGid: nextGid,
+            seek: seek,
+            searchConfig: searchConfig,
+            useCacheIfAvailable: useCacheIfAvailable,
+            parser: EHSpiderParser.galleryPage2GalleryPageInfo,
+          ),
     );
   }
 

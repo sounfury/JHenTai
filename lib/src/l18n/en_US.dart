@@ -789,6 +789,8 @@ class en_US {
       'year': 'Year',
       'month': 'Mon',
       'day': 'Day',
+      'allFavoriteCategories': 'All favorites',
+      'favoriteSearchScopeHint': 'Select multiple folders to search together. No selection searches all.',
       'favoriteHint': 'Qualifiers: tag/title/comment/favnote',
 
       /// popular page

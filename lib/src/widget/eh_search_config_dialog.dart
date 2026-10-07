@@ -82,8 +82,8 @@ class _EHSearchConfigDialogState extends State<EHSearchConfigDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       child: Container(
-        height: searchConfig.searchType == SearchType.favorite ? 400 : 500,
-        width: 200,
+        height: 500,
+        width: searchConfig.searchType == SearchType.favorite ? 360 : 200,
         padding: const EdgeInsets.only(top: 24, bottom: 24, left: 12, right: 12),
         child: Column(mainAxisSize: MainAxisSize.min, children: [buildHeader(), Expanded(child: buildBody())]),
       ),
@@ -185,40 +185,35 @@ class _EHSearchConfigDialogState extends State<EHSearchConfigDialog> {
   }
 
   Widget _buildFavoriteTags() {
+    final selected = searchConfig.effectiveFavoriteCategoryIndices;
     return Column(
-      children: [0, 2, 4, 6, 8]
-          .map((tagIndex) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildTag(
-                    category: favoriteSetting.favoriteTagNames[tagIndex],
-                    enabled: (searchConfig.searchFavoriteCategoryIndex ?? tagIndex) == tagIndex,
-                    color: UIConfig.favoriteTagColor[tagIndex],
-                    onTap: () => setState(() {
-                      if (searchConfig.searchFavoriteCategoryIndex == tagIndex) {
-                        searchConfig.searchFavoriteCategoryIndex = null;
-                      } else {
-                        searchConfig.searchFavoriteCategoryIndex = tagIndex;
-                      }
-                    }),
-                  ),
-                  _buildTag(
-                    category: favoriteSetting.favoriteTagNames[tagIndex + 1],
-                    enabled: (searchConfig.searchFavoriteCategoryIndex ?? tagIndex + 1) == tagIndex + 1,
-                    color: UIConfig.favoriteTagColor[tagIndex + 1],
-                    onTap: () {
-                      setState(() {
-                        if (searchConfig.searchFavoriteCategoryIndex == tagIndex + 1) {
-                          searchConfig.searchFavoriteCategoryIndex = null;
-                        } else {
-                          searchConfig.searchFavoriteCategoryIndex = tagIndex + 1;
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ).marginOnly(top: tagIndex == 0 ? 0 : 4))
-          .toList(),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('favoriteSearchScopeHint'.tr, style: const TextStyle(fontSize: 12)),
+        TextButton(
+          onPressed: () => setState(() => searchConfig.selectFavoriteCategories([])),
+          child: Text('allFavoriteCategories'.tr),
+        ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: List.generate(
+            10,
+            (index) => _buildTag(
+              category: favoriteSetting.favoriteTagNames[index],
+              enabled: selected.contains(index),
+              color: UIConfig.favoriteTagColor[index],
+              onTap: () => setState(() {
+                final indices = selected.length == 10 ? <int>{} : selected.toSet();
+                if (!indices.add(index)) {
+                  indices.remove(index);
+                }
+                searchConfig.selectFavoriteCategories(indices);
+              }),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

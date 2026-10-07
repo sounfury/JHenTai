@@ -788,6 +788,8 @@ class pt_BR {
       'year': 'Ano',
       'month': 'Mês',
       'day': 'Dia',
+      'allFavoriteCategories': 'Todos os favoritos',
+      'favoriteSearchScopeHint': 'Selecione várias pastas para pesquisar juntas. Sem seleção, pesquisa todas.',
       'favoriteHint': 'Qualifiers: tag/title/comment/favnote',
 
       /// popular page

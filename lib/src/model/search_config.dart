@@ -47,6 +47,29 @@ class SearchConfig {
   /// Favorite search
   int? searchFavoriteCategoryIndex;
 
+  /// null/empty means all categories. The singular field is kept for old configs.
+  List<int>? searchFavoriteCategoryIndices;
+
+  List<int> get effectiveFavoriteCategoryIndices {
+    final indices = (searchFavoriteCategoryIndices ??
+            (searchFavoriteCategoryIndex == null ? <int>[] : [searchFavoriteCategoryIndex!]))
+        .where((index) => index >= 0 && index < 10)
+        .toSet()
+        .toList()
+      ..sort();
+    return indices.isEmpty ? List.generate(10, (index) => index) : indices;
+  }
+
+  bool get aggregatesFavoriteCategories =>
+      searchType == SearchType.favorite &&
+      effectiveFavoriteCategoryIndices.length > 1 &&
+      effectiveFavoriteCategoryIndices.length < 10;
+
+  void selectFavoriteCategories(Iterable<int> indices) {
+    searchFavoriteCategoryIndex = null;
+    searchFavoriteCategoryIndices = indices.toSet().toList()..sort();
+  }
+
   SearchConfig({
     this.searchType = SearchType.gallery,
     this.includeDoujinshi = true,
@@ -71,6 +94,7 @@ class SearchConfig {
     this.disableFilterForUploader = false,
     this.disableFilterForTags = false,
     this.searchFavoriteCategoryIndex,
+    this.searchFavoriteCategoryIndices,
   });
 
   SearchConfig.nonHOnly({
@@ -97,6 +121,7 @@ class SearchConfig {
     this.disableFilterForUploader = false,
     this.disableFilterForTags = false,
     this.searchFavoriteCategoryIndex,
+    this.searchFavoriteCategoryIndices,
   });
 
   void enableAllCategories() {
@@ -186,8 +211,9 @@ class SearchConfig {
     }
 
     if (searchType == SearchType.favorite) {
-      if (searchFavoriteCategoryIndex != null) {
-        params['favcat'] = searchFavoriteCategoryIndex;
+      final indices = effectiveFavoriteCategoryIndices;
+      if (indices.length == 1) {
+        params['favcat'] = indices.single;
       }
     }
 
@@ -287,6 +313,7 @@ class SearchConfig {
       disableFilterForUploader: json["disableFilterForUploader"],
       disableFilterForTags: json["disableFilterForTags"],
       searchFavoriteCategoryIndex: json["searchFavoriteCategoryIndex"],
+      searchFavoriteCategoryIndices: (json["searchFavoriteCategoryIndices"] as List?)?.cast<int>(),
     );
   }
 
@@ -315,6 +342,7 @@ class SearchConfig {
       "disableFilterForUploader": disableFilterForUploader,
       "disableFilterForTags": disableFilterForTags,
       "searchFavoriteCategoryIndex": searchFavoriteCategoryIndex,
+      "searchFavoriteCategoryIndices": searchFavoriteCategoryIndices,
     };
   }
 
@@ -365,7 +393,8 @@ class SearchConfig {
       disableFilterForLanguage: disableFilterForLanguage ?? this.disableFilterForLanguage,
       disableFilterForUploader: disableFilterForUploader ?? this.disableFilterForUploader,
       disableFilterForTags: disableFilterForTags ?? this.disableFilterForTags,
-      searchFavoriteCategoryIndex: searchFavoriteCategoryIndex ?? searchFavoriteCategoryIndex,
+      searchFavoriteCategoryIndex: searchFavoriteCategoryIndex,
+      searchFavoriteCategoryIndices: searchFavoriteCategoryIndices?.toList(),
     );
   }
 

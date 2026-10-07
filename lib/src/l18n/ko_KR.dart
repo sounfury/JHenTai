@@ -783,6 +783,8 @@ class ko_KR {
       'year': '연도별',
       'month': '월별',
       'day': '일별',
+      'allFavoriteCategories': '모든 즐겨찾기',
+      'favoriteSearchScopeHint': '여러 폴더를 선택하여 함께 검색합니다. 선택하지 않으면 전체를 검색합니다.',
       'favoriteHint': 'Qualifiers: tag/title/comment/favnote',
 
       /// popular page

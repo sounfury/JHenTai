@@ -785,6 +785,8 @@ class zh_TW {
       'year': '年',
       'month': '月',
       'day': '日',
+      'allFavoriteCategories': '全部收藏夾',
+      'favoriteSearchScopeHint': '可複選收藏夾，搜尋所選範圍；未選擇時搜尋全部。',
       'favoriteHint': '''
 限定詞：
 tag： 配對全命名空間內的標籤

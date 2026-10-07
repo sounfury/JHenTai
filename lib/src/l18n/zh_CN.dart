@@ -785,6 +785,8 @@ class zh_CN {
       'year': '年',
       'month': '月',
       'day': '日',
+      'allFavoriteCategories': '全部收藏夹',
+      'favoriteSearchScopeHint': '可多选收藏夹，搜索所选范围；未选择时搜索全部。',
       'favoriteHint': '''
 限定词：
 tag： 匹配全命名空间内的标签

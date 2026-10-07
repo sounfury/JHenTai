@@ -796,6 +796,8 @@ class ru_RU {
       'year': 'Год',
       'month': 'Мес',
       'day': 'День',
+      'allFavoriteCategories': 'Все избранное',
+      'favoriteSearchScopeHint': 'Выберите несколько папок для общего поиска. Без выбора поиск по всем.',
       'favoriteHint': 'Квалификаторы: tag/title/comment/favnote',
 
       /// popular page
