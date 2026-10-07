@@ -1,3 +1,4 @@
+// 根据原文字形尺寸和书写方向排版译文，并绘制字色与描边。
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -174,6 +175,8 @@ void paintTranslationBubbleText(
   TextDirection textDirection, {
   double? fontSize,
   Color color = Colors.black,
+  Color? outlineColor,
+  double outlineWidth = 0,
   bool vertical = false,
 }) {
   final content = rect.deflate(2);
@@ -193,33 +196,52 @@ void paintTranslationBubbleText(
     return;
   }
   canvas.save();
-  canvas.clipRect(content);
-  if (vertical) {
-    final layout = VerticalTranslationLayout(
-      translation,
-      fontSize: resolved,
-      maxHeight: content.height,
-      color: color,
-    );
-    layout.paint(
-      canvas,
-      content.center - Offset(layout.size.width / 2, layout.size.height / 2),
-    );
-    layout.dispose();
-  } else {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: translation,
-        style: TextStyle(color: color, fontSize: resolved, height: 1.05),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: textDirection,
-    )..layout(maxWidth: content.width);
-    painter.paint(
-      canvas,
-      Offset(content.left, content.center.dy - painter.height / 2),
-    );
-    painter.dispose();
+  final outlined =
+      outlineColor != null && outlineWidth.isFinite && outlineWidth > 0;
+  canvas.clipRect(outlined ? rect : content);
+  // 先描边再填充；两遍使用完全相同的字形、排版及标点旋转。
+  for (final foreground in <Paint?>[
+    if (outlined)
+      Paint()
+        ..color = outlineColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = outlineWidth
+        ..strokeJoin = StrokeJoin.round,
+    null,
+  ]) {
+    if (vertical) {
+      final layout = VerticalTranslationLayout(
+        translation,
+        fontSize: resolved,
+        maxHeight: content.height,
+        color: color,
+        foreground: foreground,
+      );
+      layout.paint(
+        canvas,
+        content.center - Offset(layout.size.width / 2, layout.size.height / 2),
+      );
+      layout.dispose();
+    } else {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: translation,
+          style: TextStyle(
+            color: foreground == null ? color : null,
+            foreground: foreground,
+            fontSize: resolved,
+            height: 1.05,
+          ),
+        ),
+        textAlign: TextAlign.center,
+        textDirection: textDirection,
+      )..layout(maxWidth: content.width);
+      painter.paint(
+        canvas,
+        Offset(content.left, content.center.dy - painter.height / 2),
+      );
+      painter.dispose();
+    }
   }
   canvas.restore();
 }

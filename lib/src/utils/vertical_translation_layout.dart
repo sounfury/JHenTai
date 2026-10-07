@@ -1,3 +1,4 @@
+// 按漫画竖排方向排列中文和标点，供译文测量、填充及描边绘制共用。
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ class VerticalTranslationLayout {
     required double fontSize,
     required double maxHeight,
     Color color = Colors.black,
+    Paint? foreground,
   }) {
     final characters = text.replaceAll(RegExp(r'\s+'), '').characters.toList();
     if (characters.isEmpty || fontSize <= 0 || maxHeight <= 0) {
@@ -23,14 +25,22 @@ class VerticalTranslationLayout {
       final painter = TextPainter(
         text: TextSpan(
           text: _verticalForms[character] ?? character,
-          style: TextStyle(color: color, fontSize: fontSize, height: 1.05),
+          style: TextStyle(
+            color: foreground == null ? color : null,
+            foreground: foreground,
+            fontSize: fontSize,
+            height: 1.05,
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       _painters[character] = painter;
       final rotated = _rotatedCharacters.contains(character);
       cellWidth = math.max(cellWidth, rotated ? painter.height : painter.width);
-      cellHeight = math.max(cellHeight, rotated ? painter.width : painter.height);
+      cellHeight = math.max(
+        cellHeight,
+        rotated ? painter.width : painter.height,
+      );
     }
     final capacity = math.max(1, (maxHeight / cellHeight).floor());
     final columnCount = (characters.length / capacity).ceil();

@@ -1,0 +1,554 @@
+{
+  "id": "colored_horizontal_text",
+  "backgroundOnly": true,
+  "coloredText": true,
+  "reportedOn": "2026-10-07",
+  "symptom": "横排多行彩字整段漏擦，已擦文字留下白描边",
+  "sourceWidth": 1280,
+  "sourceHeight": 2158,
+  "textBounds": [
+    35,
+    145,
+    1235,
+    1540
+  ],
+  "translatedBlocks": [
+    {
+      "text": "HＤＲ",
+      "confidence": 0.7742516001065572,
+      "left": 307.29605724820107,
+      "top": 50.70090799446974,
+      "width": 99.40788550359787,
+      "height": 41.52542281703068,
+      "backgroundColor": 4280355341,
+      "sourceGlyphWidth": 22.0,
+      "sourceGlyphHeight": 29.0
+    },
+    {
+      "text": "VAMOS…",
+      "confidence": 0.938888152440389,
+      "left": 1107.3112559043516,
+      "top": 151.36909172524696,
+      "width": 123.37748819129683,
+      "height": 40.48849565398365,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 124.0,
+      "sourceGlyphHeight": 41.0
+    },
+    {
+      "text": "SENSEI,",
+      "confidence": 0.9974710856165204,
+      "left": 1113.9574466602803,
+      "top": 197.31565561550428,
+      "width": 113.08510667943938,
+      "height": 42.20264399287197,
+      "backgroundColor": 4294899196,
+      "sourceGlyphWidth": 115.0,
+      "sourceGlyphHeight": 43.0
+    },
+    {
+      "text": "HASTA ESTE",
+      "confidence": 0.9995829641819001,
+      "left": 1082.4735320801092,
+      "top": 242.66587403106013,
+      "width": 176.0559796492489,
+      "height": 39.68672992780239,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 177.0,
+      "sourceGlyphHeight": 41.0
+    },
+    {
+      "text": "MOMENTO",
+      "confidence": 0.9998797689165387,
+      "left": 1092.169834692275,
+      "top": 291.1287899161554,
+      "width": 152.66033061545022,
+      "height": 36.7582783766444,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 153.0,
+      "sourceGlyphHeight": 37.0
+    },
+    {
+      "text": "NO ERA",
+      "confidence": 0.9990343550841013,
+      "left": 1109.4772242093247,
+      "top": 335.6622117988831,
+      "width": 120.91913392312563,
+      "height": 40.30792772703205,
+      "backgroundColor": 4291335319,
+      "sourceGlyphWidth": 53.0,
+      "sourceGlyphHeight": 34.0
+    },
+    {
+      "text": "NECESARIO",
+      "confidence": 0.9990052911970351,
+      "left": 1088.7380886212752,
+      "top": 384.2977901138126,
+      "width": 163.52382275744958,
+      "height": 34.61524066789718,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 165.0,
+      "sourceGlyphHeight": 35.0
+    },
+    {
+      "text": "TOMAR",
+      "confidence": 0.9999210357666015,
+      "left": 1115.5395930031327,
+      "top": 427.3866079285058,
+      "width": 110.92081399373455,
+      "height": 40.031821456421085,
+      "backgroundColor": 4291136912,
+      "sourceGlyphWidth": 107.0,
+      "sourceGlyphHeight": 34.0
+    },
+    {
+      "text": "FOTOS..",
+      "confidence": 0.8624001911708287,
+      "left": 1114.4320088473228,
+      "top": 471.57286705627797,
+      "width": 113.13598230535445,
+      "height": 44.2600494695335,
+      "backgroundColor": 4291070604,
+      "sourceGlyphWidth": 104.0,
+      "sourceGlyphHeight": 34.0
+    },
+    {
+      "text": "MIS PEZONES YA",
+      "confidence": 0.9588296754019601,
+      "left": 67.3325778182715,
+      "top": 576.0689769106151,
+      "width": 236.39297431028803,
+      "height": 40.90940678574225,
+      "backgroundColor": 4294899196,
+      "sourceGlyphWidth": 237.0,
+      "sourceGlyphHeight": 41.0
+    },
+    {
+      "text": "ES BASTANTE",
+      "confidence": 0.9992390437559648,
+      "left": 965.5495560257785,
+      "top": 578.3695187123457,
+      "width": 199.9008879484428,
+      "height": 34.99230585889063,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 201.0,
+      "sourceGlyphHeight": 36.0
+    },
+    {
+      "text": "ESTAN ERECTOS..",
+      "confidence": 0.9088058749834697,
+      "left": 40.65964234075403,
+      "top": 622.7734483109032,
+      "width": 254.68071531849193,
+      "height": 37.77866307968611,
+      "backgroundColor": 4294898939,
+      "sourceGlyphWidth": 256.0,
+      "sourceGlyphHeight": 39.0
+    },
+    {
+      "text": "VERGONZOSO",
+      "confidence": 0.969992172718048,
+      "left": 970.5897763319247,
+      "top": 623.7035823020739,
+      "width": 190.82044733615066,
+      "height": 34.91186524659838,
+      "backgroundColor": 4294898939,
+      "sourceGlyphWidth": 192.0,
+      "sourceGlyphHeight": 36.0
+    },
+    {
+      "text": "Y ESTOY SUDANDO..",
+      "confidence": 0.9652127518373377,
+      "left": 51.601835066683805,
+      "top": 669.0160141711614,
+      "width": 275.7963298666324,
+      "height": 37.89427762782634,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 277.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "QUE TE",
+      "confidence": 0.9972107609113058,
+      "left": 1005.7870832860639,
+      "top": 666.1882026890489,
+      "width": 121.42583342787213,
+      "height": 42.5433707413049,
+      "backgroundColor": 4289882994,
+      "sourceGlyphWidth": 55.5,
+      "sourceGlyphHeight": 35.0
+    },
+    {
+      "text": "ESTOY TAN",
+      "confidence": 0.9983452492290072,
+      "left": 103.07509396333518,
+      "top": 715.7896462021412,
+      "width": 164.84981207332964,
+      "height": 36.947759834523595,
+      "backgroundColor": 4294899195,
+      "sourceGlyphWidth": 165.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "TOMEN FOTOS",
+      "confidence": 0.9854178916324269,
+      "left": 965.8563436850033,
+      "top": 714.5643660730628,
+      "width": 202.2873126299936,
+      "height": 37.38526039118756,
+      "backgroundColor": 4294898939,
+      "sourceGlyphWidth": 204.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "AVERGONZADA…",
+      "confidence": 0.9809712717930476,
+      "left": 47.44536686215774,
+      "top": 762.460292235292,
+      "width": 228.1092662756845,
+      "height": 35.20068418613232,
+      "backgroundColor": 4294898939,
+      "sourceGlyphWidth": 229.0,
+      "sourceGlyphHeight": 36.0
+    },
+    {
+      "text": "DESNUDA..",
+      "confidence": 0.9188157386249967,
+      "left": 989.6227620150428,
+      "top": 758.3620748742826,
+      "width": 154.7342892860288,
+      "height": 43.028628493244696,
+      "backgroundColor": 4289882994,
+      "sourceGlyphWidth": 150.0,
+      "sourceGlyphHeight": 34.0
+    },
+    {
+      "text": "*sudar*",
+      "confidence": 0.9977800164903913,
+      "left": 1039.6816163733072,
+      "top": 861.5879020731288,
+      "width": 208.38217036290052,
+      "height": 85.95305805040084,
+      "backgroundColor": 4289685614,
+      "sourceGlyphWidth": 201.0,
+      "sourceGlyphHeight": 75.0
+    },
+    {
+      "text": "BUENO NO ES",
+      "confidence": 0.9846660169688138,
+      "left": 1045.8468590414077,
+      "top": 1248.0157023249897,
+      "width": 204.3062819171846,
+      "height": 37.40422967837867,
+      "backgroundColor": 4294767611,
+      "sourceGlyphWidth": 203.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "QUE NO ME",
+      "confidence": 0.9470214115248786,
+      "left": 1060.0064761016865,
+      "top": 1294.4756925195968,
+      "width": 174.98704779662694,
+      "height": 37.084995557821,
+      "backgroundColor": 4294701817,
+      "sourceGlyphWidth": 171.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "ENTONCES...",
+      "confidence": 0.9049133441664956,
+      "left": 176.00006068195498,
+      "top": 1354.8610681446416,
+      "width": 175.99987863609002,
+      "height": 37.097826397283825,
+      "backgroundColor": 4294833660,
+      "sourceGlyphWidth": 172.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "GUSTE NI NADA…",
+      "confidence": 0.9886701958520072,
+      "left": 1032.4453668621577,
+      "top": 1341.214956414396,
+      "width": 228.1092662756846,
+      "height": 35.200684186133,
+      "backgroundColor": 4294833404,
+      "sourceGlyphWidth": 87.0,
+      "sourceGlyphHeight": 36.0
+    },
+    {
+      "text": "TU, ASUME LA",
+      "confidence": 0.9780096362034479,
+      "left": 167.2312936081483,
+      "top": 1400.392674205163,
+      "width": 193.53741278370342,
+      "height": 39.64189039564371,
+      "backgroundColor": 4294833404,
+      "sourceGlyphWidth": 145.0,
+      "sourceGlyphHeight": 41.0
+    },
+    {
+      "text": "RESPONSABILIDAD..",
+      "confidence": 0.9733256276916055,
+      "left": 101.28472461995293,
+      "top": 1448.083559672488,
+      "width": 268.4007926182113,
+      "height": 37.00342349246557,
+      "backgroundColor": 4294833405,
+      "sourceGlyphWidth": 210.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "ME DI CUENTA QUE..",
+      "confidence": 0.9361249837610457,
+      "left": 847.3043262416157,
+      "top": 1448.7726098237051,
+      "width": 282.3913475167684,
+      "height": 35.482765427216236,
+      "backgroundColor": 4294833661,
+      "sourceGlyphWidth": 277.0,
+      "sourceGlyphHeight": 37.0
+    },
+    {
+      "text": "CUANDO VEO VIDEOS DE",
+      "confidence": 0.9976118773221969,
+      "left": 824.2095718084051,
+      "top": 1493.9716986740766,
+      "width": 336.5808563831897,
+      "height": 35.672274293637656,
+      "backgroundColor": 4294833661,
+      "sourceGlyphWidth": 333.0,
+      "sourceGlyphHeight": 37.0
+    },
+    {
+      "text": "SEX.. SIENTO QUE MI",
+      "confidence": 0.9057605439110806,
+      "left": 835.4050521729274,
+      "top": 1539.2999172226848,
+      "width": 313.210570882694,
+      "height": 36.99011204231465,
+      "backgroundColor": 4294833661,
+      "sourceGlyphWidth": 310.0,
+      "sourceGlyphHeight": 38.0
+    },
+    {
+      "text": "CUERPO SE VUELVE..",
+      "confidence": 0.9288733767138587,
+      "left": 845.5612760736196,
+      "top": 1584.9176193572016,
+      "width": 292.8774478527607,
+      "height": 37.97539561395479,
+      "backgroundColor": 4294833661,
+      "sourceGlyphWidth": 290.0,
+      "sourceGlyphHeight": 39.0
+    },
+    {
+      "text": "CADA VEZ MAS EROTICO.",
+      "confidence": 0.9430184250786191,
+      "left": 824.4843063266874,
+      "top": 1629.1279630431052,
+      "width": 332.03138734662525,
+      "height": 38.129335107819315,
+      "backgroundColor": 4294833660,
+      "sourceGlyphWidth": 327.0,
+      "sourceGlyphHeight": 39.0
+    },
+    {
+      "text": "写真",
+      "confidence": 0.9990982115268707,
+      "left": 589.0828060945285,
+      "top": 1804.8887762437819,
+      "width": 101.8343878109431,
+      "height": 54.99763407959972,
+      "backgroundColor": 4282788397,
+      "sourceGlyphWidth": 37.5,
+      "sourceGlyphHeight": 36.0
+    }
+  ],
+  "evaluationRects": [
+    [
+      1107,
+      151,
+      124,
+      41
+    ],
+    [
+      1113,
+      197,
+      115,
+      43
+    ],
+    [
+      1082,
+      242,
+      177,
+      41
+    ],
+    [
+      1092,
+      291,
+      153,
+      37
+    ],
+    [
+      1109,
+      335,
+      122,
+      41
+    ],
+    [
+      1088,
+      384,
+      165,
+      35
+    ],
+    [
+      1115,
+      427,
+      112,
+      41
+    ],
+    [
+      1114,
+      471,
+      114,
+      45
+    ],
+    [
+      67,
+      576,
+      237,
+      41
+    ],
+    [
+      965,
+      578,
+      201,
+      36
+    ],
+    [
+      40,
+      622,
+      256,
+      39
+    ],
+    [
+      970,
+      623,
+      192,
+      36
+    ],
+    [
+      51,
+      669,
+      277,
+      38
+    ],
+    [
+      1005,
+      666,
+      123,
+      43
+    ],
+    [
+      103,
+      715,
+      165,
+      38
+    ],
+    [
+      965,
+      714,
+      204,
+      38
+    ],
+    [
+      47,
+      762,
+      229,
+      36
+    ],
+    [
+      989,
+      758,
+      156,
+      44
+    ],
+    [
+      1045,
+      1248,
+      206,
+      38
+    ],
+    [
+      1060,
+      1294,
+      175,
+      38
+    ],
+    [
+      176,
+      1354,
+      176,
+      38
+    ],
+    [
+      1032,
+      1341,
+      229,
+      36
+    ],
+    [
+      167,
+      1400,
+      194,
+      41
+    ],
+    [
+      101,
+      1448,
+      269,
+      38
+    ],
+    [
+      847,
+      1448,
+      283,
+      37
+    ],
+    [
+      824,
+      1493,
+      337,
+      37
+    ],
+    [
+      835,
+      1539,
+      314,
+      38
+    ],
+    [
+      845,
+      1584,
+      294,
+      39
+    ],
+    [
+      824,
+      1629,
+      333,
+      39
+    ]
+  ],
+  "whiteSourceThreshold": 245,
+  "whiteResidualThreshold": 240,
+  "maxResidualFraction": 0.01,
+  "expectedSelectedMasks": 11,
+  "files": {
+    "source.png": "b066140763b737a095759212acedd254681950cb34722efe2108f5f549bed4ae",
+    "observed.png": "d761ba0d49dbc4f78552e289627529ee2066a78001d053b65c6292aad1d8ba58",
+    "pipeline_snapshot.json": "c53a6bf1bce628192f1cc7a4d87b23c866f5807e0819c78acb3f5985da847ff9"
+  }
+}

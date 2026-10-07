@@ -1,3 +1,4 @@
+// 管理阅读布局、图片加载及翻译结果恢复，按当前页面策略校验修复缓存。
 import 'dart:async';
 import 'dart:io';
 
@@ -29,6 +30,7 @@ import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/setting/style_setting.dart';
 import 'package:jhentai/src/setting/user_setting.dart';
 import 'package:jhentai/src/utils/image_cache_util.dart';
+import 'package:jhentai/src/utils/page_processing_strategy.dart';
 import 'package:jhentai/src/utils/permission_util.dart';
 import 'package:jhentai/src/utils/string_uril.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
@@ -455,6 +457,12 @@ abstract class BaseLayoutLogic extends GetxController
       await imageInpaintingService.hydrateCachedRepair(
         requestKey: request.cacheKey,
         sourcePath: request.imagePath!,
+        strategyId: PageProcessingStrategy.of(
+          resolvePageColorMode(
+            imageTranslationSetting.pageColorPreference.value,
+            imageTranslationService.resultFor(request.cacheKey).pageColorMode,
+          ),
+        ).id,
       );
     }
     updateSafely([BaseLayoutLogic.pageId]);

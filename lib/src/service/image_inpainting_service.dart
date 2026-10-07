@@ -1,3 +1,4 @@
+// 管理漫画文字擦除、背景修复及派生成图缓存，仅修复已翻译的文字。
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -9,7 +10,9 @@ import 'package:get/get.dart';
 import 'package:path/path.dart';
 
 import '../model/image_translation.dart';
+import '../setting/image_translation_setting.dart';
 import '../utils/image_text_grouping.dart';
+import '../utils/page_processing_strategy.dart';
 import 'engine/engine.dart';
 import 'inference_service.dart';
 import 'jh_service.dart';
@@ -69,45 +72,23 @@ List<PolygonMask> filterPolygonMasksToTranslatedBlocks({
   if (masks.isEmpty || translatedBlocks.isEmpty) {
     return const <PolygonMask>[];
   }
-  double coveredFraction(PolygonMask mask, RecognizedTextBlock block) {
-    final double maskArea = (mask.right - mask.left) * (mask.bottom - mask.top);
-    if (maskArea <= 0 || block.width <= 0 || block.height <= 0) {
-      return 0;
-    }
-    final double overlapWidth = math.max(
-      0,
-      math.min(mask.right, block.left + block.width) -
-          math.max(mask.left, block.left),
-    );
-    final double overlapHeight = math.max(
-      0,
-      math.min(mask.bottom, block.top + block.height) -
-          math.max(mask.top, block.top),
-    );
-    return overlapWidth * overlapHeight / maskArea;
-  }
-
   return masks
       .where((PolygonMask mask) {
-        double translatedCoverage = 0;
-        for (final RecognizedTextBlock block in translatedBlocks) {
-          translatedCoverage = math.max(
-            translatedCoverage,
-            coveredFraction(mask, block),
-          );
-        }
+        // CTD 可能把多行／多列对白合成一个区域，OCR 则仍逐行返回。
+        // 使用各行交集的并集面积，重叠识别框不能重复增加覆盖率。
+        final double translatedCoverage = _coveredFractionForBlocks(
+          mask,
+          translatedBlocks,
+        );
         // A neighboring translated column must not authorize erasing an
         // unchanged column just because their inflated OCR boxes touch.
         if (translatedCoverage < 0.15) {
           return false;
         }
-        double protectedCoverage = 0;
-        for (final RecognizedTextBlock block in protectedBlocks) {
-          protectedCoverage = math.max(
-            protectedCoverage,
-            coveredFraction(mask, block),
-          );
-        }
+        final double protectedCoverage = _coveredFractionForBlocks(
+          mask,
+          protectedBlocks,
+        );
         return translatedCoverage > protectedCoverage;
       })
       .toList(growable: false);
@@ -167,7 +148,7 @@ class ImageInpaintingService extends GetxController
     implements JHLifeCircleBean {
   // Old request indexes may point to a background erased under a previous
   // OCR, sound-effect, or mask-matching policy.
-  static const int _requestIndexPolicyVersion = 8;
+  static const int _requestIndexPolicyVersion = 9;
 
   ImageInpaintingService({EngineRegistry? registry})
     : engineRegistry = registry ?? EngineRegistry();
@@ -175,6 +156,7 @@ class ImageInpaintingService extends GetxController
   final EngineRegistry engineRegistry;
   final Map<String, InpaintingResult> _results = <String, InpaintingResult>{};
   final Map<String, String> _artifactKeys = <String, String>{};
+  final Map<String, String> _strategyIds = <String, String>{};
   final Map<String, EngineTask<String>> _activeTasks =
       <String, EngineTask<String>>{};
   final Map<String, EngineTask<DetectionResult>> _activeDetectionTasks =
@@ -182,15 +164,7 @@ class ImageInpaintingService extends GetxController
   final Map<String, String> _translatedImagePaths = <String, String>{};
   Directory? _cacheDirectoryOverride;
 
-  void _logTiming(String message) {
-    unawaited(log.info(message).catchError((Object _) {}));
-  }
-
   ImageProcessingDisplayMode displayMode = ImageProcessingDisplayMode.overlay;
-
-  Directory get _cacheDirectory =>
-      _cacheDirectoryOverride ??
-      Directory(join(pathService.jhOcrModelDir.path, 'inpainting-cache'));
 
   @override
   List<JHLifeCircleBean> get initDependencies =>
@@ -242,10 +216,17 @@ class ImageInpaintingService extends GetxController
       return null;
     }
     setDisplayMode(mode);
+    final PageProcessingStrategy strategy = PageProcessingStrategy.of(
+      resolvePageColorMode(
+        imageTranslationSetting.pageColorPreference.value,
+        translation.pageColorMode,
+      ),
+    );
     if (!force) {
       final InpaintingResult? cached = await hydrateCachedRepair(
         requestKey: requestKey,
         sourcePath: sourcePath,
+        strategyId: strategy.id,
       );
       if (cached?.status == InpaintingStatus.success) {
         return cached;
@@ -260,6 +241,7 @@ class ImageInpaintingService extends GetxController
       requestKey: requestKey,
       sourcePath: sourcePath,
       force: force,
+      strategy: strategy,
       eraseOnlyBlocks: eraseBlocks,
       protectedBlocks: translation.blocks
           .where((block) => !eraseBlocks.contains(block))
@@ -269,16 +251,23 @@ class ImageInpaintingService extends GetxController
 
   /// Cold-start / viewport hydrate: restore a previously written repair
   /// artifact for [requestKey] without re-running CTD/LaMa Large when the
-  /// request-keyed disk index still matches the source file.
+  /// request-keyed disk index still matches the source file and [strategyId].
+  /// 策略必须显式传入，避免阅读页恢复拆分策略之前的修复缓存。
   Future<InpaintingResult?> hydrateCachedRepair({
     required String requestKey,
     required String sourcePath,
+    required String strategyId,
   }) async {
     final InpaintingResult current = resultFor(requestKey);
     if (current.status == InpaintingStatus.success &&
+        _strategyIds[requestKey] == strategyId &&
         current.outputPath != null &&
         File(current.outputPath!).existsSync()) {
       return current;
+    }
+    if (current.status == InpaintingStatus.success &&
+        _strategyIds[requestKey] != strategyId) {
+      clearDisplayResult(requestKey);
     }
     final File source = File(sourcePath);
     if (!await source.exists()) {
@@ -295,7 +284,8 @@ class ImageInpaintingService extends GetxController
           decoded['schemaVersion'] != 4 ||
           decoded['policyVersion'] != _requestIndexPolicyVersion ||
           decoded['sourceHash'] != sourceHash ||
-          decoded['artifactKey'] is! String) {
+          decoded['artifactKey'] is! String ||
+          decoded['strategyId'] != strategyId) {
         return null;
       }
       final String artifactKey = decoded['artifactKey'] as String;
@@ -314,6 +304,9 @@ class ImageInpaintingService extends GetxController
         return null;
       }
       _artifactKeys[requestKey] = artifactKey;
+      if (decoded['strategyId'] is String) {
+        _strategyIds[requestKey] = decoded['strategyId'] as String;
+      }
       final InpaintingResult restored = InpaintingResult(
         status: InpaintingStatus.success,
         outputPath: output.path,
@@ -357,29 +350,6 @@ class ImageInpaintingService extends GetxController
     return 1.0;
   }
 
-  String? _usableDisplayPath(
-    String requestKey,
-    ImageProcessingDisplayMode mode,
-  ) {
-    final InpaintingResult result = resultFor(requestKey);
-    if (mode == ImageProcessingDisplayMode.overlay) {
-      return null;
-    }
-    if (mode == ImageProcessingDisplayMode.translatedImage) {
-      final String? translated =
-          _translatedImagePaths[requestKey] ?? result.translatedImagePath;
-      if (translated != null && File(translated).existsSync()) {
-        return translated;
-      }
-    }
-    final String? repaired = result.outputPath;
-    return result.status == InpaintingStatus.success &&
-            repaired != null &&
-            File(repaired).existsSync()
-        ? repaired
-        : null;
-  }
-
   /// Returns the derived image for the selected display mode, or null when
   /// normal overlay rendering must remain the fallback.
   String? displayPathFor(String requestKey) {
@@ -408,6 +378,7 @@ class ImageInpaintingService extends GetxController
     required String requestKey,
     required String sourcePath,
     bool force = false,
+    PageProcessingStrategy strategy = PageProcessingStrategy.monochrome,
     List<RecognizedTextBlock> eraseOnlyBlocks = const <RecognizedTextBlock>[],
     List<RecognizedTextBlock> protectedBlocks = const <RecognizedTextBlock>[],
   }) async {
@@ -463,6 +434,7 @@ class ImageInpaintingService extends GetxController
         sourcePath: sourcePath,
         polygonMasks: masks,
         force: force,
+        strategy: strategy,
       );
     } on EngineTaskCancelledException {
       const InpaintingResult result = InpaintingResult(
@@ -492,6 +464,7 @@ class ImageInpaintingService extends GetxController
     required String sourcePath,
     required List<PolygonMask> polygonMasks,
     bool force = false,
+    PageProcessingStrategy strategy = PageProcessingStrategy.monochrome,
   }) async {
     final Stopwatch clock = Stopwatch()..start();
     _set(requestKey, const InpaintingResult(status: InpaintingStatus.queued));
@@ -518,8 +491,11 @@ class ImageInpaintingService extends GetxController
       sourceHash,
       maskHash,
       modelFingerprint,
+      strategy.id,
     );
     _artifactKeys[requestKey] = artifactKey;
+    _strategyIds[requestKey] = strategy.id;
+    _logTiming('[背景融合] page=$requestKey strategy=${strategy.id}');
     final File output = File(join(_cacheDirectory.path, '$artifactKey.png'));
     final File metadata = File(join(_cacheDirectory.path, '$artifactKey.json'));
 
@@ -560,6 +536,7 @@ class ImageInpaintingService extends GetxController
         configuration: <String, dynamic>{
           'modelFingerprint': modelFingerprint,
           'maskFingerprint': maskHash,
+          'pageColorMode': strategy.mode.name,
         },
       ),
     );
@@ -663,6 +640,7 @@ class ImageInpaintingService extends GetxController
       }
       _results.clear();
       _artifactKeys.clear();
+      _strategyIds.clear();
       _translatedImagePaths.clear();
       update();
       return;
@@ -685,6 +663,39 @@ class ImageInpaintingService extends GetxController
     _results.remove(requestKey);
     _translatedImagePaths.remove(requestKey);
     update([requestKey]);
+  }
+
+  // ===== 私有方法 =====
+
+  void _logTiming(String message) {
+    unawaited(log.info(message).catchError((Object _) {}));
+  }
+
+  Directory get _cacheDirectory =>
+      _cacheDirectoryOverride ??
+      Directory(join(pathService.jhOcrModelDir.path, 'inpainting-cache'));
+
+  String? _usableDisplayPath(
+    String requestKey,
+    ImageProcessingDisplayMode mode,
+  ) {
+    final InpaintingResult result = resultFor(requestKey);
+    if (mode == ImageProcessingDisplayMode.overlay) {
+      return null;
+    }
+    if (mode == ImageProcessingDisplayMode.translatedImage) {
+      final String? translated =
+          _translatedImagePaths[requestKey] ?? result.translatedImagePath;
+      if (translated != null && File(translated).existsSync()) {
+        return translated;
+      }
+    }
+    final String? repaired = result.outputPath;
+    return result.status == InpaintingStatus.success &&
+            repaired != null &&
+            File(repaired).existsSync()
+        ? repaired
+        : null;
   }
 
   InpaintingResult _fail(
@@ -803,6 +814,8 @@ class ImageInpaintingService extends GetxController
       'requestKey': requestKey,
       'artifactKey': artifactKey,
       'sourceHash': sourceHash,
+      if (_strategyIds[requestKey] != null)
+        'strategyId': _strategyIds[requestKey],
       if (translated != null) 'translatedImagePath': translated,
     });
   }
@@ -823,7 +836,12 @@ class ImageInpaintingService extends GetxController
           )
           .toString();
 
-  String _artifactKey(String sourceHash, String maskHash, String modelHash) =>
+  String _artifactKey(
+    String sourceHash,
+    String maskHash,
+    String modelHash,
+    String strategyId,
+  ) =>
       sha256
           .convert(
             utf8.encode(
@@ -831,7 +849,8 @@ class ImageInpaintingService extends GetxController
                 'sourceHash': sourceHash,
                 'maskHash': maskHash,
                 'modelHash': modelHash,
-                'pipeline': 'lama-refined-v5-contour-context',
+                'pipeline': 'lama-refined-v6-group-colored-outline',
+                'strategy': strategyId,
               }),
             ),
           )
@@ -839,3 +858,56 @@ class ImageInpaintingService extends GetxController
 }
 
 ImageInpaintingService imageInpaintingService = ImageInpaintingService();
+
+// ===== 私有工具 =====
+
+/// 计算检测区域内所有文字框的并集覆盖率，适用于横排多行和竖排多列。
+double _coveredFractionForBlocks(
+  PolygonMask mask,
+  List<RecognizedTextBlock> blocks,
+) {
+  if (blocks.isEmpty) return 0;
+  final left = mask.left, top = mask.top;
+  final right = mask.right, bottom = mask.bottom;
+  final area = (right - left) * (bottom - top);
+  if (!area.isFinite || area <= 0) return 0;
+  final rectangles =
+      <({double left, double top, double right, double bottom})>[];
+  final edges = <double>{};
+  for (final block in blocks) {
+    if (!block.left.isFinite ||
+        !block.top.isFinite ||
+        !block.width.isFinite ||
+        !block.height.isFinite ||
+        block.width <= 0 ||
+        block.height <= 0)
+      continue;
+    final x0 = math.max(left, block.left);
+    final y0 = math.max(top, block.top);
+    final x1 = math.min(right, block.left + block.width);
+    final y1 = math.min(bottom, block.top + block.height);
+    if (x1 <= x0 || y1 <= y0) continue;
+    rectangles.add((left: x0, top: y0, right: x1, bottom: y1));
+    edges.addAll([y0, y1]);
+  }
+  final bands = edges.toList()..sort();
+  double coveredArea = 0;
+  for (int index = 1; index < bands.length; index++) {
+    final y0 = bands[index - 1], y1 = bands[index];
+    final intervals =
+        rectangles.where((r) => r.top < y1 && r.bottom > y0).toList()
+          ..sort((a, b) => a.left.compareTo(b.left));
+    if (intervals.isEmpty) continue;
+    double start = intervals.first.left, end = intervals.first.right;
+    double width = 0;
+    for (final interval in intervals.skip(1)) {
+      if (interval.left > end) {
+        width += end - start;
+        start = interval.left;
+      }
+      end = math.max(end, interval.right);
+    }
+    coveredArea += (width + end - start) * (y1 - y0);
+  }
+  return (coveredArea / area).clamp(0, 1);
+}

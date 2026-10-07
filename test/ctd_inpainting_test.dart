@@ -1,3 +1,4 @@
+// 兼容已有 CTD 检测、修复服务及缓存恢复测试。
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -10,6 +11,7 @@ import 'package:jhentai/src/service/inference/ctd_model_evidence.dart';
 import 'package:jhentai/src/service/inference/ctd_onnx_inference_engine.dart';
 import 'package:jhentai/src/service/inference/lama_model_evidence.dart';
 import 'package:jhentai/src/service/inference/onnx_model_store.dart';
+import 'package:jhentai/src/utils/page_processing_strategy.dart';
 
 class _FakeInpaintEngine implements InpaintEngine {
   _FakeInpaintEngine({this.failure});
@@ -388,6 +390,7 @@ void main() {
       final InpaintingResult? hydrated = await restarted.hydrateCachedRepair(
         requestKey: 'downloaded:/comics/page-1.jpg',
         sourcePath: source.path,
+        strategyId: PageProcessingStrategy.monochrome.id,
       );
       expect(hydrated, isNotNull);
       expect(hydrated!.status, InpaintingStatus.success);

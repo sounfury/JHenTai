@@ -1,3 +1,4 @@
+// 汇总翻译配置与缓存版本，避免恢复分组规则变化前的旧译文。
 import '../../setting/image_translation_setting.dart';
 import '../../setting/inference_setting.dart';
 import '../inference/onnx_model_store.dart';
@@ -60,6 +61,8 @@ ImageTranslationConfiguration captureImageTranslationConfiguration() {
       'target': setting.targetLanguage.value,
       'thinking': setting.enableThinking.value,
       'mergeTextBlocks': setting.autoMergeText.value,
+      // 字色隔离与彩字阅读顺序改变了译文分组编号，旧缓存不能直接回填。
+      'textGroupingVersion': 2,
     },
   );
 }

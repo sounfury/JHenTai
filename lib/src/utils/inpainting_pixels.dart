@@ -1,3 +1,4 @@
+// 提供文字擦除掩码细化、纯色背景填充和 LaMa 输入输出像素处理工具。
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -168,6 +169,7 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
   final w = source.width, h = source.height;
   if (coarse.length != w * h) throw ArgumentError('mask dimensions');
   final result = Uint8List(w * h)..fillRange(0, w * h, 255);
+  final acceptedGlyphs = Uint8List(w * h);
   final visited = Uint8List(w * h);
   final queue = Int32List(w * h);
   final gray = Uint8List(w * h);
@@ -214,13 +216,48 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
           }
         }
       }
-      if (tail < 2 || supported / tail < 0.9) continue;
+      if (tail < 2) continue;
       final bw = right - left + 1, bh = bottom - top + 1;
       // Reject backgrounds, panel edges and long connected illustration lines.
-      if (bw > w * 0.12 ||
+      if (bw > w * (outlined ? 0.4 : 0.12) ||
           bh > h * (outlined ? 0.4 : 0.08) ||
           tail > w * h * (outlined ? 0.006 : 0.002))
         continue;
+      if (supported / tail < 0.9) {
+        if (!outlined) continue;
+        // 白描边可能与亮色背景相连。仅补回检测多边形内、紧邻已确认
+        // 笔画的描边像素，不把与之相连的背景或画面线条一起擦除。
+        for (int j = 0; j < tail; j++) {
+          final i = queue[j];
+          if (coarse[i] != 0) continue;
+          final x = i % w, y = i ~/ w;
+          bool touchesGlyph = false;
+          for (int dy = -8; dy <= 8 && !touchesGlyph; dy++) {
+            for (int dx = -8; dx <= 8; dx++) {
+              if (dx * dx + dy * dy > 64) continue;
+              final nx = x + dx, ny = y + dy;
+              if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+              if (acceptedGlyphs[ny * w + nx] != 0) {
+                touchesGlyph = true;
+                break;
+              }
+            }
+          }
+          if (!touchesGlyph) continue;
+          for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+              final nx = x + dx, ny = y + dy;
+              if (nx >= 0 &&
+                  ny >= 0 &&
+                  nx < w &&
+                  ny < h &&
+                  coarse[ny * w + nx] == 0)
+                result[ny * w + nx] = 0;
+            }
+          }
+        }
+        continue;
+      }
       if (outlined) {
         int anchored = 0;
         for (int j = 0; j < tail; j++) {
@@ -231,7 +268,8 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
               final nx = x + dx, ny = y + dy;
               if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
               final next = ny * w + nx;
-              if (result[next] == 0 && gray[next] < 100) {
+              // 彩字不一定足够黑；描边应关联已通过检测支持检查的真实笔画。
+              if (acceptedGlyphs[next] != 0) {
                 touchesGlyph = true;
                 break;
               }
@@ -243,6 +281,7 @@ Uint8List refineInpaintingMask(img.Image source, Uint8List coarse) {
       }
       final radius = (math.min(bw, bh) * 0.12).ceil().clamp(1, 4);
       for (int j = 0; j < tail; j++) {
+        if (!outlined) acceptedGlyphs[queue[j]] = 1;
         final x = queue[j] % w, y = queue[j] ~/ w;
         for (int dy = -radius; dy <= radius; dy++) {
           for (int dx = -radius; dx <= radius; dx++) {

@@ -10,6 +10,7 @@ import 'package:image/image.dart' as image;
 import '../engine/engine_contract.dart';
 import '../log.dart';
 import '../../utils/inpainting_pixels.dart';
+import '../../utils/page_processing_strategy.dart';
 import 'inference_exception.dart';
 import 'inference_safety.dart';
 import 'inference_task.dart';
@@ -29,6 +30,7 @@ abstract class InpaintingInferenceEngine {
     required String inputPath,
     required String outputPath,
     required List<PolygonMask> polygonMasks,
+    PageColorMode? colorMode,
     InferenceCancellationToken? cancellationToken,
     void Function(double progress)? onProgress,
   });
@@ -88,6 +90,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     required String inputPath,
     required String outputPath,
     required List<PolygonMask> polygonMasks,
+    PageColorMode? colorMode,
     InferenceCancellationToken? cancellationToken,
     void Function(double progress)? onProgress,
   }) {
@@ -101,6 +104,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         inputPath: inputPath,
         outputPath: outputPath,
         polygonMasks: polygonMasks,
+        colorMode: colorMode,
         cancellationToken: cancellationToken,
         onProgress: onProgress,
       );
@@ -111,6 +115,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
     required String inputPath,
     required String outputPath,
     required List<PolygonMask> polygonMasks,
+    PageColorMode? colorMode,
     InferenceCancellationToken? cancellationToken,
     void Function(double progress)? onProgress,
   }) async {
@@ -141,7 +146,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       stageStart = clock.elapsedMicroseconds;
       final _PreparedRepair repair = await compute(
         _prepareRepair,
-        _RepairRequest(inputPath, polygonMasks),
+        _RepairRequest(inputPath, polygonMasks, colorMode),
       );
       _logStage(
         'preprocess',
@@ -149,7 +154,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         stageStart,
         'image=${repair.source.width}x${repair.source.height} '
             'tensor=${repair.input == null ? 'none' : '${repair.input!.width}x${repair.input!.height}'} '
-            'flat_pixels=${repair.flatPixels}',
+            'flat_pixels=${repair.flatPixels} strategy=${repair.strategyId}',
       );
       for (final MapEntry<String, double> entry in repair.timingsMs.entries) {
         _logLamaTiming(
@@ -392,14 +397,21 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       request.polygons,
     );
     timingsMs['polygon_mask'] = (clock.elapsedMicroseconds - stageStart) / 1000;
+    // 擦除差异全部由页面策略决定；未指定时按原图自动判定。
     stageStart = clock.elapsedMicroseconds;
-    final Uint8List mask = refineInpaintingMask(source, coarseMask);
+    final PageProcessingStrategy strategy = PageProcessingStrategy.of(
+      request.colorMode ?? classifyImageColorMode(source),
+    );
+    timingsMs['color_classify'] =
+        (clock.elapsedMicroseconds - stageStart) / 1000;
+    stageStart = clock.elapsedMicroseconds;
+    final Uint8List mask = strategy.refineEraseMask(source, coarseMask);
     timingsMs['mask_refine'] = (clock.elapsedMicroseconds - stageStart) / 1000;
     if (!mask.contains(0)) {
       throw StateError('no text pixels remain after mask refinement');
     }
     stageStart = clock.elapsedMicroseconds;
-    final flat = repairFlatInpaintingRegions(source, mask);
+    final flat = strategy.repairFlatRegions(source, mask);
     timingsMs['flat_fill'] = (clock.elapsedMicroseconds - stageStart) / 1000;
     if (!flat.remainingMask.contains(0)) {
       return _PreparedRepair(
@@ -408,6 +420,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
         null,
         timingsMs,
         flat.repairedPixels,
+        strategy.id,
       );
     }
     // Bound feature-map memory independently of the execution provider.
@@ -428,6 +441,7 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
       prepared,
       timingsMs,
       flat.repairedPixels,
+      strategy.id,
     );
   }
 
@@ -527,9 +541,10 @@ class LamaOnnxInpaintingInferenceEngine implements InpaintingInferenceEngine {
 }
 
 class _RepairRequest {
-  const _RepairRequest(this.inputPath, this.polygons);
+  const _RepairRequest(this.inputPath, this.polygons, this.colorMode);
   final String inputPath;
   final List<PolygonMask> polygons;
+  final PageColorMode? colorMode;
 }
 
 class _PreparedRepair {
@@ -539,12 +554,14 @@ class _PreparedRepair {
     this.input,
     this.timingsMs,
     this.flatPixels,
+    this.strategyId,
   );
   final image.Image source;
   final Uint8List mask;
   final LamaInput? input;
   final int flatPixels;
   final Map<String, double> timingsMs;
+  final String strategyId;
 }
 
 class _RepairOutput {

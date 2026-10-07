@@ -11,6 +11,7 @@ import '../service/image_inpainting_service.dart';
 import '../service/inference/onnx_model_store.dart';
 import '../service/jh_service.dart';
 import '../service/log.dart';
+import '../utils/page_processing_strategy.dart';
 
 ImageTranslationSetting imageTranslationSetting = ImageTranslationSetting();
 
@@ -108,6 +109,10 @@ class ImageTranslationSetting
   final Rx<ContextBatchSize> contextBatchSize = ContextBatchSize.one.obs;
   final Rx<ImageProcessingDisplayMode> imageProcessingDisplayMode =
       ImageProcessingDisplayMode.overlay.obs;
+
+  /// 黑白／彩色页面策略；自动时按每页像素判定。
+  final Rx<PageColorPreference> pageColorPreference =
+      PageColorPreference.auto.obs;
 
   /// Whether to auto-translate gallery titles and comments as they appear on
   /// screen. This currently requires Apple on-device translation, independent
@@ -228,6 +233,11 @@ class ImageTranslationSetting
               mode != ImageProcessingDisplayMode.translatedImage,
           orElse: () => ImageProcessingDisplayMode.overlay,
         );
+    pageColorPreference.value = PageColorPreference.values.firstWhere(
+      (PageColorPreference value) =>
+          value.name == config['pageColorPreference'],
+      orElse: () => PageColorPreference.auto,
+    );
     if (translatorEngine.value == ImageTranslationEngine.appleOnDevice) {
       contextBatchSize.value = ContextBatchSize.one;
     }
@@ -264,6 +274,7 @@ class ImageTranslationSetting
     'preTranslateConcurrency': preTranslateConcurrency.value,
     'contextBatchSize': contextBatchSize.value.name,
     'imageProcessingDisplayMode': imageProcessingDisplayMode.value.name,
+    'pageColorPreference': pageColorPreference.value.name,
     'autoTranslateGalleryText': autoTranslateGalleryText.value,
   });
 
@@ -412,6 +423,11 @@ class ImageTranslationSetting
             ? ImageProcessingDisplayMode.overlay
             : value;
     imageInpaintingService.setDisplayMode(imageProcessingDisplayMode.value);
+    await saveBeanConfig();
+  }
+
+  Future<void> savePageColorPreference(PageColorPreference value) async {
+    pageColorPreference.value = value;
     await saveBeanConfig();
   }
 

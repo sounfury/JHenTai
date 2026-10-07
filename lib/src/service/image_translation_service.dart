@@ -1,3 +1,4 @@
+// 协调漫画图片文字识别、翻译、原文样式补采样、缓存恢复和图片导出。
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -31,6 +32,7 @@ import '../utils/bubble_mask_layout.dart';
 import '../utils/bubble_detection_refinement.dart';
 import '../utils/sound_effect_style.dart';
 import '../utils/ocr_layout_protocol.dart';
+import '../utils/page_processing_strategy.dart';
 import '../utils/rgba_raster.dart';
 import 'engine/engine.dart';
 import 'engine/translation_protocol.dart';
@@ -63,6 +65,7 @@ class RecognizedImage {
     required this.imageWidth,
     required this.imageHeight,
     this.ocrArtifactCheckVersion = 0,
+    this.pageColorMode,
   });
 
   final String cacheKey;
@@ -76,6 +79,7 @@ class RecognizedImage {
   final int imageWidth;
   final int imageHeight;
   final int ocrArtifactCheckVersion;
+  final PageColorMode? pageColorMode;
 }
 
 class ImageTranslationService extends GetxController
@@ -807,6 +811,7 @@ class ImageTranslationService extends GetxController
         imageWidth: imageWidth,
         imageHeight: imageHeight,
         ocrArtifactCheckVersion: checked.ocrArtifactCheckVersion,
+        pageColorMode: await _classifyPageColor(sourceBytes, page),
       );
     } on ImageTranslationException catch (e, stack) {
       if (_cancelRequested) {
@@ -953,6 +958,7 @@ class ImageTranslationService extends GetxController
           imageWidth: recognized.imageWidth,
           imageHeight: recognized.imageHeight,
           ocrArtifactCheckVersion: recognized.ocrArtifactCheckVersion,
+          pageColorMode: recognized.pageColorMode,
         ),
       );
       try {
@@ -1173,13 +1179,17 @@ class ImageTranslationService extends GetxController
       cached.imageWidth ?? 0,
       cached.imageHeight ?? 0,
     );
+    final PageColorMode? pageColorMode =
+        cached.pageColorMode ?? await _classifyPageColor(sourceBytes, null);
     final restored = cached.copyWith(
       fromCache: true,
       containers: containers,
       blocks: blocks,
+      pageColorMode: pageColorMode,
     );
     if (!identical(containers, cached.containers) ||
-        !identical(blocks, cached.blocks)) {
+        !identical(blocks, cached.blocks) ||
+        pageColorMode != cached.pageColorMode) {
       try {
         await _writePersistentResult(persistentKey, restored);
       } catch (error) {
@@ -1301,6 +1311,24 @@ class ImageTranslationService extends GetxController
 
   static RgbaRaster? _decodeRaster(Uint8List bytes) => RgbaRaster.decode(bytes);
 
+  /// 判定页面色彩类型，决定擦除与排版策略；解码失败时返回 null（按黑白处理）。
+  Future<PageColorMode?> _classifyPageColor(
+    Uint8List sourceBytes,
+    RgbaRaster? page,
+  ) async {
+    try {
+      final RgbaRaster? raster = page ?? await _decodePage(sourceBytes);
+      if (raster == null) return null;
+      return await compute(
+        _classifyRasterColor,
+        (raster.pixels, raster.width, raster.height),
+      );
+    } catch (error) {
+      log.warning('Failed to classify page color mode: $error');
+      return null;
+    }
+  }
+
   Future<RgbaRaster?> _decodePage(Uint8List sourceBytes) async {
     try {
       return await compute(_decodeRaster, sourceBytes);
@@ -1382,7 +1410,8 @@ class ImageTranslationService extends GetxController
           (block) =>
               block.backgroundColor != null &&
               block.sourceGlyphWidth != null &&
-              block.sourceGlyphHeight != null,
+              block.sourceGlyphHeight != null &&
+              block.textStyleVersion >= 1,
         )) {
       return blocks;
     }
@@ -1572,6 +1601,12 @@ class ImageTranslationService extends GetxController
       backgroundColor: imageTranslationSetting.translationBackgroundColor.value,
       backgroundOpacity:
           imageTranslationSetting.translationBackgroundOpacity.value,
+      strategy: PageProcessingStrategy.of(
+        resolvePageColorMode(
+          imageTranslationSetting.pageColorPreference.value,
+          result.pageColorMode,
+        ),
+      ),
     );
     paintTranslationOverlay(
       canvas,
@@ -2122,3 +2157,6 @@ class ImageTranslationException implements Exception {
 
   const ImageTranslationException(this.code);
 }
+
+PageColorMode _classifyRasterColor((Uint8List, int, int) page) =>
+    classifyPageColorMode(page.$1, page.$2, page.$3);

@@ -1,3 +1,4 @@
+// 过滤和合并 OCR 误识别片段，保留正常对白的文字、坐标及原文样式。
 import 'dart:math' as math;
 
 import '../model/image_translation.dart';
@@ -265,6 +266,10 @@ List<RecognizedTextBlock> mergeOverlappingOcrArtifacts(
           ) -
           top,
       backgroundColor: candidate.backgroundColor,
+      textColor: candidate.textColor,
+      outlineColor: candidate.outlineColor,
+      outlineWidthRatio: candidate.outlineWidthRatio,
+      textStyleVersion: candidate.textStyleVersion,
       sourceGlyphWidth: candidate.sourceGlyphWidth,
       sourceGlyphHeight: candidate.sourceGlyphHeight,
     );

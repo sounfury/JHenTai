@@ -1,3 +1,4 @@
+// 使用真实漫画材料重放生产识别、背景修复和排版流程，生成验收证据。
 import 'dart:convert';
 import 'dart:io';
 
@@ -17,6 +18,7 @@ import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/utils/image_text_grouping.dart';
 import 'package:jhentai/src/utils/ocr_artifact_filter.dart';
 import 'package:jhentai/src/utils/rgba_raster.dart';
+import 'package:jhentai/src/utils/page_processing_strategy.dart';
 import 'package:jhentai/src/service/engine/engine_contract.dart';
 
 Future<Map<String, dynamic>> runOcrArtifactCacheAcceptance({
@@ -162,6 +164,7 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
     inputPath: sourcePath,
     outputPath: output,
     polygonMasks: masks,
+    colorMode: pageColorModeFromName(annotation['pageColorMode']),
   );
   final source = img.decodeImage(await File(sourcePath).readAsBytes())!;
   final repaired = img.decodeImage(await File(output).readAsBytes())!;
@@ -174,6 +177,14 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
   ].any((path) => runtime.hasReadySessions([path]));
   int foreground = 0, backgroundResidual = 0;
   int white = 0, whiteResidual = 0, black = 0, blackResidual = 0;
+  int colored = 0, coloredResidual = 0;
+  // 验收材料可指定原文的 RGB 范围；阈值只用于测量，不参与生产掩码。
+  final coloredRange = annotation['coloredTextRgbRange'] as List?;
+  bool isColoredGlyph(img.Pixel p) => coloredRange == null
+      ? p.r > 150 && p.g < 100 && p.b > 90
+      : p.r >= coloredRange[0] && p.r <= coloredRange[1] &&
+          p.g >= coloredRange[2] && p.g <= coloredRange[3] &&
+          p.b >= coloredRange[4] && p.b <= coloredRange[5];
   for (int y = bounds[1]; y < bounds[1] + bounds[3]; y++) {
     for (int x = bounds[0]; x < bounds[0] + bounds[2]; x++) {
       if (evaluationRects != null &&
@@ -201,6 +212,16 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
         black++;
         if (after < 100) blackResidual++;
       }
+      if (annotation['coloredText'] == true) {
+        final originalPixel = source.getPixel(x, y);
+        if (isColoredGlyph(originalPixel)) {
+          colored++;
+          final repairedPixel = repaired.getPixel(x, y);
+          if (isColoredGlyph(repairedPixel)) {
+            coloredResidual++;
+          }
+        }
+      }
     }
   }
   final evidence = <String, dynamic>{
@@ -212,13 +233,22 @@ Future<Map<String, dynamic>> runBackgroundAcceptance({
       'backgroundResidualFraction': backgroundResidual / foreground,
     'whitePixels': white,
     'blackPixels': black,
-    'whiteResidualFraction': whiteResidual / white,
-    'blackResidualFraction': blackResidual / black,
+    'whiteResidualFraction': white == 0 ? 0 : whiteResidual / white,
+    'blackResidualFraction': black == 0 ? 0 : blackResidual / black,
+    if (annotation['coloredText'] == true) ...{
+      'coloredPixels': colored,
+      'coloredResidualFraction': colored == 0 ? 0 : coloredResidual / colored,
+    },
     'passed':
         white > 100 &&
-        black > 100 &&
         whiteResidual / white < annotation['maxResidualFraction'] &&
-        blackResidual / black < annotation['maxResidualFraction'] &&
+        (annotation['coloredText'] == true
+            ? colored > 100 &&
+                coloredResidual / colored < annotation['maxResidualFraction']
+            : black > 100 &&
+                blackResidual / black < annotation['maxResidualFraction']) &&
+        (annotation['expectedSelectedMasks'] == null ||
+            masks.length == annotation['expectedSelectedMasks']) &&
         (uniformBackground == null ||
             (foreground > 100 &&
                 backgroundResidual / foreground <

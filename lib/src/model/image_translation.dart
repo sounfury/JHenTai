@@ -1,3 +1,6 @@
+// 定义漫画图片翻译的识别文字、原文样式、排版容器和任务结果。
+import '../utils/page_processing_strategy.dart';
+
 /// Lifecycle of one page in the translation pipeline.
 ///
 /// [failed] is retained for compatibility with callers that only know about a
@@ -31,6 +34,12 @@ class RecognizedTextBlock {
   /// Dominant source fill as opaque ARGB; absent in older cached results.
   final int? backgroundColor;
 
+  /// 原文字色、描边色为不透明 ARGB；描边宽度按字高／竖排字宽归一化。
+  final int? textColor;
+  final int? outlineColor;
+  final double outlineWidthRatio;
+  final int textStyleVersion;
+
   /// Foreground column/row thickness measured from source pixels, in OCR
   /// coordinates. Unlike the OCR rectangle, these exclude margins and gaps.
   final double? sourceGlyphWidth;
@@ -44,6 +53,10 @@ class RecognizedTextBlock {
     this.width = 0,
     this.height = 0,
     this.backgroundColor,
+    this.textColor,
+    this.outlineColor,
+    this.outlineWidthRatio = 0,
+    this.textStyleVersion = 0,
     this.sourceGlyphWidth,
     this.sourceGlyphHeight,
   });
@@ -56,6 +69,10 @@ class RecognizedTextBlock {
     'width': width,
     'height': height,
     if (backgroundColor != null) 'backgroundColor': backgroundColor,
+    if (textColor != null) 'textColor': textColor,
+    if (outlineColor != null) 'outlineColor': outlineColor,
+    if (outlineWidthRatio > 0) 'outlineWidthRatio': outlineWidthRatio,
+    if (textStyleVersion > 0) 'textStyleVersion': textStyleVersion,
     if (sourceGlyphWidth != null) 'sourceGlyphWidth': sourceGlyphWidth,
     if (sourceGlyphHeight != null) 'sourceGlyphHeight': sourceGlyphHeight,
   };
@@ -69,6 +86,10 @@ class RecognizedTextBlock {
         width: (json['width'] as num?)?.toDouble() ?? 0,
         height: (json['height'] as num?)?.toDouble() ?? 0,
         backgroundColor: (json['backgroundColor'] as num?)?.toInt(),
+        textColor: (json['textColor'] as num?)?.toInt(),
+        outlineColor: (json['outlineColor'] as num?)?.toInt(),
+        outlineWidthRatio: (json['outlineWidthRatio'] as num?)?.toDouble() ?? 0,
+        textStyleVersion: (json['textStyleVersion'] as num?)?.toInt() ?? 0,
         sourceGlyphWidth: (json['sourceGlyphWidth'] as num?)?.toDouble(),
         sourceGlyphHeight: (json['sourceGlyphHeight'] as num?)?.toDouble(),
       );
@@ -185,6 +206,9 @@ class ImageTranslationResult {
   final bool fromCache;
   final int ocrArtifactCheckVersion;
 
+  /// 自动判定的页面色彩类型；旧缓存为 null，恢复时补齐。
+  final PageColorMode? pageColorMode;
+
   const ImageTranslationResult({
     required this.status,
     this.sourceText = '',
@@ -199,6 +223,7 @@ class ImageTranslationResult {
     this.imageHeight,
     this.fromCache = false,
     this.ocrArtifactCheckVersion = 0,
+    this.pageColorMode,
   });
 
   const ImageTranslationResult.idle()
@@ -244,6 +269,7 @@ class ImageTranslationResult {
     int? imageHeight,
     bool? fromCache,
     int? ocrArtifactCheckVersion,
+    PageColorMode? pageColorMode,
   }) {
     return ImageTranslationResult(
       status: status ?? this.status,
@@ -260,6 +286,7 @@ class ImageTranslationResult {
       fromCache: fromCache ?? this.fromCache,
       ocrArtifactCheckVersion:
           ocrArtifactCheckVersion ?? this.ocrArtifactCheckVersion,
+      pageColorMode: pageColorMode ?? this.pageColorMode,
     );
   }
 
@@ -276,6 +303,7 @@ class ImageTranslationResult {
     if (imageHeight != null) 'imageHeight': imageHeight,
     if (ocrArtifactCheckVersion > 0)
       'ocrArtifactCheckVersion': ocrArtifactCheckVersion,
+    if (pageColorMode != null) 'pageColorMode': pageColorMode!.name,
   };
 
   /// Older translation caches omit status and contain successful translations.
@@ -323,6 +351,7 @@ class ImageTranslationResult {
             .toList(growable: false),
         imageWidth: (json['imageWidth'] as num?)?.toInt(),
         imageHeight: (json['imageHeight'] as num?)?.toInt(),
+        pageColorMode: pageColorModeFromName(json['pageColorMode']),
       );
 }
 

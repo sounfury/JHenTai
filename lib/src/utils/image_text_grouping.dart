@@ -1,3 +1,4 @@
+// 按原文位置和样式组织对白，供翻译请求、译文回填、排版及擦除共用。
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -703,6 +704,17 @@ List<RecognizedTextGroup> groupRecognizedTextBlocks(
   // stacked lines), so pick the dominant orientation up front — the same
   // heuristic the ONNX detector uses to choose its reading order.
   final bool mostlyVertical = _isMostlyVertical(blocks);
+  // 彩漫 OCR 的返回顺序可能交错甚至倒序；按实际行位置匹配相邻对白。
+  // 只重排索引，原始 blocks 与逐行译文的对应关系保持不变。
+  final order = List<int>.generate(blocks.length, (index) => index);
+  if (!mostlyVertical && blocks.any(_hasColoredText)) {
+    order.sort((a, b) {
+      final top = blocks[a].top.compareTo(blocks[b].top);
+      if (top != 0) return top;
+      final left = blocks[a].left.compareTo(blocks[b].left);
+      return left != 0 ? left : a.compareTo(b);
+    });
+  }
 
   final List<List<int>> groupIndices = <List<int>>[];
   final List<double> groupLeft = <double>[];
@@ -731,7 +743,7 @@ List<RecognizedTextGroup> groupRecognizedTextBlocks(
     groupLast.add(block);
   }
 
-  for (int index = 0; index < blocks.length; index++) {
+  for (final index in order) {
     final RecognizedTextBlock block = blocks[index];
     if (block.width <= 0 || block.height <= 0) {
       // No usable geometry: its own group, never merged.
@@ -744,6 +756,10 @@ List<RecognizedTextGroup> groupRecognizedTextBlocks(
     for (int group = 0; group < groupIndices.length; group++) {
       final RecognizedTextBlock? last = groupLast[group];
       if (last == null || last.width <= 0 || last.height <= 0) {
+        continue;
+      }
+      // 不同颜色通常代表不同说话人，不能让整组继承相邻对白的字色。
+      if (!_compatibleTextColors(last, block)) {
         continue;
       }
       final double? score =
@@ -956,4 +972,26 @@ bool translationPreservesSource(String source, String translation) {
   String compact(String value) => value.replaceAll(RegExp(r'\s+'), '');
   final String original = compact(source);
   return original.isNotEmpty && original == compact(translation);
+}
+
+// ===== 私有样式工具 =====
+
+bool _hasColoredText(RecognizedTextBlock block) {
+  final color = block.textColor;
+  if (color == null) {
+    return false;
+  }
+  final channels = [color >> 16 & 255, color >> 8 & 255, color & 255];
+  return channels.reduce(math.max) - channels.reduce(math.min) >= 48;
+}
+
+bool _compatibleTextColors(RecognizedTextBlock a, RecognizedTextBlock b) {
+  if (!_hasColoredText(a) || !_hasColoredText(b)) {
+    return true;
+  }
+  final first = a.textColor!, second = b.textColor!;
+  final dr = (first >> 16 & 255) - (second >> 16 & 255);
+  final dg = (first >> 8 & 255) - (second >> 8 & 255);
+  final db = (first & 255) - (second & 255);
+  return dr * dr + dg * dg + db * db <= 10000;
 }

@@ -1,6 +1,7 @@
 import '../inference/inference_exception.dart';
 import '../inference/inference_task.dart';
 import '../inference/inpainting_inference_engine.dart';
+import '../../utils/page_processing_strategy.dart';
 import 'engine_contract.dart';
 
 class LamaOnnxInpaintEngineAdapter implements InpaintEngine {
@@ -49,6 +50,9 @@ class LamaOnnxInpaintEngineAdapter implements InpaintEngine {
               inputPath: request.imagePath,
               outputPath: request.outputPath,
               polygonMasks: request.polygonMasks,
+              colorMode: pageColorModeFromName(
+                request.configuration['pageColorMode'],
+              ),
               cancellationToken: token,
               onProgress:
                   (double progress) =>

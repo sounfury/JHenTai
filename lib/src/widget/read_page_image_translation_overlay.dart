@@ -7,6 +7,7 @@ import 'package:jhentai/src/model/image_translation.dart';
 import 'package:jhentai/src/service/image_inpainting_service.dart';
 import 'package:jhentai/src/service/image_translation_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
+import 'package:jhentai/src/utils/page_processing_strategy.dart';
 
 /// Inline overlay for the read page. After "recognize and translate this page"
 /// is triggered, the bottom result sheet is no longer shown; instead this
@@ -176,6 +177,9 @@ class ReadPageImageTranslationOverlay extends StatelessWidget {
                                   textDirection: Directionality.of(context),
                                   backgroundColor: colorSnapshot.data ?? Colors.white,
                                   backgroundOpacity: backgroundOpacity,
+                                  strategy: PageProcessingStrategy.of(
+                                    resolvePageColorMode(imageTranslationSetting.pageColorPreference.value, result.pageColorMode),
+                                  ),
                                 ),
                               ),
                         ),
@@ -330,12 +334,14 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
   final TextDirection textDirection;
   final Color backgroundColor;
   final double backgroundOpacity;
+  final PageProcessingStrategy strategy;
 
   const _ImageTranslationOverlayPainter({
     required this.result,
     required this.textDirection,
     required this.backgroundColor,
     required this.backgroundOpacity,
+    required this.strategy,
   });
 
   @override
@@ -367,6 +373,7 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
       textDirection: textDirection,
       backgroundColor: backgroundColor,
       backgroundOpacity: backgroundOpacity,
+      strategy: strategy,
     );
     paintTranslationOverlay(canvas, layout, textDirection: textDirection, backgroundOpacity: backgroundOpacity);
   }
@@ -376,5 +383,6 @@ class _ImageTranslationOverlayPainter extends CustomPainter {
       oldDelegate.result != result ||
       oldDelegate.textDirection != textDirection ||
       oldDelegate.backgroundColor != backgroundColor ||
-      oldDelegate.backgroundOpacity != backgroundOpacity;
+      oldDelegate.backgroundOpacity != backgroundOpacity ||
+      oldDelegate.strategy != strategy;
 }

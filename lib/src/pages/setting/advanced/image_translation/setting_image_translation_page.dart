@@ -13,6 +13,7 @@ import 'package:jhentai/src/service/inference/onnx_model_store.dart';
 import 'package:jhentai/src/service/inference_service.dart';
 import 'package:jhentai/src/setting/image_translation_setting.dart';
 import 'package:jhentai/src/setting/inference_setting.dart';
+import 'package:jhentai/src/utils/page_processing_strategy.dart';
 import 'package:jhentai/src/utils/route_util.dart';
 import 'package:jhentai/src/utils/toast_util.dart';
 import 'package:jhentai/src/widget/onnx_model_tile.dart';
@@ -127,6 +128,7 @@ class _SettingImageTranslationPageState extends State<SettingImageTranslationPag
             _buildPreTranslateConcurrency(),
 
             _buildImageProcessingDisplayMode(),
+            _buildPageColorPreference(),
             _buildTranslationBackgroundStyle(),
             Obx(
               () =>
@@ -197,6 +199,28 @@ class _SettingImageTranslationPageState extends State<SettingImageTranslationPag
               value: ImageProcessingDisplayMode.repairedBackgroundEmbeddedText,
               child: Text('imageTranslationDisplayCtdMigan'.tr),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageColorPreference() {
+    return Obx(
+      () => ListTile(
+        title: Text('imageTranslationPageColorMode'.tr),
+        subtitle: Text('imageTranslationPageColorModeHint'.tr, style: const TextStyle(fontSize: 12)),
+        trailing: DropdownButton<PageColorPreference>(
+          value: imageTranslationSetting.pageColorPreference.value,
+          onChanged: (PageColorPreference? value) {
+            if (value != null) {
+              imageTranslationSetting.savePageColorPreference(value);
+            }
+          },
+          items: <DropdownMenuItem<PageColorPreference>>[
+            DropdownMenuItem(value: PageColorPreference.auto, child: Text('imageTranslationPageColorAuto'.tr)),
+            DropdownMenuItem(value: PageColorPreference.monochrome, child: Text('imageTranslationPageColorMonochrome'.tr)),
+            DropdownMenuItem(value: PageColorPreference.color, child: Text('imageTranslationPageColorColor'.tr)),
           ],
         ),
       ),
