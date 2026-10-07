@@ -1,4 +1,4 @@
-name: Build iOS (jh-test)
+name: Build iOS (JHenTai)
 
 on:
   workflow_dispatch:
@@ -75,11 +75,11 @@ jobs:
           cd build
           mkdir -p Payload
           mv ios/iphoneos/*.app Payload
-          zip -9 jh-test_${{ steps.get_version.outputs.version }}.ipa -r Payload
+          zip -9 JHenTai_${{ steps.get_version.outputs.version }}.ipa -r Payload
 
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jh-test-ipa
+          name: JHenTai-ipa
           path: build/*.ipa
           if-no-files-found: error
