@@ -60,12 +60,12 @@
       },
       "versions": [
         {
-          "version": "8.0.16",
-          "buildVersion": "338",
-          "date": "2026-11-05T13:16:38Z",
-          "localizedDescription": "- 收藏搜索支持多选收藏夹，并在线聚合搜索结果\\n- 搜索页新增「隐藏已汉化」开关，可排除中文画廊及已有汉化版本的原文作品\\n- 图片翻译新增页面色彩策略：自动识别、黑白、彩色；分别优化文字擦除、颜色采样和译文排版\\n- iOS 应用显示名恢复为 JHenTai，包名恢复为 top.jtmonster.jhentai\\n\\n--------------------\\n\\n- Search multiple favorite categories and aggregate results online\\n- Add a Hide translated toggle to exclude Chinese galleries and original-language galleries with Chinese translations\\n- Add automatic, monochrome, and color page strategies for image translation, with dedicated text removal, color sampling, and layout handling\\n- Restore the iOS app name to JHenTai and the bundle identifier to top.jtmonster.jhentai\\n",
-          "downloadURL": "https://github.com/sounfury/JHenTai/releases/download/v8.0.16+338/JHenTai_8.0.16+338.ipa",
-          "size": 24006242
+          "version": "8.0.18",
+          "buildVersion": "345",
+          "date": "2026-11-05T13:48:21Z",
+          "localizedDescription": "- 合并上游 master 至 182ced71，包含 v8.0.17 和 v8.0.18 的修复\\n- 修复解锁归档等操作时的 403 错误和解析异常\\n- 修复系统代理关闭后仍使用旧代理地址的问题\\n- 桌面端支持通过 -g / --gallery 启动参数直接打开画廊或图片页\\n- 修复 Android 深链接处理导致画廊页面参数被覆盖的问题\\n- 保留多收藏夹聚合搜索、「隐藏已汉化」和黑白／彩色页面图片翻译\\n- iOS 应用显示名为 JHenTai，包名为 top.jtmonster.jhentai\\n\\n--------------------\\n\\n- Merge upstream master through 182ced71, including fixes from v8.0.17 and v8.0.18\\n- Fix 403 errors and parsing failures when unlocking archives and performing related operations\\n- Stop using stale system proxy addresses when the system proxy is disabled\\n- Support opening galleries or image pages with the desktop -g / --gallery launch option\\n- Fix Android deep links overwriting gallery page arguments\\n- Keep multi-category favorite search, Hide translated, and monochrome/color image translation\\n- Use JHenTai as the iOS app name and top.jtmonster.jhentai as the bundle identifier\\n",
+          "downloadURL": "https://github.com/sounfury/JHenTai/releases/download/v8.0.18+345/JHenTai_8.0.18+345.ipa",
+          "size": 23988097
         }
       ]
     }
